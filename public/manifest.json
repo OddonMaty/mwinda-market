@@ -1,0 +1,62 @@
+{
+  "name": "Mwinda Market — Marketplace Nationale RDC",
+  "short_name": "Mwinda Market",
+  "description": "La première marketplace e-commerce nationale de la République Démocratique du Congo connectant les 26 provinces.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0B1B3D",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "fr-CD",
+  "categories": ["shopping", "business", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Suivi de Commande",
+      "short_name": "Suivi",
+      "description": "Suivez vos colis à travers les 26 provinces",
+      "url": "/suivi",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Devenir Vendeur",
+      "short_name": "Vendre",
+      "description": "Ouvrez votre boutique nationale",
+      "url": "/devenir-vendeur",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Zones de Livraison",
+      "short_name": "Hubs",
+      "description": "Consultez les hubs et tarifs de livraison",
+      "url": "/zones-livraison",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

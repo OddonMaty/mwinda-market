@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mwinda Market
 
-## Getting Started
+Plateforme e-commerce panafricaine multi-vendeurs, conçue pour connecter acheteurs et vendeurs à travers l'Afrique subsaharienne.
 
-First, run the development server:
+## Stack technique
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Couche | Technologie |
+|---|---|
+| Framework | [Next.js 14](https://nextjs.org/) (App Router) |
+| Langage | TypeScript |
+| Style | Tailwind CSS |
+| PWA | next-pwa (service worker, manifest) |
+| Fonts | Google Fonts via `next/font` |
+| Déploiement | Compatible Vercel / Node.js server |
+
+## Fonctionnalités
+
+- 🛒 Catalogue produits avec filtres par catégorie et boutique
+- 🏪 Pages boutiques multi-vendeurs avec profil et inventaire
+- 📦 Suivi de commande par référence
+- 🗺️ Zones de livraison par pays et province
+- 🧾 Panier persistant (Context API)
+- 📲 PWA installable (manifest + service worker)
+- 🌍 Sélecteur pays / langue dans le header
+- 📱 Responsive : mobile (375px), tablette (768px), desktop (1440px)
+
+## Pages (App Router)
+
+```
+/                        → Accueil
+/produits                → Catalogue produits
+/produits/[id]           → Détail produit
+/boutiques               → Liste des boutiques
+/boutiques/[id]          → Détail boutique
+/panier                  → Panier
+/suivi                   → Suivi de commande
+/suivi/[reference]       → Résultat de suivi
+/devenir-vendeur         → Inscription vendeur
+/vendeur/dashboard       → Tableau de bord vendeur
+/zones-livraison         → Zones et tarifs de livraison
+/mentions-legales        → Mentions légales
+/confidentialite         → Politique de confidentialité
+/conditions              → CGU / CGV
+/assistance              → Centre d'aide
+/connexion               → Connexion / Inscription
+/categories              → Toutes les catégories
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Installation locale
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Cloner le dépôt
+git clone https://github.com/OddonMaty/mwinda-market.git
+cd mwinda-market
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Installer les dépendances
+npm install
 
-## Learn More
+# Lancer le serveur de développement
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Ouvrir [http://localhost:3000](http://localhost:3000) dans le navigateur.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts disponibles
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Commande | Description |
+|---|---|
+| `npm run dev` | Serveur de développement (port 3000) |
+| `npm run build` | Build de production |
+| `npm run start` | Serveur de production |
+| `npm run lint` | Lint ESLint |
 
-## Deploy on Vercel
+## Structure du projet
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/                  # Routes (App Router)
+│   ├── layout.tsx        # Layout racine (Header, Footer, fonts)
+│   ├── page.tsx          # Page d'accueil
+│   ├── produits/
+│   ├── boutiques/
+│   ├── panier/
+│   ├── suivi/
+│   ├── vendeur/
+│   └── ...
+├── components/           # Composants réutilisables
+│   ├── Header.tsx
+│   ├── Footer.tsx
+│   ├── ProductCard.tsx
+│   ├── ShopCard.tsx
+│   └── ...
+└── context/              # Context API (panier, etc.)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+
+- Les fichiers `public/sw.js` et `public/workbox-*.js` sont auto-générés au build (next-pwa) et exclus du dépôt.
+- Aucun fichier `.env` n'est inclus dans le dépôt. Créer un `.env.local` pour les variables d'environnement locales.
