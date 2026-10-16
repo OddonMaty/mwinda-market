@@ -65,7 +65,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
           type="button"
           onClick={() => setIsOpen(true)}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant bg-surface hover:bg-surface-container-low transition-all text-left shadow-2xs group ${className}`}
-          title="Changer de pays / marché"
+          title="Changer de pays / devise"
         >
           <span className="text-xl leading-none select-none">{country.flag}</span>
           <div className="flex flex-col">
@@ -79,7 +79,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             </div>
             <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
               <span className="font-bold text-secondary">{country.currency.code}</span>
-              <span>• Marché actif</span>
+              <span>• Devise active</span>
             </span>
           </div>
         </button>
@@ -107,7 +107,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">
-              Marché Pays Actif
+              Pays & Devise
             </span>
             <span className="text-xs font-bold text-secondary flex items-center gap-0.5">
               Modifier
@@ -143,10 +143,10 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-primary font-display">
-                    Sélectionnez votre marché
+                    Sélectionnez votre pays & devise
                   </h3>
                   <p className="text-xs text-on-surface-variant">
-                    {activeCountries.length} marchés ouverts avec boutiques actives
+                    {activeCountries.length} pays et devises disponibles
                   </p>
                 </div>
               </div>
@@ -163,7 +163,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             <div className="px-5 py-2.5 bg-secondary-fixed/50 border-b border-secondary-fixed flex items-center gap-2 text-xs text-on-secondary-fixed">
               <span className="material-symbols-outlined text-secondary text-base">info</span>
               <span>
-                Mwinda Market connecte les pays disposant d&apos;au moins une boutique certifiée.
+                Mwinda Market affiche les prix dans la devise locale de votre pays.
               </span>
             </div>
 
@@ -188,7 +188,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             <div className="p-4 overflow-y-auto space-y-2 flex-1">
               {filteredCountries.length === 0 ? (
                 <div className="text-center py-8 text-on-surface-variant text-xs">
-                  Aucun marché actif ne correspond à votre recherche.
+                  Aucun pays ne correspond à votre recherche.
                 </div>
               ) : (
                 filteredCountries.map((c) => {
@@ -250,7 +250,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
               <span>
                 Zone actuelle : <strong>{countryDisplayName}</strong>
               </span>
-              <span className="text-secondary font-medium">Boutiques certifiées locales</span>
+              <span className="text-secondary font-medium">Catalogue panafricain</span>
             </div>
           </div>
         </div>

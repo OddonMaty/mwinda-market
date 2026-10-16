@@ -16,12 +16,12 @@ export const ShopCard: React.FC<ShopCardProps> = ({ shop, className = "" }) => {
       className={`bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden hover:border-secondary hover:shadow-card-hover transition-all flex flex-col group ${className}`}
     >
       {/* Banner Container with Badges */}
-      <div className="relative h-28 sm:h-32 w-full bg-primary-container overflow-hidden">
+      <div className="relative h-28 sm:h-32 w-full bg-primary-container overflow-hidden z-0">
         <div
           className="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-300"
           style={{ backgroundImage: `url('${shop.bannerImage}')` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
         {/* Top Badges */}
         <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
@@ -43,12 +43,12 @@ export const ShopCard: React.FC<ShopCardProps> = ({ shop, className = "" }) => {
       </div>
 
       {/* Vendor Identity Block */}
-      <div className="px-4 sm:px-5 pt-0 pb-4 sm:pb-5 flex-1 flex flex-col">
+      <div className="px-4 sm:px-5 pt-0 pb-4 sm:pb-5 flex-1 flex flex-col relative z-10 bg-surface-container-lowest">
         {/* Avatar + Title Header */}
-        <div className="flex items-start sm:items-end -mt-6 sm:-mt-7 mb-3 gap-2.5 sm:gap-3">
+        <div className="flex items-start mb-3 gap-2.5 sm:gap-3">
           <Link
             href={`/boutiques/${shop.id}`}
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border-2 border-white bg-white shadow-md overflow-hidden shrink-0 flex items-center justify-center p-0.5 sm:p-1 group-hover:scale-105 transition-transform relative z-10"
+            className="-mt-7 sm:-mt-8 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border-2 border-white bg-white shadow-md overflow-hidden shrink-0 flex items-center justify-center p-0.5 sm:p-1 group-hover:scale-105 transition-transform relative z-20"
           >
             <Image
               src={shop.logoImage}
@@ -58,7 +58,7 @@ export const ShopCard: React.FC<ShopCardProps> = ({ shop, className = "" }) => {
               className="w-full h-full object-cover rounded-xl"
             />
           </Link>
-          <div className="min-w-0 flex-1 pt-0.5 sm:pt-0">
+          <div className="min-w-0 flex-1 pt-1.5 sm:pt-2">
             <Link href={`/boutiques/${shop.id}`} className="block">
               <h3 className="text-sm sm:text-base font-bold text-primary font-display truncate hover:text-secondary transition-colors leading-snug">
                 {shop.name}

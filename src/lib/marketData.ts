@@ -27,6 +27,13 @@ export function getProductCountryCode(product: ElectronicProduct): string {
 // ─── Boutiques ────────────────────────────────────────────────────────────────
 
 /**
+ * Retourne TOUTES les boutiques (catalogue global panafricain sans filtre pays).
+ */
+export function getAllShops(): Shop[] {
+  return SHOPS_DATA;
+}
+
+/**
  * Retourne toutes les boutiques d'un pays donné.
  * @param countryCode Code ISO 3166-1 alpha-2 (ex: "CD", "CG", "RW")
  */
@@ -43,6 +50,13 @@ export function getShopById(id: string): Shop | undefined {
 }
 
 // ─── Produits ─────────────────────────────────────────────────────────────────
+
+/**
+ * Retourne TOUS les produits (catalogue global panafricain sans filtre pays).
+ */
+export function getAllProducts(): ElectronicProduct[] {
+  return ELECTRONICS_PRODUCTS;
+}
 
 /**
  * Retourne tous les produits d'un pays donné.
@@ -71,6 +85,17 @@ export function getProductsByShop(shopId: string): ElectronicProduct[] {
 }
 
 /**
+ * Retourne les régions/provinces distinctes présentes dans TOUTES les boutiques (global).
+ */
+export function getAllShopProvinces(): string[] {
+  const provinces = new Set<string>();
+  SHOPS_DATA.forEach((s) => {
+    if (s.province) provinces.add(s.province);
+  });
+  return Array.from(provinces).sort();
+}
+
+/**
  * Retourne les régions/provinces distinctes présentes dans les boutiques d'un pays.
  * Utilisé pour alimenter les filtres de province.
  */
@@ -79,6 +104,17 @@ export function getProvincesByCountry(countryCode: string): string[] {
   const provinces = new Set<string>();
   shops.forEach((s) => {
     if (s.province) provinces.add(s.province);
+  });
+  return Array.from(provinces).sort();
+}
+
+/**
+ * Retourne les régions/provinces distinctes dans TOUS les produits (global).
+ */
+export function getAllProductProvinces(): string[] {
+  const provinces = new Set<string>();
+  ELECTRONICS_PRODUCTS.forEach((p) => {
+    if (p.province) provinces.add(p.province);
   });
   return Array.from(provinces).sort();
 }
@@ -93,6 +129,17 @@ export function getProductProvincesByCountry(countryCode: string): string[] {
     if (p.province) provinces.add(p.province);
   });
   return Array.from(provinces).sort();
+}
+
+/**
+ * Retourne les noms de boutiques distincts dans TOUS les produits (global).
+ */
+export function getAllShopNames(): string[] {
+  const names = new Set<string>();
+  ELECTRONICS_PRODUCTS.forEach((p) => {
+    if (p.shopName) names.add(p.shopName);
+  });
+  return Array.from(names).sort();
 }
 
 /**

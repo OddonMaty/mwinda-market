@@ -8,9 +8,9 @@ import { Footer } from "@/components/Footer";
 import { ProductCard, Product } from "@/components/ProductCard";
 import { SHOPS_DATA, getShopById, Shop } from "@/data/shops";
 import { ELECTRONICS_PRODUCTS } from "@/data/electronics";
-import { useMarket } from "@/context/MarketContext";
 import { getCountryByCode } from "@/lib/activeCountries";
 import { getShopCountryCode, getProductsByShop, toProductCard } from "@/lib/marketData";
+// Note: country filtering removed — catalogue is now global
 import { useT } from "@/i18n";
 
 interface PageProps {
@@ -172,12 +172,9 @@ export default function ShopDetailPage({ params }: PageProps) {
   const shop: Shop = shopFound || SHOPS_DATA[0];
 
   const { t, language } = useT();
-  const { country, setCountry } = useMarket();
   const shopCountryCode = getShopCountryCode(shop);
-  const isOtherCountry = shopCountryCode !== country.code;
   const shopCountry = getCountryByCode(shopCountryCode);
   const shopCountryName = shopCountry?.name?.[language as "fr" | "en"] || shopCountry?.name?.fr || shopCountryCode;
-  const currentCountryName = country.name?.[language as "fr" | "en"] || country.name.fr;
   const shopCountryFlag = shopCountry?.flag || "";
 
   const [activeTab, setActiveTab] = useState<string>("Tout");
@@ -268,28 +265,7 @@ export default function ShopDetailPage({ params }: PageProps) {
     <div className="min-h-screen flex flex-col bg-background selection:bg-secondary selection:text-white">
       <Header />
 
-      {/* Bandeau cross-country si la boutique appartient à un autre pays */}
-      {isOtherCountry && (
-        <div className="bg-amber-50 border-b border-amber-200">
-          <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-10 py-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-amber-800">
-              <span className="material-symbols-outlined text-base text-amber-600">info</span>
-              <span>
-                {t("shop_detail.cross_market_banner")} <strong>{shopCountryFlag} {shopCountryName}</strong>.{" "}
-                {t("shop_detail.cross_market_viewing")} {country.flag} {currentCountryName}.
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setCountry(shopCountryCode)}
-              className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-sm flex items-center gap-1.5"
-            >
-              <span className="material-symbols-outlined text-sm">swap_horiz</span>
-              <span>{t("shop_detail.switch_market")} {shopCountryName}</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Catalogue global — pas de bandeau de restriction par pays */}
 
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 lg:px-10 py-4 sm:py-6 space-y-6">

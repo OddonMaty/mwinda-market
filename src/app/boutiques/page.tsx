@@ -8,15 +8,14 @@ import { ShopCard } from "@/components/ShopCard";
 import { Shop } from "@/data/shops";
 import { useMarket } from "@/context/MarketContext";
 import { useT } from "@/i18n";
-import { getShopsByCountry } from "@/lib/marketData";
+import { getAllShops } from "@/lib/marketData";
 
 export default function ShopsDirectoryPage() {
   const { country } = useMarket();
   const { t } = useT();
-  const countryCode = country.code;
-  const countryName = country.name.fr;
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [regionSearchText, setRegionSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Toutes");
   const [selectedProvince, setSelectedProvince] = useState<string>("Toutes");
   const [minRating, setMinRating] = useState<number>(0);
@@ -24,41 +23,26 @@ export default function ShopsDirectoryPage() {
   const [sortOption, setSortOption] = useState<string>("popularity");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  // Boutiques du pays courant (source centrale)
-  const allCountryShops = useMemo(
-    () => getShopsByCountry(countryCode),
-    [countryCode]
-  );
+  // Toutes les boutiques (catalogue panafricain sans filtre pays)
+  const allShops = useMemo(() => getAllShops(), []);
 
-  // Catégories dynamiques du pays
+  // Catégories dynamiques globales
   const categories = useMemo(() => {
     const cats = new Set<string>();
-    allCountryShops.forEach((s) => cats.add(s.category));
+    allShops.forEach((s) => cats.add(s.category));
     return ["Toutes", ...Array.from(cats).sort()];
-  }, [allCountryShops]);
+  }, [allShops]);
 
-  // Provinces dynamiques du pays
+  // Provinces/Régions dynamiques globales
   const provinces = useMemo(() => {
     const provs = new Set<string>();
-    allCountryShops.forEach((s) => { if (s.province) provs.add(s.province); });
+    allShops.forEach((s) => { if (s.province) provs.add(s.province); });
     return ["Toutes", ...Array.from(provs).sort()];
-  }, [allCountryShops]);
-
-  // Réinitialiser les filtres quand le pays change
-  const [lastCountry, setLastCountry] = useState(countryCode);
-  if (countryCode !== lastCountry) {
-    setLastCountry(countryCode);
-    setSearchQuery("");
-    setSelectedCategory("Toutes");
-    setSelectedProvince("Toutes");
-    setMinRating(0);
-    setOnlyVerified(false);
-    setSortOption("popularity");
-  }
+  }, [allShops]);
 
   // Boutiques filtrées
   const filteredShops = useMemo(() => {
-    let list: Shop[] = [...allCountryShops];
+    let list: Shop[] = [...allShops];
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -70,6 +54,15 @@ export default function ShopsDirectoryPage() {
           s.province.toLowerCase().includes(q) ||
           s.category.toLowerCase().includes(q) ||
           s.specialties.some((spec) => spec.toLowerCase().includes(q))
+      );
+    }
+
+    if (regionSearchText.trim()) {
+      const q = regionSearchText.toLowerCase();
+      list = list.filter(
+        (s) =>
+          s.city.toLowerCase().includes(q) ||
+          s.province.toLowerCase().includes(q)
       );
     }
 
@@ -99,10 +92,11 @@ export default function ShopsDirectoryPage() {
     }
 
     return list;
-  }, [allCountryShops, searchQuery, selectedCategory, selectedProvince, minRating, onlyVerified, sortOption]);
+  }, [allShops, searchQuery, regionSearchText, selectedCategory, selectedProvince, minRating, onlyVerified, sortOption]);
 
   const handleResetFilters = () => {
     setSearchQuery("");
+    setRegionSearchText("");
     setSelectedCategory("Toutes");
     setSelectedProvince("Toutes");
     setMinRating(0);
@@ -134,13 +128,13 @@ export default function ShopsDirectoryPage() {
                 <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
                   public
                 </span>
-                <span>{country.flag} {countryName}</span>
+                <span>Marché Panafricain • {country.currency.code}</span>
               </div>
               <h1 className="text-2xl sm:text-4xl font-black text-primary font-display tracking-tight">
-                {t("shops.title")} — {countryName}
+                {t("shops.title")}
               </h1>
               <p className="text-xs sm:text-sm text-on-surface-variant max-w-2xl leading-relaxed">
-                {t("shops.subtitle")} — {country.flag} {countryName}
+                {t("shops.subtitle")}
               </p>
             </div>
 
@@ -148,7 +142,7 @@ export default function ShopsDirectoryPage() {
             <div className="flex items-center gap-3 sm:gap-4 bg-surface-container-low p-3 sm:p-4 rounded-2xl border border-outline-variant shrink-0">
               <div className="px-3 text-center border-r border-outline-variant">
                 <span className="block text-lg sm:text-xl font-black text-primary font-display">
-                  {allCountryShops.length}+
+                  {allShops.length}+
                 </span>
                 <span className="text-[11px] text-on-surface-variant">{t("shops.shops_found")}</span>
               </div>
@@ -244,7 +238,19 @@ export default function ShopsDirectoryPage() {
               {/* Filter 2: Provinces */}
               <div className="space-y-2 pb-4 border-b border-outline-variant">
                 <label className="block text-xs font-bold text-primary">{t("shops.location")}</label>
-                <div className="space-y-1.5 text-xs">
+                <div className="relative mb-2">
+                  <input
+                    type="text"
+                    value={regionSearchText}
+                    onChange={(e) => setRegionSearchText(e.target.value)}
+                    placeholder="Filtrer ville, région..."
+                    className="w-full pl-7 pr-2.5 py-1.5 bg-surface-container-low border border-outline-variant rounded-md text-xs placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-secondary"
+                  />
+                  <span className="material-symbols-outlined absolute left-1.5 top-2 text-outline text-sm">
+                    search
+                  </span>
+                </div>
+                <div className="space-y-1.5 text-xs max-h-48 overflow-y-auto pr-1">
                   {provinces.map((prov) => (
                     <button
                       key={prov}

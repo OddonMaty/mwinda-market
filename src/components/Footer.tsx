@@ -91,22 +91,6 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/zones-livraison"
-                  className="hover:text-secondary-accent transition-colors"
-                >
-                  {t("footer.delivery_rates")}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/zones-livraison#hubs"
-                  className="hover:text-secondary-accent transition-colors"
-                >
-                  {t("footer.logistics_hubs")}
-                </Link>
-              </li>
-              <li>
                 <Link href="/conditions" className="hover:text-secondary-accent transition-colors">
                   {t("footer.terms_of_service")}
                 </Link>
@@ -126,69 +110,18 @@ export const Footer: React.FC = () => {
             </h4>
             {isRDC ? (
               <ul className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs text-slate-300">
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Kinshasa
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Haut-Katanga
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Nord-Kivu
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Sud-Kivu
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Kongo Central
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Tshopo
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Lualaba
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Kasaï Central
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Kasaï Oriental
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Ituri
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/zones-livraison" className="hover:text-secondary-accent transition">
-                    Maniema
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/zones-livraison"
-                    className="hover:text-secondary-accent transition font-bold text-secondary-accent"
-                  >
-                    Toutes les 26...
-                  </Link>
-                </li>
+                <li><span>Kinshasa</span></li>
+                <li><span>Haut-Katanga</span></li>
+                <li><span>Nord-Kivu</span></li>
+                <li><span>Sud-Kivu</span></li>
+                <li><span>Kongo Central</span></li>
+                <li><span>Tshopo</span></li>
+                <li><span>Lualaba</span></li>
+                <li><span>Kasaï Central</span></li>
+                <li><span>Kasaï Oriental</span></li>
+                <li><span>Ituri</span></li>
+                <li><span>Maniema</span></li>
+                <li><span className="font-bold text-secondary-accent">Toutes les 26...</span></li>
               </ul>
             ) : (
               <ul className="space-y-2 text-xs text-slate-300">

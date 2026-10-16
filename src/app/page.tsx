@@ -6,10 +6,9 @@ import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProductCard, Product } from "@/components/ProductCard";
-import { useMarket } from "@/context/MarketContext";
 import { useCart } from "@/context/CartContext";
 import { useT } from "@/i18n";
-import { getProductsByCountry, getShopsByCountry, toProductCard } from "@/lib/marketData";
+import { getAllProducts, getAllShops, toProductCard } from "@/lib/marketData";
 
 // Palettes de couleurs pour les cartes boutiques
 const SHOP_COLORS = [
@@ -20,11 +19,8 @@ const SHOP_COLORS = [
 ];
 
 export default function HomePage() {
-  const { country } = useMarket();
   const { addToCart } = useCart();
   const { t } = useT();
-  const countryCode = country.code;
-  const countryName = country.name.fr;
 
   const [activeFilter, setActiveFilter] = useState("all");
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
@@ -36,16 +32,14 @@ export default function HomePage() {
     { key: "local", label: t("home.filter_local") },
   ];
 
-  // Produits phares du pays courant (top 6)
+  // Produits phares globaux (top 6 pan-africain)
   const featuredProducts: Product[] = useMemo(() => {
-    const countryProducts = getProductsByCountry(countryCode);
-    return countryProducts.slice(0, 6).map((p) => toProductCard(p));
-  }, [countryCode]);
+    return getAllProducts().slice(0, 6).map((p) => toProductCard(p));
+  }, []);
 
-  // Boutiques populaires du pays courant (top 4)
+  // Boutiques populaires globales (top 4 pan-africain)
   const popularShops = useMemo(() => {
-    const shops = getShopsByCountry(countryCode);
-    return shops.slice(0, 4).map((s, i) => ({
+    return getAllShops().slice(0, 4).map((s, i) => ({
       id: s.id,
       name: s.name,
       tag: s.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
@@ -54,7 +48,7 @@ export default function HomePage() {
       productsCount: `${s.productCount}+ ${t("shops.articles_count")}`,
       colorBg: SHOP_COLORS[i % SHOP_COLORS.length],
     }));
-  }, [countryCode, t]);
+  }, [t]);
 
   const handleAddToCart = (product: Product) => {
     addToCart(product);
@@ -307,7 +301,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xs uppercase tracking-wider text-secondary font-bold">{t("home.shops_tag")}</span>
-              <h2 className="text-xl sm:text-2xl font-bold text-primary font-display">{t("home.shops_title")} — {countryName}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-primary font-display">{t("home.shops_title")}</h2>
             </div>
             <Link
               href="/boutiques"

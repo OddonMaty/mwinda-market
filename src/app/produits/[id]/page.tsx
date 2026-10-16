@@ -12,10 +12,8 @@ import { ProductCard } from "@/components/ProductCard";
 import { ELECTRONICS_PRODUCTS, ElectronicProduct } from "@/data/electronics";
 import { DRC_PROVINCES, Province } from "@/data/provinces";
 import { useCart } from "@/context/CartContext";
-import { useMarket } from "@/context/MarketContext";
 import { getShopIdByName } from "@/data/shops";
-import { getProductCountryCode, getProductsByCountry, toProductCard } from "@/lib/marketData";
-import { getCountryByCode } from "@/lib/activeCountries";
+import { getAllProducts, toProductCard } from "@/lib/marketData";
 import { useT } from "@/i18n";
 
 interface PageProps {
@@ -26,7 +24,6 @@ interface PageProps {
 
 export default function ProductDetailPage({ params }: PageProps) {
   const { addToCart: addGlobalToCart } = useCart();
-  const { country, setCountry } = useMarket();
   const { t } = useT();
 
   // Resolve product — null when ID truly doesn't exist (B-03)
@@ -38,12 +35,6 @@ export default function ProductDetailPage({ params }: PageProps) {
     ELECTRONICS_PRODUCTS.find((p) => p.id === "station-energie-solaire-1000w") ||
     ELECTRONICS_PRODUCTS[0];
 
-  // Détecter le pays du produit (via shopId) et vérifier si c'est le pays courant
-  const productCountryCode = getProductCountryCode(product);
-  const isOtherCountry = productCountryCode !== country.code;
-  const productCountry = getCountryByCode(productCountryCode);
-  const productCountryName = productCountry?.name?.fr || productCountryCode;
-  const productCountryFlag = productCountry?.flag || "";
 
   // Gallery state
   const images = product.images && product.images.length > 0 ? product.images : [product.image];
@@ -71,17 +62,15 @@ export default function ProductDetailPage({ params }: PageProps) {
     setQuantity((prev) => (prev < maxStock ? prev + 1 : prev));
   };
 
-  // Add to cart handler (disabled if other country)
+  // Add to cart handler (always active — global catalogue)
   const handleAddToCart = () => {
-    if (isOtherCountry) return;
     addGlobalToCart(product, quantity);
     setToastMessage(`${quantity}x « ${product.title} » ${t("product_detail.toast_added")}`);
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Buy now handler (disabled if other country)
+  // Buy now handler (always active — global catalogue)
   const handleBuyNow = () => {
-    if (isOtherCountry) return;
     addGlobalToCart(product, quantity);
     setToastMessage(`${t("product_detail.toast_redirect")} (${quantity})...`);
     setTimeout(() => {
@@ -89,18 +78,13 @@ export default function ProductDetailPage({ params }: PageProps) {
     }, 1200);
   };
 
-  // Changer de pays pour correspondre au produit
-  const handleSwitchToProductCountry = () => {
-    setCountry(productCountryCode);
-  };
-
-  // Produits similaires : du même pays que le produit (pas le pays courant)
+  // Produits similaires : catalogue global, même catégorie
   const similarProducts = useMemo(() => {
-    return getProductsByCountry(productCountryCode)
-      .filter((p) => p.id !== product.id)
+    return getAllProducts()
+      .filter((p) => p.id !== product.id && p.category === product.category)
       .slice(0, 3)
       .map((p) => toProductCard(p));
-  }, [productCountryCode, product.id]);
+  }, [product.id, product.category]);
 
   // Fallbacks for specs, features, reviews
   const specifications = product.specifications || {
@@ -222,29 +206,6 @@ export default function ProductDetailPage({ params }: PageProps) {
           </ol>
         </div>
       </nav>
-
-      {/* Bandeau cross-country */}
-      {isOtherCountry && (
-        <div className="bg-amber-50 border-b border-amber-200">
-          <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-10 py-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-amber-800">
-              <span className="material-symbols-outlined text-base text-amber-600">info</span>
-              <span>
-                {t("product_detail.cross_market_banner")} <strong>{productCountryFlag} {productCountryName}</strong>.{" "}
-                {t("product_detail.cross_market_viewing")} {country.flag} {country.name.fr}.
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={handleSwitchToProductCountry}
-              className="px-4 py-2 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition flex items-center gap-1.5 shrink-0"
-            >
-              <span className="material-symbols-outlined text-sm">swap_horiz</span>
-              {t("product_detail.switch_market")} {productCountryFlag} {productCountryName}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Main Content Container */}
       <main className="w-full max-w-7xl mx-auto px-4 md:px-8 lg:px-10 py-6 sm:py-8 space-y-12 flex-1">
@@ -465,30 +426,20 @@ export default function ProductDetailPage({ params }: PageProps) {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={isOtherCountry}
-                  className={`w-full py-3.5 px-6 rounded-lg font-bold text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-95 group ${
-                    isOtherCountry
-                      ? "bg-slate-300 text-slate-500 cursor-not-allowed"
-                      : "bg-tertiary hover:bg-tertiary-hover text-white"
-                  }`}
-                  title={isOtherCountry ? t("product_detail.not_deliverable") : t("product_detail.add_to_cart")}
+                  className="w-full py-3.5 px-6 rounded-lg font-bold text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-95 group bg-tertiary hover:bg-tertiary-hover text-white"
+                  title={t("product_detail.add_to_cart")}
                 >
                   <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">
                     shopping_cart
                   </span>
-                  <span>{isOtherCountry ? t("product_detail.not_deliverable") : t("product_detail.add_to_cart")}</span>
+                  <span>{t("product_detail.add_to_cart")}</span>
                 </button>
 
                 {/* Bouton Secondaire Acheter Maintenant */}
                 <button
                   type="button"
                   onClick={handleBuyNow}
-                  disabled={isOtherCountry}
-                  className={`w-full py-3.5 px-6 rounded-lg font-bold text-sm sm:text-base shadow transition flex items-center justify-center gap-2 active:scale-95 ${
-                    isOtherCountry
-                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-primary hover:bg-slate-800 text-white"
-                  }`}
+                  className="w-full py-3.5 px-6 rounded-lg font-bold text-sm sm:text-base shadow transition flex items-center justify-center gap-2 active:scale-95 bg-primary hover:bg-slate-800 text-white"
                 >
                   <span className="material-symbols-outlined text-xl">flash_on</span>
                   <span>{t("product_detail.buy_now")}</span>

@@ -261,72 +261,60 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
         </div>
 
         {/* Bottom Row: Navigation Links Bar (Desktop) */}
-        <nav className="hidden lg:flex items-center justify-between border-t border-outline-variant py-2.5">
-          <ul className="flex items-center space-x-6 text-sm font-semibold">
-            <li>
+        <nav className="hidden lg:flex items-center justify-between border-t border-outline-variant py-2.5 gap-3 min-w-0">
+          <ul className="flex items-center gap-2.5 lg:gap-3.5 xl:gap-4 text-xs xl:text-[13px] font-semibold shrink min-w-0">
+            <li className="shrink-0">
               <Link
                 href="/"
-                className="text-secondary font-bold border-b-2 border-secondary pb-1 flex items-center gap-1.5"
+                className="text-secondary font-bold border-b-2 border-secondary pb-1 flex items-center gap-1.5 whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-base">home</span>
-                {t("header.home")}
+                <span className="material-symbols-outlined text-[17px]">home</span>
+                <span>{t("header.home")}</span>
               </Link>
             </li>
-            <li>
+            <li className="shrink-0">
               <Link
                 href="/boutiques"
-                className="text-on-surface-variant hover:text-primary transition pb-1 flex items-center gap-1.5"
+                className="text-on-surface-variant hover:text-primary transition pb-1 flex items-center gap-1.5 whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-base">storefront</span>
-                {t("header.all_shops")}
+                <span className="material-symbols-outlined text-[17px]">storefront</span>
+                <span>{t("header.all_shops")}</span>
               </Link>
             </li>
-            <li>
+            <li className="shrink-0">
               <Link
                 href="/produits"
-                className="text-on-surface-variant hover:text-primary transition pb-1 flex items-center gap-1.5"
+                className="text-on-surface-variant hover:text-primary transition pb-1 flex items-center gap-1.5 whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-base">category</span>
-                {t("header.categories")}
+                <span className="material-symbols-outlined text-[17px]">category</span>
+                <span>{t("header.categories")}</span>
               </Link>
             </li>
-            <li>
+            <li className="shrink-0">
               <Link
                 href="/devenir-vendeur"
-                className="text-on-surface-variant hover:text-primary transition pb-1 flex items-center gap-1.5"
+                className="text-on-surface-variant hover:text-primary transition pb-1 flex items-center gap-1.5 whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-base">badge</span>
-                {t("header.become_seller")}
+                <span className="material-symbols-outlined text-[17px]">badge</span>
+                <span>{t("header.become_seller")}</span>
               </Link>
             </li>
-            <li>
-              <Link
-                href="/zones-livraison"
-                className="text-on-surface-variant hover:text-primary transition pb-1 flex items-center gap-1.5"
-              >
-                <span className="material-symbols-outlined text-base">local_shipping</span>
-                {t("header.delivery_zones")}
-                <span className="ml-1 text-[10px] bg-secondary-fixed text-on-secondary-container px-1.5 py-0.5 rounded-full font-bold">
-                  {isRDC ? "26 Provinces" : country.code}
-                </span>
-              </Link>
-            </li>
-            <li>
+            <li className="shrink-0">
               <Link
                 href="/suivi"
-                className="text-on-surface-variant hover:text-primary transition pb-1 flex items-center gap-1.5"
+                className="text-on-surface-variant hover:text-primary transition pb-1 flex items-center gap-1.5 whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-base">track_changes</span>
-                {t("header.order_tracking")}
+                <span className="material-symbols-outlined text-[17px]">track_changes</span>
+                <span>{t("header.order_tracking")}</span>
               </Link>
             </li>
           </ul>
 
           {/* Hotline assistance */}
-          <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-            <span className="material-symbols-outlined text-secondary text-base">support_agent</span>
-            <span>{t("header.customer_support")} :</span>
-            <strong className="text-primary font-bold">
+          <div className="flex items-center gap-1.5 text-xs text-on-surface-variant shrink-0 whitespace-nowrap pl-4">
+            <span className="material-symbols-outlined text-secondary text-base shrink-0">support_agent</span>
+            <span className="whitespace-nowrap">{t("header.customer_support")} :</span>
+            <strong className="text-primary font-bold whitespace-nowrap">
               {isRDC ? "+243 81 000 9999" : `${country.phoneCode} 800 000`}
             </strong>
           </div>
@@ -422,14 +410,6 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                 >
                   <span className="material-symbols-outlined text-lg">badge</span>
                   <span>{t("header.become_seller")}</span>
-                </Link>
-                <Link
-                  href="/zones-livraison"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface hover:bg-surface-container"
-                >
-                  <span className="material-symbols-outlined text-lg">local_shipping</span>
-                  <span>{t("header.delivery_zones")}</span>
                 </Link>
                 <Link
                   href="/suivi"

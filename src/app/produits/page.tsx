@@ -11,47 +11,37 @@ import { useMarket } from "@/context/MarketContext";
 import { useCart } from "@/context/CartContext";
 import { useT } from "@/i18n";
 import {
-  getProductsByCountry,
-  getProductProvincesByCountry,
-  getShopNamesByCountry,
+  getAllProducts,
+  getAllProductProvinces,
+  getAllShopNames,
 } from "@/lib/marketData";
 
 export default function ElectronicsPage() {
   const { country } = useMarket();
   const { addToCart } = useCart();
   const { t } = useT();
-  const countryCode = country.code;
-  const countryName = country.name.fr;
 
-  // Données filtrées par pays courant (source centrale)
-  const allCountryProducts = useMemo(
-    () => getProductsByCountry(countryCode),
-    [countryCode]
-  );
-  const availableProvinces = useMemo(
-    () => getProductProvincesByCountry(countryCode),
-    [countryCode]
-  );
-  const availableShops = useMemo(
-    () => getShopNamesByCountry(countryCode),
-    [countryCode]
-  );
+  // Données globales sans filtre pays (catalogue panafricain)
+  const allProducts = useMemo(() => getAllProducts(), []);
+  const availableProvinces = useMemo(() => getAllProductProvinces(), []);
+  const availableShops = useMemo(() => getAllShopNames(), []);
 
-  // Catégories disponibles dans ce pays
+  // Catégories disponibles globalement
   const subCategories = useMemo(() => {
     const cats = new Set<string>();
-    allCountryProducts.forEach((p) => cats.add(p.category));
+    allProducts.forEach((p) => cats.add(p.category));
     return ["Tous", ...Array.from(cats).sort()];
-  }, [allCountryProducts]);
+  }, [allProducts]);
 
-  // Max prix du pays (arrondi à la centaine supérieure)
-  const maxPriceInCountry = useMemo(() => {
-    if (allCountryProducts.length === 0) return 700;
-    const max = Math.max(...allCountryProducts.map((p) => p.usdPrice));
+  // Max prix global (arrondi à la centaine supérieure)
+  const maxPriceInCatalog = useMemo(() => {
+    if (allProducts.length === 0) return 700;
+    const max = Math.max(...allProducts.map((p) => p.usdPrice));
     return Math.ceil(max / 100) * 100;
-  }, [allCountryProducts]);
+  }, [allProducts]);
 
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>("Tous");
+  const [regionSearchText, setRegionSearchText] = useState<string>("");
   const [selectedProvinceFilter, setSelectedProvinceFilter] = useState<string>("Toutes");
   const [selectedShopFilter, setSelectedShopFilter] = useState<string>("Toutes");
   const [priceMax, setPriceMax] = useState<number>(700);
@@ -59,16 +49,6 @@ export default function ElectronicsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Réinitialiser les filtres quand le pays change
-  const [lastCountry, setLastCountry] = useState(countryCode);
-  if (countryCode !== lastCountry) {
-    setLastCountry(countryCode);
-    setSelectedSubCategory("Tous");
-    setSelectedProvinceFilter("Toutes");
-    setSelectedShopFilter("Toutes");
-    setPriceMax(maxPriceInCountry);
-  }
 
   const handleAddToCart = (product: ElectronicProduct) => {
     addToCart({
@@ -88,17 +68,27 @@ export default function ElectronicsPage() {
 
   const handleResetFilters = () => {
     setSelectedSubCategory("Tous");
+    setRegionSearchText("");
     setSelectedProvinceFilter("Toutes");
     setSelectedShopFilter("Toutes");
-    setPriceMax(maxPriceInCountry);
+    setPriceMax(maxPriceInCatalog);
     setSortOption("pertinence");
   };
 
   const filteredProducts = useMemo(() => {
-    let result = [...allCountryProducts];
+    let result = [...allProducts];
 
     if (selectedSubCategory !== "Tous") {
       result = result.filter((p) => p.category === selectedSubCategory);
+    }
+
+    if (regionSearchText.trim()) {
+      const q = regionSearchText.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.province.toLowerCase().includes(q) ||
+          p.shopCity.toLowerCase().includes(q)
+      );
     }
 
     if (selectedProvinceFilter !== "Toutes") {
@@ -120,7 +110,7 @@ export default function ElectronicsPage() {
     }
 
     return result;
-  }, [allCountryProducts, selectedSubCategory, selectedProvinceFilter, selectedShopFilter, priceMax, sortOption]);
+  }, [allProducts, selectedSubCategory, regionSearchText, selectedProvinceFilter, selectedShopFilter, priceMax, sortOption]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background selection:bg-secondary selection:text-white">
@@ -166,11 +156,11 @@ export default function ElectronicsPage() {
                   {t("catalog.title")}
                 </h1>
                 <span className="bg-surface-container text-secondary text-xs font-bold px-2.5 py-0.5 rounded-full border border-secondary/20">
-                  {allCountryProducts.length}+ {t("shops.articles_count")}
+                  {allProducts.length}+ {t("shops.articles_count")}
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-on-surface-variant mt-1 max-w-3xl leading-relaxed">
-                {t("catalog.subtitle")} — {country.flag} {countryName}
+                {t("catalog.subtitle")}
               </p>
             </div>
 
@@ -178,7 +168,7 @@ export default function ElectronicsPage() {
               <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
                 public
               </span>
-              <span>{country.flag} {countryName} — {country.currency.code}</span>
+              <span>Marché Panafricain • {country.currency.code}</span>
             </div>
           </div>
 
@@ -294,10 +284,22 @@ export default function ElectronicsPage() {
               </div>
             </div>
 
-            {/* Filter: Région de provenance (dynamique) */}
+            {/* Filter: Région de provenance (texte libre global + liste) */}
             <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-card space-y-2.5">
               <h3 className="font-bold text-primary text-xs uppercase tracking-wider">{t("catalog.origin_province")}</h3>
-              <div className="space-y-1.5 text-xs">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={regionSearchText}
+                  onChange={(e) => setRegionSearchText(e.target.value)}
+                  placeholder="Rechercher ville, région..."
+                  className="w-full pl-7 pr-2.5 py-1.5 bg-surface-container-low border border-outline-variant rounded-md text-xs placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-secondary"
+                />
+                <span className="material-symbols-outlined absolute left-1.5 top-2 text-outline text-sm">
+                  search
+                </span>
+              </div>
+              <div className="space-y-1.5 text-xs max-h-48 overflow-y-auto pr-1">
                 {["Toutes", ...availableProvinces].map((prov) => (
                   <label key={prov} className="flex items-center justify-between cursor-pointer group py-0.5">
                     <span className="flex items-center gap-2">
@@ -620,7 +622,19 @@ export default function ElectronicsPage() {
 
               <div>
                 <p className="font-bold mb-2">{t("catalog.origin_province")}</p>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="relative mb-2.5">
+                  <input
+                    type="text"
+                    value={regionSearchText}
+                    onChange={(e) => setRegionSearchText(e.target.value)}
+                    placeholder="Rechercher ville, région..."
+                    className="w-full pl-8 pr-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-xs placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-secondary"
+                  />
+                  <span className="material-symbols-outlined absolute left-2 top-2 text-outline text-base">
+                    search
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
                   {["Toutes", ...availableProvinces].map((prov) => (
                     <button
                       key={prov}
