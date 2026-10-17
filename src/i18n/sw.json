@@ -18,7 +18,8 @@
     "cart_title": "Mkokoteni Wangu",
     "notifications": "Taarifa",
     "favorites": "Vipendwa",
-    "connected_regions": "mikoa iliyounganishwa"
+    "connected_regions": "mikoa iliyounganishwa",
+    "delivery_available": "Uwasilishaji unapatikana"
   },
   "footer": {
     "about_text": "Jukwaa la biashara ya kielektroniki la Afrika linalounganisha masoko ya bara zima kwa uwazi, ufuatiliaji na vifaa vya uhakika.",
@@ -40,7 +41,10 @@
     "cat_home": "Vifaa vya Nyumbani & Sanaa za Mikono",
     "panafrican_title": "Biashara ya Afrika Nzima",
     "panafrican_desc": "Kila nchi ni soko huru, ikiwawezesha wafanyabiashara na wazalishaji wa ndani kote barani.",
-    "copyright": "Haki zote zimehifadhiwa. Mwinda Market Pan-Afrika."
+    "copyright": "Haki zote zimehifadhiwa. Mwinda Market Pan-Afrika.",
+    "served_zones": "Maeneo yanayohudumiwa",
+    "delivery_available": "Uwasilishaji unapatikana",
+    "panafrican_open_zone": "Eneo Lililofunguliwa la Panafrika"
   },
   "home": {
     "hero_tag": "Maonesho ya Kitaifa ya Biashara 2025",
@@ -154,7 +158,13 @@
     "view_all_category": "Tazama yote kwenye kategoria",
     "not_found_title": "Bidhaa Haikupatikana",
     "not_found_desc": "Kitambulisho hiki cha bidhaa hakilingani na bidhaa yoyote katika katalogi yetu. Inawezekana iliondolewa au URL si sahihi.",
-    "not_found_cta": "Rudi kwenye katalogi"
+    "not_found_cta": "Rudi kwenye katalogi",
+    "delivery_tag": "Uwasilishaji",
+    "delivery_available": "Uwasilishaji unapatikana",
+    "delivery_available_badge": "Inapatikana",
+    "delivery_available_sub": "Uwasilishaji unapatikana kwa ufuatiliaji wa agizo",
+    "delivery_card_desc": "Usafirishaji wa uangalifu na uwasilishaji salama. Ufuatiliaji wa moja kwa moja unapatikana kwa kila agizo.",
+    "delivery_tab_desc": "Uwasilishaji unapatikana kwa bidhaa hii na ufuatiliaji salama wa wakati halisi na ulinzi wa mnunuzi chini ya dhamana ya Mwinda Pay."
   },
   "shops": {
     "breadcrumb_home": "Nyumbani",
@@ -283,7 +293,9 @@
     "continue_shopping": "Endelea na ununuzi",
     "delivery_available": "Uwasilishaji unapatikana",
     "delivery_available_desc": "Usafirishaji salama na ufuatiliaji wa agizo",
-    "delivery_available_val": "Inapatikana"
+    "delivery_available_val": "Inapatikana",
+    "order_confirmed_delivery": "Uwasilishaji unapatikana kwa ufuatiliaji wa moja kwa moja.",
+    "panafrican_catalog": "Katalogi ya Panafrika"
   },
   "tracking": {
     "breadcrumb_home": "Mwanzo",
@@ -634,5 +646,20 @@
     "notify_label": "Pata taarifa wakati wa kuzinduliwa",
     "notify_placeholder": "Nambari yako ya WhatsApp",
     "notify_btn": "Niarifu"
+  },
+  "country_selector": {
+    "change_title": "Badilisha nchi / sarafu",
+    "active_currency": "Sarafu inayotumika",
+    "card_title": "Nchi na Sarafu",
+    "edit": "Badilisha",
+    "currency_label": "Sarafu:",
+    "modal_title": "Chagua nchi na sarafu yako",
+    "countries_available": "nchi na sarafu zinazopatikana",
+    "modal_notice": "Mwinda Market huonyesha bei katika sarafu ya ndani ya nchi yako.",
+    "search_placeholder": "Tafuta nchi (DRC, Kenya, Rwanda, Cote d'Ivoire...)",
+    "no_results": "Hakuna nchi inayolingana na utafutaji wako.",
+    "flagship_badge": "Eneo Kuu",
+    "current_zone": "Eneo la sasa:",
+    "panafrican_catalog": "Katalogi ya Panafrika"
   }
 }

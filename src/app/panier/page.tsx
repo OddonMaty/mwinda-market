@@ -94,7 +94,7 @@ export default function CartPage() {
                 <span>{t("cart.escrow_protected")}</span>
               </div>
               <p className="text-on-surface-variant leading-relaxed">
-                Livraison disponible avec suivi en direct. {t("cart.escrow_unlocked_info")}
+                {t("cart.order_confirmed_delivery")} {t("cart.escrow_unlocked_info")}
               </p>
             </div>
 
@@ -151,7 +151,7 @@ export default function CartPage() {
                   </span>
                 </h1>
                 <p className="text-xs text-on-surface-variant mt-1">
-                  Catalogue panafricain • {country.flag} {country.currency.code} — {t("cart.market_subtitle")}
+                  {t("cart.panafrican_catalog")} • {country.flag} {country.currency.code} — {t("cart.market_subtitle")}
                 </p>
               </div>
 

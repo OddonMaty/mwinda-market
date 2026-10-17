@@ -18,7 +18,8 @@
     "cart_title": "O Meu Carrinho",
     "notifications": "Notificações",
     "favorites": "Favoritos",
-    "connected_regions": "regiões conectadas"
+    "connected_regions": "regiões conectadas",
+    "delivery_available": "Entrega disponível"
   },
   "footer": {
     "about_text": "Plataforma de comércio eletrónico pan-africana conectando os mercados de África com transparência, rastreabilidade e rapidez logística.",
@@ -40,7 +41,10 @@
     "cat_home": "Casa & Artesanato Local",
     "panafrican_title": "Comércio Pan-Africano",
     "panafrican_desc": "Cada país é um mercado autónomo, valorizando comerciantes e produtores locais em todo o continente.",
-    "copyright": "Todos os direitos reservados. Mwinda Market Pan-África."
+    "copyright": "Todos os direitos reservados. Mwinda Market Pan-África.",
+    "served_zones": "Zonas atendidas",
+    "delivery_available": "Entrega disponível",
+    "panafrican_open_zone": "Zona Panafricana Aberta"
   },
   "home": {
     "hero_tag": "Feira Nacional de Comércio 2025",
@@ -154,7 +158,13 @@
     "view_all_category": "Ver toda a categoria",
     "not_found_title": "Produto Não Encontrado",
     "not_found_desc": "Este identificador de produto não corresponde a nenhum artigo no nosso catálogo. Pode ter sido removido ou o URL está incorreto.",
-    "not_found_cta": "Voltar ao catálogo"
+    "not_found_cta": "Voltar ao catálogo",
+    "delivery_tag": "Entrega",
+    "delivery_available": "Entrega disponível",
+    "delivery_available_badge": "Disponível",
+    "delivery_available_sub": "Entrega disponível com rastreamento da encomenda",
+    "delivery_card_desc": "Envio cuidadoso e entrega segura. Rastreamento em direto disponível para todas as encomendas.",
+    "delivery_tab_desc": "A entrega está disponível para este produto com rastreamento seguro em tempo real e proteção ao comprador sob custódia Mwinda Pay."
   },
   "shops": {
     "breadcrumb_home": "Início",
@@ -283,7 +293,9 @@
     "continue_shopping": "Continuar a comprar",
     "delivery_available": "Entrega disponível",
     "delivery_available_desc": "Envio seguro e entrega cuidadosa com rastreamento de encomendas",
-    "delivery_available_val": "Disponível"
+    "delivery_available_val": "Disponível",
+    "order_confirmed_delivery": "Entrega disponível com rastreamento ao vivo.",
+    "panafrican_catalog": "Catálogo Panafricano"
   },
   "tracking": {
     "breadcrumb_home": "Início",
@@ -634,5 +646,20 @@
     "notify_label": "Ser notificado na abertura",
     "notify_placeholder": "O seu número WhatsApp",
     "notify_btn": "Notificar-me"
+  },
+  "country_selector": {
+    "change_title": "Mudar de país / moeda",
+    "active_currency": "Moeda ativa",
+    "card_title": "País & Moeda",
+    "edit": "Alterar",
+    "currency_label": "Moeda:",
+    "modal_title": "Selecione o seu país & moeda",
+    "countries_available": "países e moedas disponíveis",
+    "modal_notice": "O Mwinda Market apresenta os preços na moeda local do seu país.",
+    "search_placeholder": "Pesquisar um país (RDC, Quénia, Ruanda, Costa do Marfim...)",
+    "no_results": "Nenhum país corresponde à sua pesquisa.",
+    "flagship_badge": "Zona Principal",
+    "current_zone": "Zona atual:",
+    "panafrican_catalog": "Catálogo Panafricano"
   }
 }

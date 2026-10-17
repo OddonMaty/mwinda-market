@@ -18,7 +18,8 @@
     "cart_title": "My Cart",
     "notifications": "Notifications",
     "favorites": "Favorites",
-    "connected_regions": "connected regions"
+    "connected_regions": "connected regions",
+    "delivery_available": "Delivery available"
   },
   "footer": {
     "about_text": "Pan-African e-commerce platform connecting African markets with transparency, traceability and reliable logistics.",
@@ -40,7 +41,10 @@
     "cat_home": "Home & Local Crafts",
     "panafrican_title": "Pan-African Commerce",
     "panafrican_desc": "Each country is an autonomous market, empowering local merchants and manufacturers across the continent.",
-    "copyright": "All rights reserved. Mwinda Market Pan-Africa."
+    "copyright": "All rights reserved. Mwinda Market Pan-Africa.",
+    "served_zones": "Covered areas",
+    "delivery_available": "Delivery available",
+    "panafrican_open_zone": "Open Pan-African Zone"
   },
   "home": {
     "hero_tag": "National Trade Fair 2025",
@@ -154,7 +158,13 @@
     "view_all_category": "View all in category",
     "not_found_title": "Product Not Found",
     "not_found_desc": "This product ID doesn't match any item in our catalogue. It may have been removed or the URL is incorrect.",
-    "not_found_cta": "Back to catalogue"
+    "not_found_cta": "Back to catalogue",
+    "delivery_tag": "Delivery",
+    "delivery_available": "Delivery available",
+    "delivery_available_badge": "Available",
+    "delivery_available_sub": "Delivery available with order tracking",
+    "delivery_card_desc": "Careful dispatch and secure delivery. Real-time tracking available for every order.",
+    "delivery_tab_desc": "Delivery is available for this product with secure real-time tracking and buyer protection under Mwinda Pay escrow."
   },
   "shops": {
     "breadcrumb_home": "Home",
@@ -283,7 +293,9 @@
     "continue_shopping": "Continue shopping",
     "delivery_available": "Delivery available",
     "delivery_available_desc": "Secure shipment and careful handling with order tracking",
-    "delivery_available_val": "Available"
+    "delivery_available_val": "Available",
+    "order_confirmed_delivery": "Delivery available with live tracking.",
+    "panafrican_catalog": "Pan-African Catalog"
   },
   "tracking": {
     "breadcrumb_home": "Home",
@@ -634,5 +646,20 @@
     "notify_label": "Get notified at launch",
     "notify_placeholder": "Your WhatsApp number",
     "notify_btn": "Notify me"
+  },
+  "country_selector": {
+    "change_title": "Change country / currency",
+    "active_currency": "Active currency",
+    "card_title": "Country & Currency",
+    "edit": "Change",
+    "currency_label": "Currency:",
+    "modal_title": "Select your country & currency",
+    "countries_available": "countries and currencies available",
+    "modal_notice": "Mwinda Market displays prices in your country's local currency.",
+    "search_placeholder": "Search a country (DRC, Kenya, Rwanda, Ivory Coast...)",
+    "no_results": "No country matches your search.",
+    "flagship_badge": "Flagship Area",
+    "current_zone": "Current area:",
+    "panafrican_catalog": "Pan-African Catalog"
   }
 }

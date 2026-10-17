@@ -95,7 +95,7 @@ export default function ProductDetailPage({ params }: PageProps) {
     "Produit 100% authentique vérifié par l'équipe technique Mwinda Market",
     `Stock garanti disponible immédiatement à ${product.shopCity}`,
     "Paiement sécurisé par Mobile Money (M-Pesa, Airtel Money, Orange Money)",
-    "Livraison fiable avec suivi en direct à travers les 26 provinces",
+    t("product_detail.delivery_available_sub"),
   ];
 
   const reviews = product.reviews || [
@@ -445,7 +445,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                   <span className="material-symbols-outlined text-secondary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
                     local_shipping
                   </span>
-                  <span className="font-medium">Livraison disponible avec suivi de commande</span>
+                  <span className="font-medium">{t("product_detail.delivery_available_sub")}</span>
                 </div>
               </div>
             </div>
@@ -458,16 +458,16 @@ export default function ProductDetailPage({ params }: PageProps) {
                     local_shipping
                   </span>
                   <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-                    Livraison
+                    {t("product_detail.delivery_tag")}
                   </h4>
                 </div>
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                   <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  Disponible
+                  {t("product_detail.delivery_available_badge")}
                 </span>
               </div>
               <p className="text-xs text-on-surface-variant leading-relaxed">
-                Expédition soignée et remise sécurisée. Suivi en direct disponible pour toute commande.
+                {t("product_detail.delivery_card_desc")}
               </p>
             </div>
 
@@ -614,10 +614,10 @@ export default function ProductDetailPage({ params }: PageProps) {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-primary font-display">
-                      Livraison disponible
+                      {t("product_detail.delivery_available")}
                     </h3>
                     <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                      La livraison est disponible pour ce produit avec suivi sécurisé en temps réel et protection acheteur sous séquestre Mwinda Pay.
+                      {t("product_detail.delivery_tab_desc")}
                     </p>
                   </div>
                 </div>

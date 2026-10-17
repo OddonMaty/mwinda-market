@@ -39,44 +39,6 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 /** Clé localStorage unique et globale pour le panier panafricain */
 const CART_STORAGE_KEY = "mwinda_cart";
 
-/** Articles de démo panafricains (affichés lors de la toute première visite) */
-const DEMO_ITEMS: CartItem[] = [
-  {
-    id: "station-energie-solaire-1000w",
-    title: "Station d'Énergie Solaire Portable 1000W / 220V",
-    shopName: "Solaris RDC",
-    shopCity: "Matadi",
-    province: "Kongo Central",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDmXvfXwTplOwxgiJSx77S7jwTTpZ8JC6jwsJkDBxGUAuYb2ISq2w7Dd5KmxiP3VGTqPnQaFJ-XvGGOH4t-BOxDhG_bz6OGLB74m-ihjwpe6I7hvGgxva8brMHKPYTDz6dmidEFXg9OPv14a2nNr_DDXYoPt05RR8OLvBb4dnSgsMvKAgzE4-yJgSKDqVyj1zeKvHxzAq9GB1TKlLWtph7tDGM5vjkclHkTieQNFPxfadZthzHrkJ3x",
-    usdPrice: 640,
-    originalUsdPrice: 720,
-    quantity: 1,
-    badges: {
-      discount: "Top Vente",
-      logistics: "essential",
-      logisticsText: "Énergie Verte",
-    },
-  },
-  {
-    id: "ecouteurs-sans-fil-pro-anc",
-    title: "Écouteurs Sans Fil Pro Anti-Bruit ANC 35h",
-    shopName: "Kin Bourse High-Tech",
-    shopCity: "Kinshasa (Limete)",
-    province: "Kinshasa",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAVXnkcQ9M4ypR_WjnwEz9_U_keYyPiyWC3xYO_Cq_Ng8pO-2a4eotSrSwuWVOsd2PRPH-BWfGpexGuit0Md_7IQUJtyYkOORHl2ErrO-CGKwuvBhx5Rv9KYd8CFipKpZwzP8Jl1zVPnSs3wqQUGcTlKTEMJ6PkhAd83wXC_o634LHX63K74ySxRBseoEUy8qohH5LlOuiDkXPJfI3J5HKnoPc2jRTu_3iKhTQ7vjlk5BhybEduYcQb",
-    usdPrice: 45,
-    originalUsdPrice: 65,
-    quantity: 2,
-    badges: {
-      discount: "-30%",
-      logistics: "express",
-      logisticsText: "Stock Local",
-    },
-  },
-];
-
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { country } = useMarket();
   const [items, setItems] = useState<CartItem[]>([]);
@@ -141,15 +103,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         initialItems = Array.from(mergedMap.values());
       }
 
-      // Si aucune visite antérieure, initialiser avec les articles de démo
-      if (initialItems.length === 0 && !savedUnified && keysToMigrate.length === 0) {
-        initialItems = DEMO_ITEMS;
-      }
-
       setItems(initialItems);
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(initialItems));
     } catch {
-      setItems(DEMO_ITEMS);
+      setItems([]);
     } finally {
       setIsLoaded(true);
     }
@@ -235,13 +192,13 @@ export const useCart = () => {
   if (!context) {
     // Fallback sécurisé hors CartProvider (ne devrait pas arriver)
     return {
-      items: DEMO_ITEMS,
+      items: [],
       addToCart: () => {},
       removeFromCart: () => {},
       updateQuantity: () => {},
       clearCart: () => {},
-      totalCount: 3,
-      subtotalUsd: 730,
+      totalCount: 0,
+      subtotalUsd: 0,
       cartCountryCode: "CD",
     };
   }

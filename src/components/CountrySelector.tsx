@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useMarket } from "@/context/MarketContext";
 import { getActiveCountries } from "@/lib/activeCountries";
 import { Country } from "@/data/countries";
+import { useT } from "@/i18n";
 
 interface CountrySelectorProps {
   variant?: "header" | "compact" | "card";
@@ -15,6 +16,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
   className = "",
 }) => {
   const { country, setCountry, language } = useMarket();
+  const { t } = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -65,7 +67,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
           type="button"
           onClick={() => setIsOpen(true)}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant bg-surface hover:bg-surface-container-low transition-all text-left shadow-2xs group ${className}`}
-          title="Changer de pays / devise"
+          title={t("country_selector.change_title")}
         >
           <span className="text-xl leading-none select-none">{country.flag}</span>
           <div className="flex flex-col">
@@ -79,7 +81,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             </div>
             <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
               <span className="font-bold text-secondary">{country.currency.code}</span>
-              <span>• Devise active</span>
+              <span>• {t("country_selector.active_currency")}</span>
             </span>
           </div>
         </button>
@@ -107,10 +109,10 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">
-              Pays & Devise
+              {t("country_selector.card_title")}
             </span>
             <span className="text-xs font-bold text-secondary flex items-center gap-0.5">
-              Modifier
+              {t("country_selector.edit")}
               <span className="material-symbols-outlined text-sm">chevron_right</span>
             </span>
           </div>
@@ -119,7 +121,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             <div>
               <div className="font-bold text-sm text-primary">{countryDisplayName}</div>
               <p className="text-[11px] text-on-surface-variant">
-                Devise : <strong>{country.currency.name} ({country.currency.code})</strong>
+                {t("country_selector.currency_label")} <strong>{country.currency.name} ({country.currency.code})</strong>
               </p>
             </div>
           </div>
@@ -143,10 +145,10 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-primary font-display">
-                    Sélectionnez votre pays & devise
+                    {t("country_selector.modal_title")}
                   </h3>
                   <p className="text-xs text-on-surface-variant">
-                    {activeCountries.length} pays et devises disponibles
+                    {activeCountries.length} {t("country_selector.countries_available")}
                   </p>
                 </div>
               </div>
@@ -163,7 +165,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             <div className="px-5 py-2.5 bg-secondary-fixed/50 border-b border-secondary-fixed flex items-center gap-2 text-xs text-on-secondary-fixed">
               <span className="material-symbols-outlined text-secondary text-base">info</span>
               <span>
-                Mwinda Market affiche les prix dans la devise locale de votre pays.
+                {t("country_selector.modal_notice")}
               </span>
             </div>
 
@@ -175,7 +177,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                 </span>
                 <input
                   type="text"
-                  placeholder="Rechercher un pays (RDC, Kenya, Rwanda, Côte d'Ivoire...)"
+                  placeholder={t("country_selector.search_placeholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-xl text-xs sm:text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary"
@@ -188,7 +190,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             <div className="p-4 overflow-y-auto space-y-2 flex-1">
               {filteredCountries.length === 0 ? (
                 <div className="text-center py-8 text-on-surface-variant text-xs">
-                  Aucun pays ne correspond à votre recherche.
+                  {t("country_selector.no_results")}
                 </div>
               ) : (
                 filteredCountries.map((c) => {
@@ -214,7 +216,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
                             <span className="font-bold text-sm text-primary">{cName}</span>
                             {isFlagship && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-container text-white">
-                                Zone Phare
+                                {t("country_selector.flagship_badge")}
                               </span>
                             )}
                           </div>
@@ -248,9 +250,9 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
             {/* Modal Footer */}
             <div className="p-3.5 bg-surface-container-low border-t border-outline-variant text-[11px] text-on-surface-variant flex items-center justify-between">
               <span>
-                Zone actuelle : <strong>{countryDisplayName}</strong>
+                {t("country_selector.current_zone")} <strong>{countryDisplayName}</strong>
               </span>
-              <span className="text-secondary font-medium">Catalogue panafricain</span>
+              <span className="text-secondary font-medium">{t("country_selector.panafrican_catalog")}</span>
             </div>
           </div>
         </div>

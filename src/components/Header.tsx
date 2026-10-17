@@ -252,7 +252,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
           </div>
           <span className="text-[11px] text-on-surface-variant font-medium whitespace-nowrap flex items-center gap-1">
             <span className="material-symbols-outlined text-xs text-secondary">local_shipping</span>
-            <span>Livraison disponible</span>
+            <span>{t("header.delivery_available")}</span>
           </span>
         </div>
 
