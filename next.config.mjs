@@ -25,6 +25,15 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/zones-livraison",
+        destination: "/assistance",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default withPWA(nextConfig);

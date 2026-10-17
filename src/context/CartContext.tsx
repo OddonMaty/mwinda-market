@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useMarket } from "@/context/MarketContext";
 
 export interface CartItem {
@@ -36,13 +36,11 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-/** Clé localStorage par pays : mwinda_cart_CD, mwinda_cart_KE, etc. */
-function getStorageKey(countryCode: string): string {
-  return `mwinda_cart_${(countryCode || "CD").toUpperCase()}`;
-}
+/** Clé localStorage unique et globale pour le panier panafricain */
+const CART_STORAGE_KEY = "mwinda_cart";
 
-/** Articles de démo pour la RDC (affichés quand le panier CD est vide) */
-const RDC_DEMO_ITEMS: CartItem[] = [
+/** Articles de démo panafricains (affichés lors de la toute première visite) */
+const DEMO_ITEMS: CartItem[] = [
   {
     id: "station-energie-solaire-1000w",
     title: "Station d'Énergie Solaire Portable 1000W / 220V",
@@ -56,8 +54,8 @@ const RDC_DEMO_ITEMS: CartItem[] = [
     quantity: 1,
     badges: {
       discount: "Top Vente",
-      logistics: "interprovincial",
-      logisticsText: "Solaire RDC",
+      logistics: "essential",
+      logisticsText: "Énergie Verte",
     },
   },
   {
@@ -80,62 +78,92 @@ const RDC_DEMO_ITEMS: CartItem[] = [
 ];
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Obtenir le pays courant depuis MarketContext
   const { country } = useMarket();
-  const countryCode = country.code;
-
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [loadedForCountry, setLoadedForCountry] = useState<string>("");
 
-  // Charger le panier du pays courant depuis localStorage
-  const loadCartForCountry = useCallback((code: string) => {
+  // Chargement et migration au premier montage
+  useEffect(() => {
     try {
-      const key = getStorageKey(code);
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setItems(parsed);
-          return;
+      let initialItems: CartItem[] = [];
+      const savedUnified = localStorage.getItem(CART_STORAGE_KEY);
+      if (savedUnified) {
+        try {
+          const parsed = JSON.parse(savedUnified);
+          if (Array.isArray(parsed)) {
+            initialItems = parsed;
+          }
+        } catch {
+          // ignore json parse error
         }
       }
-      // Panier vide en localStorage : utiliser les articles démo pour la RDC
-      if (code === "CD") {
-        setItems(RDC_DEMO_ITEMS);
-      } else {
-        setItems([]);
+
+      // Migration des anciennes clés par pays : mwinda_cart_CD, mwinda_cart_KE, etc.
+      const keysToMigrate: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("mwinda_cart_") && k !== CART_STORAGE_KEY) {
+          keysToMigrate.push(k);
+        }
       }
+
+      if (keysToMigrate.length > 0) {
+        const mergedMap = new Map<string, CartItem>();
+        for (const it of initialItems) {
+          mergedMap.set(it.id, { ...it });
+        }
+
+        for (const key of keysToMigrate) {
+          try {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                for (const it of parsed) {
+                  if (it && it.id) {
+                    if (mergedMap.has(it.id)) {
+                      const exist = mergedMap.get(it.id)!;
+                      exist.quantity = (exist.quantity || 1) + (it.quantity || 1);
+                    } else {
+                      mergedMap.set(it.id, { ...it });
+                    }
+                  }
+                }
+              }
+            }
+          } catch {
+            // ignore
+          }
+          // Suppression de l'ancienne clé spécifique au pays
+          localStorage.removeItem(key);
+        }
+
+        initialItems = Array.from(mergedMap.values());
+      }
+
+      // Si aucune visite antérieure, initialiser avec les articles de démo
+      if (initialItems.length === 0 && !savedUnified && keysToMigrate.length === 0) {
+        initialItems = DEMO_ITEMS;
+      }
+
+      setItems(initialItems);
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(initialItems));
     } catch {
-      // Ignorer les erreurs localStorage (SSR ou mode privé)
-      if (code === "CD") {
-        setItems(RDC_DEMO_ITEMS);
-      } else {
-        setItems([]);
-      }
+      setItems(DEMO_ITEMS);
+    } finally {
+      setIsLoaded(true);
     }
   }, []);
 
-  // Lors du premier chargement ou changement de pays
+  // Sauvegarde persistante dès modification
   useEffect(() => {
-    if (!countryCode) return;
-    if (countryCode !== loadedForCountry) {
-      loadCartForCountry(countryCode);
-      setLoadedForCountry(countryCode);
-      setIsLoaded(true);
-    }
-  }, [countryCode, loadedForCountry, loadCartForCountry]);
-
-  // Sauvegarder le panier courant dans localStorage (clé par pays)
-  useEffect(() => {
-    if (!isLoaded || !countryCode) return;
+    if (!isLoaded) return;
     try {
-      const key = getStorageKey(countryCode);
-      localStorage.setItem(key, JSON.stringify(items));
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
     } catch {
-      // Ignorer
+      // ignore
     }
-  }, [items, isLoaded, countryCode]);
+  }, [items, isLoaded]);
 
   const addToCart = (product: CartProductInput, quantity: number = 1) => {
     setItems((prev) => {
@@ -194,7 +222,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         clearCart,
         totalCount,
         subtotalUsd,
-        cartCountryCode: countryCode,
+        cartCountryCode: country.code,
       }}
     >
       {children}
@@ -207,7 +235,7 @@ export const useCart = () => {
   if (!context) {
     // Fallback sécurisé hors CartProvider (ne devrait pas arriver)
     return {
-      items: RDC_DEMO_ITEMS,
+      items: DEMO_ITEMS,
       addToCart: () => {},
       removeFromCart: () => {},
       updateQuantity: () => {},

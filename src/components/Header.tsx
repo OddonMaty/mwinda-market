@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ProvinceSelector } from "./ProvinceSelector";
 import { CountrySelector } from "./CountrySelector";
 import { useCart } from "@/context/CartContext";
 import { useMarket, SupportedLanguage, SUPPORTED_LANGUAGES } from "@/context/MarketContext";
@@ -69,10 +68,9 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
             </Link>
           </div>
 
-          {/* Signature Selectors (Desktop only) : Pays / Marché + Région */}
+          {/* Signature Selector (Desktop only) : Pays / Devise */}
           <div className="hidden lg:flex items-center gap-2 shrink-0">
             <CountrySelector variant="header" />
-            <ProvinceSelector variant="header" />
           </div>
 
           {/* Center Search Bar (Tablet & Desktop: hidden on mobile < 768px) */}
@@ -247,16 +245,14 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
           </div>
         )}
 
-        {/* Mobile Country & Province Selector Bar */}
+        {/* Mobile Country Selector Bar */}
         <div className="lg:hidden pb-2.5 pt-0.5 flex items-center justify-between gap-2 overflow-x-auto min-w-0 max-w-full">
           <div className="flex items-center gap-1.5 shrink-0">
             <CountrySelector variant="compact" />
-            <ProvinceSelector variant="compact" />
           </div>
-          <span className="text-[11px] text-on-surface-variant font-medium whitespace-nowrap">
-            {isRDC
-              ? "26 provinces connectées"
-              : `${country.name.fr} • ${country.currency.code}`}
+          <span className="text-[11px] text-on-surface-variant font-medium whitespace-nowrap flex items-center gap-1">
+            <span className="material-symbols-outlined text-xs text-secondary">local_shipping</span>
+            <span>Livraison disponible</span>
           </span>
         </div>
 
@@ -342,10 +338,9 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                 </button>
               </div>
 
-              {/* Mobile Selectors (Country + Province) */}
+              {/* Mobile Selector (Country) */}
               <div className="py-4 space-y-2.5 border-b border-outline-variant/60">
                 <CountrySelector variant="card" />
-                <ProvinceSelector variant="card" />
               </div>
 
               {/* Language Picker in Drawer */}

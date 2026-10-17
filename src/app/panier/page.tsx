@@ -7,22 +7,14 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Badge } from "@/components/Badge";
 import { PriceTag } from "@/components/PriceTag";
-import { ProvinceSelector } from "@/components/ProvinceSelector";
 import { useCart } from "@/context/CartContext";
 import { useMarket } from "@/context/MarketContext";
-import { DRC_PROVINCES, Province } from "@/data/provinces";
 import { useT } from "@/i18n";
 
 export default function CartPage() {
-  const { t, language } = useT();
+  const { t } = useT();
   const { country } = useMarket();
-  const countryName = country.name?.[language as "fr" | "en"] || country.name.fr;
   const { items, updateQuantity, removeFromCart, clearCart, subtotalUsd, totalCount } = useCart();
-
-  // Active delivery province
-  const [selectedProvince, setSelectedProvince] = useState<Province>(() => {
-    return DRC_PROVINCES.find((p) => p.id === "kin") || DRC_PROVINCES[0];
-  });
 
   // Payment method selection
   const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "airtel" | "orange" | "card">("mpesa");
@@ -30,14 +22,8 @@ export default function CartPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderConfirmed, setOrderConfirmed] = useState<string | null>(null);
 
-  // Delivery fee calculation based on items and destination province
-  // If item comes from outside the destination province, it's interprovincial
-  const hasInterprovincial = items.some(
-    (item) => item.province && item.province.toLowerCase() !== selectedProvince.name.toLowerCase()
-  );
-
-  const deliveryFee = items.length === 0 ? 0 : hasInterprovincial ? 18 : 6;
-  const totalUsd = subtotalUsd + deliveryFee;
+  // Livraison disponible (total = sous-total)
+  const totalUsd = subtotalUsd;
 
   // Handle checkout simulation
   const handleCheckout = (e: React.FormEvent) => {
@@ -108,7 +94,7 @@ export default function CartPage() {
                 <span>{t("cart.escrow_protected")}</span>
               </div>
               <p className="text-on-surface-variant leading-relaxed">
-                {t("cart.destination_label")} <strong className="text-primary">{selectedProvince.name}</strong> ({selectedProvince.hub}). {t("cart.escrow_unlocked_info")}
+                Livraison disponible avec suivi en direct. {t("cart.escrow_unlocked_info")}
               </p>
             </div>
 
@@ -137,7 +123,7 @@ export default function CartPage() {
 
             <div className="space-y-2">
               <h1 className="text-xl sm:text-2xl font-bold text-primary font-display">
-                {t("cart.empty_title")} ({countryName})
+                {t("cart.empty_title")}
               </h1>
               <p className="text-xs sm:text-sm text-on-surface-variant max-w-sm mx-auto leading-relaxed">
                 {t("cart.empty_desc")}
@@ -149,7 +135,7 @@ export default function CartPage() {
               className="inline-flex items-center gap-2 px-6 py-3.5 bg-tertiary hover:bg-tertiary-hover text-white rounded-lg font-bold text-xs sm:text-sm transition shadow-md"
             >
               <span className="material-symbols-outlined text-lg">storefront</span>
-              <span>{t("cart.explore_catalog")} ({countryName})</span>
+              <span>{t("cart.explore_catalog")}</span>
             </Link>
           </div>
         ) : (
@@ -165,7 +151,7 @@ export default function CartPage() {
                   </span>
                 </h1>
                 <p className="text-xs text-on-surface-variant mt-1">
-                  {t("cart.market_prefix")} {country.flag} {countryName} — {t("cart.market_subtitle")}
+                  Catalogue panafricain • {country.flag} {country.currency.code} — {t("cart.market_subtitle")}
                 </p>
               </div>
 
@@ -222,14 +208,7 @@ export default function CartPage() {
 
                           {/* Logistics route badge */}
                           <div className="flex items-center gap-2 pt-0.5">
-                            {item.province && item.province.toLowerCase() === selectedProvince.name.toLowerCase() ? (
-                              <Badge variant="express" text={t("cart.stock_local_express")} />
-                            ) : (
-                              <Badge
-                                variant="interprovincial"
-                                text={country.code === "cd" ? t("cart.badge_interprovincial_rdc") : t("cart.badge_interprovincial_national")}
-                              />
-                            )}
+                            <Badge variant="express" text={t("cart.delivery_available")} />
                           </div>
                         </div>
                       </div>
@@ -285,8 +264,8 @@ export default function CartPage() {
                   ))}
                 </div>
 
-                {/* 2. Destination Province Selector & Logistics Card */}
-                <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-5 sm:p-6 shadow-card space-y-4">
+                {/* 2. Delivery availability status card */}
+                <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-5 sm:p-6 shadow-card">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
                       <div className="w-10 h-10 rounded-xl bg-secondary text-white flex items-center justify-center shrink-0">
@@ -296,41 +275,20 @@ export default function CartPage() {
                       </div>
                       <div>
                         <h3 className="text-sm sm:text-base font-bold text-primary font-display">
-                          {t("cart.delivery_destination")} {selectedProvince.name}
+                          {t("cart.delivery_available")}
                         </h3>
                         <p className="text-xs text-on-surface-variant">
-                          {t("cart.logistics_hub")} {selectedProvince.hub} • {selectedProvince.delay}
+                          {t("cart.delivery_available_desc")}
                         </p>
                       </div>
                     </div>
 
-                    {/* Integrated ProvinceSelector Modal Trigger */}
-                    <ProvinceSelector
-                      currentProvinceId={selectedProvince.id}
-                      onSelect={(prov) => setSelectedProvince(prov)}
-                      variant="compact"
-                    />
-                  </div>
-
-                  {/* Route Type Indicator */}
-                  <div className="p-3.5 bg-surface-container-low rounded-xl border border-outline-variant flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-secondary text-base">alt_route</span>
-                      <span className="text-on-surface font-medium">
-                        {t("cart.regime_logistics")}{" "}
-                        <strong className="text-primary">
-                          {hasInterprovincial
-                            ? country.code === "cd"
-                              ? t("cart.transit_interprovincial")
-                              : t("cart.transit_national")
-                            : t("cart.urban_express")}
-                        </strong>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                      <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        check_circle
                       </span>
+                      <span>{t("cart.delivery_available_val")}</span>
                     </div>
-
-                    <span className="font-bold text-secondary text-xs sm:text-sm">
-                      {deliveryFee} $ USD
-                    </span>
                   </div>
                 </div>
 
@@ -339,7 +297,7 @@ export default function CartPage() {
                   <div>
                     <h3 className="text-sm sm:text-base font-bold text-primary font-display flex items-center gap-2">
                       <span className="material-symbols-outlined text-secondary text-xl">payments</span>
-                      <span>{t("cart.payment_certified")} {country.code === "cd" ? "RDC" : countryName}</span>
+                      <span>{t("cart.payment_certified")}</span>
                     </h3>
                     <p className="text-xs text-on-surface-variant mt-0.5">
                       {t("cart.payment_subtitle")}
@@ -453,22 +411,14 @@ export default function CartPage() {
 
                   {/* Subtotal & Delivery details */}
                   <div className="space-y-3 text-xs sm:text-sm">
-                    <div className="flex items-center justify-between text-on-surface-variant pb-2 border-b border-outline-variant/60">
-                      <span>{t("cart.delivery_market")}</span>
-                      <span className="font-semibold text-primary flex items-center gap-1.5">
-                        <span>{country.flag}</span>
-                        <span>{countryName}</span>
-                      </span>
-                    </div>
-
                     <div className="flex items-center justify-between text-on-surface-variant">
                       <span>{t("cart.subtotal")} ({totalCount} {totalCount > 1 ? t("cart.articles_count") : t("cart.article_count")})</span>
                       <span className="font-semibold text-primary">{subtotalUsd} $</span>
                     </div>
 
                     <div className="flex items-center justify-between text-on-surface-variant">
-                      <span>{t("cart.delivery_fee")} ({selectedProvince.name})</span>
-                      <span className="font-semibold text-primary">{deliveryFee} $</span>
+                      <span>{t("cart.delivery_available")}</span>
+                      <span className="font-semibold text-emerald-600">{t("cart.delivery_available_val")}</span>
                     </div>
 
                     <div className="flex items-center justify-between text-on-surface-variant">

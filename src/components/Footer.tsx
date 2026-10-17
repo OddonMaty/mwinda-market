@@ -106,7 +106,7 @@ export const Footer: React.FC = () => {
           {/* Column 3: The 26 Provinces or Country Regions */}
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              {isRDC ? "Les 26 Provinces" : `Zones : ${country.name.fr}`}
+              {isRDC ? "Zones desservies" : `Zones : ${country.name.fr}`}
             </h4>
             {isRDC ? (
               <ul className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs text-slate-300">
@@ -121,7 +121,7 @@ export const Footer: React.FC = () => {
                 <li><span>Kasaï Oriental</span></li>
                 <li><span>Ituri</span></li>
                 <li><span>Maniema</span></li>
-                <li><span className="font-bold text-secondary-accent">Toutes les 26...</span></li>
+                <li><span className="font-bold text-secondary-accent">Livraison disponible</span></li>
               </ul>
             ) : (
               <ul className="space-y-2 text-xs text-slate-300">

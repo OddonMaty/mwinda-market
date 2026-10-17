@@ -7,10 +7,8 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Badge } from "@/components/Badge";
 import { PriceTag } from "@/components/PriceTag";
-import { ProvinceSelector } from "@/components/ProvinceSelector";
 import { ProductCard } from "@/components/ProductCard";
 import { ELECTRONICS_PRODUCTS, ElectronicProduct } from "@/data/electronics";
-import { DRC_PROVINCES, Province } from "@/data/provinces";
 import { useCart } from "@/context/CartContext";
 import { getShopIdByName } from "@/data/shops";
 import { getAllProducts, toProductCard } from "@/lib/marketData";
@@ -45,10 +43,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-  // Delivery province state
-  const [activeProvince, setActiveProvince] = useState<Province>(() => {
-    return DRC_PROVINCES.find((p) => p.id === "kin") || DRC_PROVINCES[0];
-  });
+
 
   // Active info tab
   const [activeTab, setActiveTab] = useState<"specs" | "features" | "delivery">("specs");
@@ -444,38 +439,36 @@ export default function ProductDetailPage({ params }: PageProps) {
                   <span className="material-symbols-outlined text-xl">flash_on</span>
                   <span>{t("product_detail.buy_now")}</span>
                 </button>
+
+                {/* Mention discrète livraison disponible */}
+                <div className="flex items-center gap-2 pt-1 text-xs text-on-surface-variant">
+                  <span className="material-symbols-outlined text-secondary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    local_shipping
+                  </span>
+                  <span className="font-medium">Livraison disponible avec suivi de commande</span>
+                </div>
               </div>
             </div>
 
-            {/* Sélecteur de Province de Livraison Intégré */}
-            <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm space-y-3">
+            {/* Bloc Information Livraison */}
+            <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-secondary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                     local_shipping
                   </span>
                   <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-                    Livraison nationale interprovinciale
+                    Livraison
                   </h4>
                 </div>
-                <ProvinceSelector
-                  currentProvinceId={activeProvince.id}
-                  onSelect={(prov) => setActiveProvince(prov)}
-                  variant="compact"
-                />
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                  Disponible
+                </span>
               </div>
-
-              <div className="p-3 bg-surface-container-low rounded-lg text-xs space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-on-surface font-semibold">
-                    Destination : <strong>{activeProvince.name}</strong> ({activeProvince.capital})
-                  </span>
-                  <span className="text-secondary font-bold">{activeProvince.delay}</span>
-                </div>
-                <p className="text-[11px] text-on-surface-variant">
-                  Acheminement via {activeProvince.hub}. Suivi colis par SMS et Web en temps réel.
-                </p>
-              </div>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Expédition soignée et remise sécurisée. Suivi en direct disponible pour toute commande.
+              </p>
             </div>
 
             {/* Carte Info Vendeur & Confiance */}
@@ -610,34 +603,21 @@ export default function ProductDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Onglet 3 : Livraison & Garantie */}
+            {/* Onglet 3 : Livraison */}
             {activeTab === "delivery" && (
               <div className="space-y-6">
-                <h3 className="text-base sm:text-lg font-bold text-primary font-display">
-                  Politique de livraison et protection acheteur RDC
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
-                    <span className="material-symbols-outlined text-secondary text-2xl">flight_takeoff</span>
-                    <h4 className="font-bold text-primary text-sm">Acheminement National</h4>
-                    <p className="text-xs text-on-surface-variant leading-relaxed">
-                      Liaisons quotidiennes entre Kinshasa, Lubumbashi, Goma, Matadi, Mbuji-Mayi et l&apos;ensemble des chefs-lieux provinciaux.
-                    </p>
+                <div className="p-6 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-secondary text-white flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      local_shipping
+                    </span>
                   </div>
-
-                  <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
-                    <span className="material-symbols-outlined text-secondary text-2xl">lock</span>
-                    <h4 className="font-bold text-primary text-sm">Fonds Protégés sous Séquestre</h4>
-                    <p className="text-xs text-on-surface-variant leading-relaxed">
-                      Le vendeur n&apos;est rémunéré qu&apos;une fois que vous avez reçu et validé le bon fonctionnement du colis.
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
-                    <span className="material-symbols-outlined text-secondary text-2xl">published_with_changes</span>
-                    <h4 className="font-bold text-primary text-sm">Retour &amp; Remplacement 7 Jours</h4>
-                    <p className="text-xs text-on-surface-variant leading-relaxed">
-                      En cas de défaut constaté à l&apos;ouverture, remplacement gratuit ou remboursement intégral sous 48h.
+                  <div>
+                    <h3 className="text-base font-bold text-primary font-display">
+                      Livraison disponible
+                    </h3>
+                    <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+                      La livraison est disponible pour ce produit avec suivi sécurisé en temps réel et protection acheteur sous séquestre Mwinda Pay.
                     </p>
                   </div>
                 </div>
