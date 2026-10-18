@@ -19,7 +19,14 @@
     "notifications": "Notifications",
     "favorites": "Favoris",
     "connected_regions": "régions connectées",
-    "delivery_available": "Livraison disponible"
+    "delivery_available": "Livraison disponible",
+    "utility_hotline_prefix": "Assistance :",
+    "utility_tracking": "Suivi de commande",
+    "utility_sell": "Devenir vendeur",
+    "all_categories": "Toutes les catégories",
+    "catalog": "Catalogue",
+    "register": "Inscription",
+    "login_register": "Connexion | Inscription"
   },
   "footer": {
     "about_text": "Plateforme de commerce électronique panafricaine connectant les marchés d'Afrique avec transparence, traçabilité et rapidité logistique.",
@@ -44,7 +51,32 @@
     "copyright": "Tous droits réservés. Mwinda Market Panafrique.",
     "served_zones": "Zones desservies",
     "delivery_available": "Livraison disponible",
-    "panafrican_open_zone": "Zone Panafricaine Ouverte"
+    "panafrican_open_zone": "Zone Panafricaine Ouverte",
+    "reassurance_secure_pay": "Paiements sécurisés",
+    "reassurance_escrow": "Séquestre Mwinda Pay",
+    "reassurance_delivery": "Livraison disponible",
+    "reassurance_certified": "Boutiques certifiées",
+    "reassurance_support": "Assistance 6j/7",
+    "reassurance_pwa": "Application installable",
+    "col_buy": "Acheter",
+    "col_buy_how": "Comment commander",
+    "col_buy_tracking": "Suivi de commande",
+    "col_buy_shops": "Boutiques",
+    "col_buy_catalog": "Catalogue",
+    "col_sell": "Vendre",
+    "col_sell_become": "Devenir vendeur",
+    "col_sell_dashboard": "Tableau de bord",
+    "col_help": "Aide",
+    "col_help_assistance": "Assistance",
+    "col_help_terms": "Conditions",
+    "col_help_privacy": "Confidentialité",
+    "col_help_legal": "Mentions légales",
+    "col_countries": "Pays desservis",
+    "payments_label": "Moyens de paiement acceptés",
+    "bottom_country": "Pays actuel",
+    "bottom_language": "Langue",
+    "community_title": "Communauté",
+    "community_desc": "Suivez l'évolution des marchés africains sur nos réseaux officiels"
   },
   "home": {
     "hero_tag": "Grande Vente Panafricaine",
@@ -661,5 +693,9 @@
     "flagship_badge": "Zone Phare",
     "current_zone": "Zone actuelle :",
     "panafrican_catalog": "Catalogue panafricain"
+  },
+  "floatbar": {
+    "float_support": "Assistance",
+    "float_top": "Haut"
   }
 }

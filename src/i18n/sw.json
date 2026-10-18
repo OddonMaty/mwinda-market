@@ -19,7 +19,14 @@
     "notifications": "Taarifa",
     "favorites": "Vipendwa",
     "connected_regions": "mikoa iliyounganishwa",
-    "delivery_available": "Uwasilishaji unapatikana"
+    "delivery_available": "Uwasilishaji unapatikana",
+    "utility_hotline_prefix": "Msaada:",
+    "utility_tracking": "Fuatilia agizo",
+    "utility_sell": "Kuwa muuzaji",
+    "all_categories": "Kategoria zote",
+    "catalog": "Katalogi",
+    "register": "Jiandikishe",
+    "login_register": "Ingia | Jiandikishe"
   },
   "footer": {
     "about_text": "Jukwaa la biashara ya kielektroniki la Afrika linalounganisha masoko ya bara zima kwa uwazi, ufuatiliaji na vifaa vya uhakika.",
@@ -44,7 +51,32 @@
     "copyright": "Haki zote zimehifadhiwa. Mwinda Market Pan-Afrika.",
     "served_zones": "Maeneo yanayohudumiwa",
     "delivery_available": "Uwasilishaji unapatikana",
-    "panafrican_open_zone": "Eneo Lililofunguliwa la Panafrika"
+    "panafrican_open_zone": "Eneo Lililofunguliwa la Panafrika",
+    "reassurance_secure_pay": "Malipo salama",
+    "reassurance_escrow": "Amana Mwinda Pay",
+    "reassurance_delivery": "Uwasilishaji unapatikana",
+    "reassurance_certified": "Maduka yaliyoidhinishwa",
+    "reassurance_support": "Msaada siku 6/7",
+    "reassurance_pwa": "Programu inayoweza kufungwa",
+    "col_buy": "Nunua",
+    "col_buy_how": "Jinsi ya kuagiza",
+    "col_buy_tracking": "Fuatilia agizo",
+    "col_buy_shops": "Maduka",
+    "col_buy_catalog": "Katalogi",
+    "col_sell": "Uza",
+    "col_sell_become": "Kuwa muuzaji",
+    "col_sell_dashboard": "Dashibodi",
+    "col_help": "Msaada",
+    "col_help_assistance": "Msaada",
+    "col_help_terms": "Masharti",
+    "col_help_privacy": "Faragha",
+    "col_help_legal": "Kisheria",
+    "col_countries": "Nchi zinazohudumika",
+    "payments_label": "Njia za malipo zinazokubaliwa",
+    "bottom_country": "Nchi ya sasa",
+    "bottom_language": "Lugha",
+    "community_title": "Jamii",
+    "community_desc": "Fuata maendeleo ya masoko ya Afrika kwenye mitandao yetu rasmi"
   },
   "home": {
     "hero_tag": "Mauzo Makuu ya Panafrika",
@@ -661,5 +693,9 @@
     "flagship_badge": "Eneo Kuu",
     "current_zone": "Eneo la sasa:",
     "panafrican_catalog": "Katalogi ya Panafrika"
+  },
+  "floatbar": {
+    "float_support": "Msaada",
+    "float_top": "Juu"
   }
 }

@@ -19,7 +19,14 @@
     "notifications": "Notifications",
     "favorites": "Favorites",
     "connected_regions": "connected regions",
-    "delivery_available": "Delivery available"
+    "delivery_available": "Delivery available",
+    "utility_hotline_prefix": "Support:",
+    "utility_tracking": "Order tracking",
+    "utility_sell": "Become a seller",
+    "all_categories": "All categories",
+    "catalog": "Catalog",
+    "register": "Register",
+    "login_register": "Sign in | Register"
   },
   "footer": {
     "about_text": "Pan-African e-commerce platform connecting African markets with transparency, traceability and reliable logistics.",
@@ -44,7 +51,32 @@
     "copyright": "All rights reserved. Mwinda Market Pan-Africa.",
     "served_zones": "Covered areas",
     "delivery_available": "Delivery available",
-    "panafrican_open_zone": "Open Pan-African Zone"
+    "panafrican_open_zone": "Open Pan-African Zone",
+    "reassurance_secure_pay": "Secure payments",
+    "reassurance_escrow": "Mwinda Pay Escrow",
+    "reassurance_delivery": "Delivery available",
+    "reassurance_certified": "Certified shops",
+    "reassurance_support": "6-day support",
+    "reassurance_pwa": "Installable app",
+    "col_buy": "Buy",
+    "col_buy_how": "How to order",
+    "col_buy_tracking": "Order tracking",
+    "col_buy_shops": "Shops",
+    "col_buy_catalog": "Catalog",
+    "col_sell": "Sell",
+    "col_sell_become": "Become a seller",
+    "col_sell_dashboard": "Dashboard",
+    "col_help": "Help",
+    "col_help_assistance": "Support",
+    "col_help_terms": "Terms",
+    "col_help_privacy": "Privacy",
+    "col_help_legal": "Legal",
+    "col_countries": "Countries served",
+    "payments_label": "Accepted payment methods",
+    "bottom_country": "Current country",
+    "bottom_language": "Language",
+    "community_title": "Community",
+    "community_desc": "Follow African market news on our official channels"
   },
   "home": {
     "hero_tag": "Grand Pan-African Sale",
@@ -661,5 +693,9 @@
     "flagship_badge": "Flagship Area",
     "current_zone": "Current area:",
     "panafrican_catalog": "Pan-African Catalog"
+  },
+  "floatbar": {
+    "float_support": "Support",
+    "float_top": "Top"
   }
 }

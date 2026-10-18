@@ -19,7 +19,14 @@
     "notifications": "Notificações",
     "favorites": "Favoritos",
     "connected_regions": "regiões conectadas",
-    "delivery_available": "Entrega disponível"
+    "delivery_available": "Entrega disponível",
+    "utility_hotline_prefix": "Suporte:",
+    "utility_tracking": "Rastreamento de pedido",
+    "utility_sell": "Torne-se vendedor",
+    "all_categories": "Todas as categorias",
+    "catalog": "Catálogo",
+    "register": "Registar",
+    "login_register": "Entrar | Registar"
   },
   "footer": {
     "about_text": "Plataforma de comércio eletrónico pan-africana conectando os mercados de África com transparência, rastreabilidade e rapidez logística.",
@@ -44,7 +51,32 @@
     "copyright": "Todos os direitos reservados. Mwinda Market Pan-África.",
     "served_zones": "Zonas atendidas",
     "delivery_available": "Entrega disponível",
-    "panafrican_open_zone": "Zona Panafricana Aberta"
+    "panafrican_open_zone": "Zona Panafricana Aberta",
+    "reassurance_secure_pay": "Pagamentos seguros",
+    "reassurance_escrow": "Garantia Mwinda Pay",
+    "reassurance_delivery": "Entrega disponível",
+    "reassurance_certified": "Lojas certificadas",
+    "reassurance_support": "Suporte 6 dias/sem",
+    "reassurance_pwa": "App instalável",
+    "col_buy": "Comprar",
+    "col_buy_how": "Como encomendar",
+    "col_buy_tracking": "Rastreamento",
+    "col_buy_shops": "Lojas",
+    "col_buy_catalog": "Catálogo",
+    "col_sell": "Vender",
+    "col_sell_become": "Torne-se vendedor",
+    "col_sell_dashboard": "Painel",
+    "col_help": "Ajuda",
+    "col_help_assistance": "Suporte",
+    "col_help_terms": "Termos",
+    "col_help_privacy": "Privacidade",
+    "col_help_legal": "Avisos legais",
+    "col_countries": "Países atendidos",
+    "payments_label": "Métodos de pagamento aceites",
+    "bottom_country": "País atual",
+    "bottom_language": "Idioma",
+    "community_title": "Comunidade",
+    "community_desc": "Siga a evolução dos mercados africanos nas nossas redes oficiais"
   },
   "home": {
     "hero_tag": "Grande Venda Pan-Africana",
@@ -661,5 +693,9 @@
     "flagship_badge": "Zona Principal",
     "current_zone": "Zona atual:",
     "panafrican_catalog": "Catálogo Panafricano"
+  },
+  "floatbar": {
+    "float_support": "Suporte",
+    "float_top": "Topo"
   }
 }

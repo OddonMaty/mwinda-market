@@ -4,267 +4,215 @@ import React from "react";
 import Link from "next/link";
 import { useMarket } from "@/context/MarketContext";
 import { useT } from "@/i18n";
-import { CountryRegion } from "@/data/countries";
+import { AFRICAN_COUNTRIES } from "@/data/countries";
+
+const REASSURANCE = [
+  { icon: "lock", labelKey: "reassurance_secure_pay" as const },
+  { icon: "account_balance_wallet", labelKey: "reassurance_escrow" as const },
+  { icon: "local_shipping", labelKey: "reassurance_delivery" as const },
+  { icon: "verified", labelKey: "reassurance_certified" as const },
+  { icon: "support_agent", labelKey: "reassurance_support" as const },
+  { icon: "install_mobile", labelKey: "reassurance_pwa" as const },
+];
+
+const PAYMENT_BADGES = ["M-Pesa", "Airtel Money", "Orange Money", "Visa", "Mastercard"];
 
 export const Footer: React.FC = () => {
-  const { country, isRDC } = useMarket();
+  const { country, isRDC, setCountry } = useMarket();
   const { t } = useT();
 
+  const year = new Date().getFullYear();
+  const whatsapp = isRDC ? "+243818900125" : country.phoneCode.replace("+", "") + "800000";
+
   return (
-    <footer className="w-full bg-primary text-white border-t border-outline-variant mt-16">
-      <div className="w-full px-4 md:px-8 lg:px-10 py-12 max-w-7xl mx-auto space-y-12">
-        {/* 5 Columns Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-          {/* Column 1: About & Payment Badges */}
-          <div className="space-y-4 lg:col-span-1">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded bg-tertiary flex items-center justify-center text-white font-bold">
+    <footer className="w-full bg-white border-t border-outline-variant mt-16">
+      {/* ─── REASSURANCE BAND ─────────────────────────────────────────────── */}
+      <div className="w-full bg-surface-container-low border-b border-outline-variant">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {REASSURANCE.map((item) => (
+            <div key={item.icon} className="flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-secondary text-xl shrink-0">{item.icon}</span>
+              <span className="text-xs font-semibold text-on-surface leading-tight">
+                {t(`footer.${item.labelKey}`)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── MAIN COLUMNS ─────────────────────────────────────────────────── */}
+      <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
+
+          {/* Col 1 — Logo + about */}
+          <div className="col-span-2 md:col-span-4 lg:col-span-1 space-y-4">
+            <Link href="/" className="flex items-center gap-2 w-fit">
+              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow">
                 <span
-                  className="material-symbols-outlined text-lg"
+                  className="material-symbols-outlined text-xl text-tertiary"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   light_mode
                 </span>
               </div>
-              <span className="text-xl font-black text-white font-display">Mwinda Market</span>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
+              <span className="text-lg font-black text-primary tracking-tight font-display">Mwinda Market</span>
+            </Link>
+            <p className="text-xs text-on-surface-variant leading-relaxed">
               {t("footer.about_text")}
             </p>
-            <div className="pt-2">
-              <span className="text-[11px] text-slate-300 block mb-2 font-bold uppercase tracking-wider">
-                {t("footer.local_payments")}
-              </span>
-              <div className="flex flex-wrap items-center gap-2">
-                {isRDC ? (
-                  <>
-                    <span className="px-2 py-1 bg-white/10 rounded text-[11px] font-bold text-white border border-white/20">
-                      M-Pesa
-                    </span>
-                    <span className="px-2 py-1 bg-white/10 rounded text-[11px] font-bold text-white border border-white/20">
-                      Airtel Money
-                    </span>
-                    <span className="px-2 py-1 bg-white/10 rounded text-[11px] font-bold text-white border border-white/20">
-                      Orange Money
-                    </span>
-                    <span className="px-2 py-1 bg-white/10 rounded text-[11px] font-bold text-white border border-white/20">
-                      Visa / MC
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="px-2 py-1 bg-white/10 rounded text-[11px] font-bold text-white border border-white/20">
-                      Mobile Money
-                    </span>
-                    <span className="px-2 py-1 bg-white/10 rounded text-[11px] font-bold text-white border border-white/20">
-                      {country.currency.code}
-                    </span>
-                    <span className="px-2 py-1 bg-white/10 rounded text-[11px] font-bold text-white border border-white/20">
-                      Visa / MC
-                    </span>
-                    <span className="px-2 py-1 bg-white/10 rounded text-[11px] font-bold text-white border border-white/20">
-                      Séquestre Panafricain
-                    </span>
-                  </>
-                )}
+
+            {/* Payment badges */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-outline mb-2">
+                {t("footer.payments_label")}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {PAYMENT_BADGES.map((badge) => (
+                  <span
+                    key={badge}
+                    className="px-2 py-0.5 bg-surface-container border border-outline-variant rounded text-[11px] font-bold text-on-surface"
+                  >
+                    {badge}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Column 2: Useful Links */}
+          {/* Col 2 — Acheter */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              {t("footer.useful_links")}
+            <h4 className="text-sm font-bold text-on-surface uppercase tracking-wide border-b border-outline-variant pb-1.5">
+              {t("footer.col_buy")}
             </h4>
-            <ul className="space-y-2 text-xs text-slate-300">
-              <li>
-                <Link href="/suivi" className="hover:text-secondary-accent transition-colors">
-                  {t("footer.order_tracking")}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/devenir-vendeur"
-                  className="hover:text-secondary-accent transition-colors"
-                >
-                  {t("footer.become_seller")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/conditions" className="hover:text-secondary-accent transition-colors">
-                  {t("footer.terms_of_service")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/assistance" className="hover:text-secondary-accent transition-colors">
-                  {t("footer.faq_help")}
-                </Link>
-              </li>
+            <ul className="space-y-2">
+              {[
+                { href: "/assistance", label: t("footer.col_buy_how") },
+                { href: "/suivi", label: t("footer.col_buy_tracking") },
+                { href: "/boutiques", label: t("footer.col_buy_shops") },
+                { href: "/produits", label: t("footer.col_buy_catalog") },
+              ].map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-xs text-on-surface-variant hover:text-secondary transition"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Column 3: The 26 Provinces or Country Regions */}
+          {/* Col 3 — Vendre */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              {isRDC ? t("footer.served_zones") : `${t("footer.served_zones")} : ${country.name.fr}`}
+            <h4 className="text-sm font-bold text-on-surface uppercase tracking-wide border-b border-outline-variant pb-1.5">
+              {t("footer.col_sell")}
             </h4>
-            {isRDC ? (
-              <ul className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs text-slate-300">
-                <li><span>Kinshasa</span></li>
-                <li><span>Haut-Katanga</span></li>
-                <li><span>Nord-Kivu</span></li>
-                <li><span>Sud-Kivu</span></li>
-                <li><span>Kongo Central</span></li>
-                <li><span>Tshopo</span></li>
-                <li><span>Lualaba</span></li>
-                <li><span>Kasaï Central</span></li>
-                <li><span>Kasaï Oriental</span></li>
-                <li><span>Ituri</span></li>
-                <li><span>Maniema</span></li>
-                <li><span className="font-bold text-secondary-accent">{t("footer.delivery_available")}</span></li>
-              </ul>
-            ) : (
-              <ul className="space-y-2 text-xs text-slate-300">
-                {((country.regions as CountryRegion[]) || []).map((r) => (
-                  <li key={r.id || r.name}>
-                    <span className="font-semibold text-white">{r.name}</span>
-                    <span className="block text-[11px] text-slate-400">
-                      {r.hub || "Hub Régional"} • {r.delay || "24h - 48h"}
-                    </span>
-                  </li>
-                ))}
-                <li>
-                  <span className="text-[11px] text-secondary-accent font-bold">
-                    {t("footer.panafrican_open_zone")}
-                  </span>
+            <ul className="space-y-2">
+              {[
+                { href: "/devenir-vendeur", label: t("footer.col_sell_become") },
+                { href: "/vendeur/dashboard", label: t("footer.col_sell_dashboard") },
+              ].map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-xs text-on-surface-variant hover:text-secondary transition"
+                  >
+                    {link.label}
+                  </Link>
                 </li>
-              </ul>
-            )}
+              ))}
+            </ul>
           </div>
 
-          {/* Column 4: Contact & Support */}
+          {/* Col 4 — Aide */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              {t("footer.customer_support")}
+            <h4 className="text-sm font-bold text-on-surface uppercase tracking-wide border-b border-outline-variant pb-1.5">
+              {t("footer.col_help")}
             </h4>
-            <div className="space-y-2.5 text-xs text-slate-300">
-              <div className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-secondary-accent text-base mt-0.5">
-                  location_on
-                </span>
-                <span>
-                  {isRDC
-                    ? "Siège social : Boulevard du 30 Juin, Gombe, Kinshasa - RDC"
-                    : `Représentation Régionale : ${country.name.fr} (${country.code})`}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary-accent text-base">chat</span>
-                <span>
-                  WhatsApp : {isRDC ? "+243 81 000 9999" : `${country.phoneCode} 800 000`}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary-accent text-base">call</span>
-                <span>
-                  Hotline Marché : {isRDC ? "+243 99 888 7777" : `${country.phoneCode} 800 001`}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary-accent text-base">mail</span>
-                <span>support@mwindamarket.cd</span>
-              </div>
-            </div>
+            <ul className="space-y-2">
+              {[
+                { href: "/assistance", label: t("footer.col_help_assistance") },
+                { href: "/conditions", label: t("footer.col_help_terms") },
+                { href: "/confidentialite", label: t("footer.col_help_privacy") },
+                { href: "/mentions-legales", label: t("footer.col_help_legal") },
+              ].map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-xs text-on-surface-variant hover:text-secondary transition"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* Column 5: Social Channels & PWA App */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Communauté</h4>
-            <p className="text-xs text-slate-300">
-              Suivez l&apos;évolution des marchés africains sur nos réseaux officiels :
-            </p>
-            <div className="flex items-center gap-2">
-              <a
-                href="#"
-                className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-xs font-bold hover:bg-secondary transition"
-              >
-                FB
-              </a>
-              <a
-                href="#"
-                className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-xs font-bold hover:bg-secondary transition"
-              >
-                IG
-              </a>
-              <a
-                href="#"
-                className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-xs font-bold hover:bg-secondary transition"
-              >
-                LN
-              </a>
-              <a
-                href="#"
-                className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-xs font-bold hover:bg-secondary transition"
-              >
-                X
-              </a>
-              <a
-                href="#"
-                className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-xs font-bold hover:bg-secondary transition"
-              >
-                TK
-              </a>
-            </div>
-
-            <div className="pt-3">
-              <span className="text-[11px] text-slate-300 block mb-1.5 font-semibold">
-                Télécharger l&apos;Application PWA
-              </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    alert(
-                      "Mwinda Market est installable directement via le menu 'Ajouter à l'écran d'accueil' de votre navigateur."
-                    )
-                  }
-                  className="px-2.5 py-1.5 rounded bg-white/10 text-xs font-bold flex items-center gap-1.5 hover:bg-white/20 transition"
-                >
-                  <span className="material-symbols-outlined text-sm">android</span>
-                  <span>Google Play</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    alert(
-                      "Mwinda Market est installable sur iOS en appuyant sur 'Partager' puis 'Sur l'écran d'accueil'."
-                    )
-                  }
-                  className="px-2.5 py-1.5 rounded bg-white/10 text-xs font-bold flex items-center gap-1.5 hover:bg-white/20 transition"
-                >
-                  <span className="material-symbols-outlined text-sm">phone_iphone</span>
-                  <span>App Store</span>
-                </button>
-              </div>
-            </div>
+          {/* Col 5 — Pays desservis */}
+          <div className="col-span-2 md:col-span-1 space-y-3">
+            <h4 className="text-sm font-bold text-on-surface uppercase tracking-wide border-b border-outline-variant pb-1.5">
+              {t("footer.col_countries")}
+            </h4>
+            <ul className="grid grid-cols-2 md:grid-cols-1 gap-x-4 gap-y-1 max-h-52 overflow-y-auto pr-1">
+              {AFRICAN_COUNTRIES.map((c) => (
+                <li key={c.code}>
+                  <button
+                    type="button"
+                    onClick={() => setCountry(c.code)}
+                    className={`flex items-center gap-1.5 text-xs w-full text-left py-0.5 rounded transition ${
+                      c.code === country.code
+                        ? "text-secondary font-bold"
+                        : "text-on-surface-variant hover:text-secondary"
+                    }`}
+                    title={c.name.fr}
+                  >
+                    <span>{c.flag}</span>
+                    <span className="truncate">{c.name.fr}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
+      </div>
 
-        {/* Bottom Legal bar */}
-        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-          <p>
-            © 2025 Mwinda Market. {t("footer.copyright")}
-          </p>
-          <div className="flex items-center space-x-6">
-            <Link href="/confidentialite" className="hover:text-white transition">
-              Politique de Confidentialité
+      {/* ─── BOTTOM BAR ───────────────────────────────────────────────────── */}
+      <div className="w-full bg-primary text-white/80">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
+          {/* Left: logo + copyright */}
+          <div className="flex items-center gap-2">
+            <span
+              className="material-symbols-outlined text-base text-tertiary"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              light_mode
+            </span>
+            <span className="font-semibold text-white">Mwinda Market</span>
+            <span className="text-white/50">·</span>
+            <span>© {year} — {t("footer.copyright")}</span>
+          </div>
+          {/* Center: country + language */}
+          <div className="flex items-center gap-3 text-white/70">
+            <span>{country.flag} {country.name.fr}</span>
+            <span>·</span>
+            <Link href="/assistance" className="hover:text-white transition">
+              {t("footer.col_help_assistance")}
             </Link>
-            <Link href="/conditions" className="hover:text-white transition">
-              Conditions de Vente
-            </Link>
-            <Link href="/mentions-legales" className="hover:text-white transition">
-              Mentions Légales
-            </Link>
+          </div>
+          {/* Right: legal links */}
+          <div className="flex items-center gap-4">
+            <Link href="/confidentialite" className="hover:text-white transition">{t("footer.col_help_privacy")}</Link>
+            <Link href="/conditions" className="hover:text-white transition">{t("footer.col_help_terms")}</Link>
+            <a
+              href={`https://wa.me/${whatsapp}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:text-white transition"
+            >
+              <span className="material-symbols-outlined text-sm">chat</span>
+              WhatsApp
+            </a>
           </div>
         </div>
       </div>

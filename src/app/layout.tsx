@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { MarketProvider } from "@/context/MarketContext";
+import { FloatingBar } from "@/components/FloatingBar";
 
 export const viewport: Viewport = {
   themeColor: "#0B1B3D",
@@ -39,9 +40,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="scroll-smooth">
-      <body className="bg-background text-on-surface antialiased font-sans min-h-screen flex flex-col selection:bg-secondary selection:text-white">
+      <body className="bg-background text-on-surface antialiased font-sans min-h-screen flex flex-col selection:bg-secondary selection:text-white max-w-full">
         <MarketProvider>
-          <CartProvider>{children}</CartProvider>
+          <CartProvider>
+            {children}
+            <FloatingBar />
+          </CartProvider>
         </MarketProvider>
       </body>
     </html>
