@@ -184,8 +184,7 @@ export const VENDOR_PROFILE: VendorProfile = {
   phone: "+243 81 234 5678",
   supportPhone: "+243 81 000 0000",
   verified: true,
-  avatarUrl:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuD4NIPIM8M5YY0iCHRbZSm22rN7KgjNEZJLrvvn7Hb5jdCTYmrIKqfHKVUF-Bws8kHs89GSfuy09phKP4hA8t6qzARBjS2kiA6rfSmKlvmlppApDD1pHX2Rz6myrp7S40cu6jqTgMKJRrBTusl47RocWW5hVxltxedjXffu4Ne6e98iTZMRlhxG3TU4DrYwGtEjB9m5AXsRRJutsAcO-E0YAh02fU3NCEj3XC0NYpf2qMx-nf_yYBbb",
+  avatarUrl: "/images/shops/vendor-avatar.jpg",
 };
 
 export const VENDOR_STATS: VendorStats = {
@@ -320,7 +319,7 @@ export const VENDOR_PRODUCTS: VendorProduct[] = [
     salesCount: 86,
     rating: 4.9,
     image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuD9_e765_w92y4tWvJ6pYV_4aFqg_d8N5l-1d_2c5kM",
+      "/images/products/brazza-robe-wax-ndoki.jpg",
     sku: "KF-WAX-001",
   },
   {
@@ -334,7 +333,7 @@ export const VENDOR_PRODUCTS: VendorProduct[] = [
     salesCount: 42,
     rating: 5.0,
     image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDFXW_lq4j67fD5r_s8d5Kq5pU7Y_wQ6r_2t8aB",
+      "/images/products/brazza-ensemble-kente-homme.jpg",
     sku: "KF-ABA-042",
   },
   {
@@ -348,7 +347,7 @@ export const VENDOR_PRODUCTS: VendorProduct[] = [
     salesCount: 65,
     rating: 4.8,
     image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDrJq5v8F6kL2g7N9s3tP5rU2wQ1aB8cD4eF6gH",
+      "/images/products/luanda-camisa-linho-angola.jpg",
     sku: "KF-CHM-018",
   },
   {
@@ -362,7 +361,7 @@ export const VENDOR_PRODUCTS: VendorProduct[] = [
     salesCount: 112,
     rating: 4.9,
     image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuE9_r5T7yU3i1o8p4s6a2f9h0j7k5l3z1x8c4v2",
+      "/images/products/brazza-sac-raphia-artisan.jpg",
     sku: "KF-ACC-009",
   },
   {
@@ -376,7 +375,7 @@ export const VENDOR_PRODUCTS: VendorProduct[] = [
     salesCount: 29,
     rating: 4.7,
     image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuG7_h3k5j8m9n2b4v6c8x0z1l3k5j7h9f2d4s6a",
+      "/images/products/brazza-boubou-grande-occasion.jpg",
     sku: "KF-VES-003",
   },
   {
@@ -390,7 +389,7 @@ export const VENDOR_PRODUCTS: VendorProduct[] = [
     salesCount: 54,
     rating: 4.9,
     image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuF2_d4s6a8h0j2k4l6z8x0c2v4b6n8m0q2w4e6r",
+      "/images/products/luanda-vestido-samakaka-festa.jpg",
     sku: "KF-KIM-011",
   },
 ];

@@ -130,7 +130,7 @@ export default function DevenirVendeurPage() {
                     <Image
                       alt="Commerçante gérant sa boutique artisanale sur Mwinda Market"
                       className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvJGhV3PP8mr8ksxOvLbpmF5aNKq8zDXxYQouEBMvQ_ROCIogzOvanxbdoBjdzN9jmVWWv_dknhTODRSaWopL5T7YJN5W38gC2O3n0_cKPsS9VteTwt9-6OWUdyisz6tzTtmdeBUrQ9r5RRncBF5o64o08njxablsAs4OH6lfMIBZgyHcbyVOl1Qg71jKvz3s0K4rY-aHIFLRm1ucxoEVEtizI_BFNxTr7kQegO8YJD2hihu8a8FpA"
+                      src="/images/vendor-hero.jpg"
                       fill
                       priority
                       sizes="(max-width: 1024px) 100vw, 50vw"

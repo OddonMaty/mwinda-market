@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ElectronicProduct } from "@/data/electronics";
@@ -16,22 +17,78 @@ import {
   getAllShopNames,
 } from "@/lib/marketData";
 
-export default function ElectronicsPage() {
+const CATEGORY_SLUG_MAP: Record<string, string> = {
+  electronique: "Électronique",
+  electronics: "Électronique",
+  mode: "Mode & Habillement",
+  fashion: "Mode & Habillement",
+  maison: "Maison & Décoration",
+  home: "Maison & Décoration",
+  beaute: "Beauté & Cosmétiques",
+  beauty: "Beauté & Cosmétiques",
+  alimentation: "Alimentation & Produits Frais",
+  food: "Alimentation & Produits Frais",
+  solaire: "Énergie Solaire & Onduleurs",
+  energie: "Énergie Solaire & Onduleurs",
+  smartphones: "Smartphones & Tablettes",
+  audio: "Audio & Écouteurs",
+  informatique: "Informatique & Ordinateurs",
+  electromenager: "Électroménager",
+};
+
+function resolveCategoryParam(param: string | null, availableCategories: string[]): string {
+  if (!param) return "Tous";
+  const normalized = param.trim().toLowerCase();
+  if (CATEGORY_SLUG_MAP[normalized]) {
+    return CATEGORY_SLUG_MAP[normalized];
+  }
+  const match = availableCategories.find(
+    (c) =>
+      c.toLowerCase() === normalized ||
+      c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized
+  );
+  if (match) return match;
+  return param;
+}
+
+function ElectronicsContent() {
   const { country } = useMarket();
   const { addToCart } = useCart();
   const { t } = useT();
+  const searchParams = useSearchParams();
 
   // Données globales sans filtre pays (catalogue panafricain)
   const allProducts = useMemo(() => getAllProducts(), []);
   const availableProvinces = useMemo(() => getAllProductProvinces(), []);
   const availableShops = useMemo(() => getAllShopNames(), []);
+  const catalogCategories = useMemo(
+    () => Array.from(new Set(allProducts.map((p) => p.category))),
+    [allProducts]
+  );
 
-  // Catégories disponibles globalement
+  const initialCategory = useMemo(() => {
+    const cat = searchParams.get("category");
+    return resolveCategoryParam(cat, catalogCategories);
+  }, [searchParams, catalogCategories]);
+
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>(initialCategory);
+
+  useEffect(() => {
+    const cat = searchParams.get("category");
+    if (cat) {
+      setSelectedSubCategory(resolveCategoryParam(cat, catalogCategories));
+    }
+  }, [searchParams, catalogCategories]);
+
+  // Catégories disponibles globalement (inclut la catégorie sélectionnée même si 0 produit)
   const subCategories = useMemo(() => {
     const cats = new Set<string>();
     allProducts.forEach((p) => cats.add(p.category));
+    if (selectedSubCategory !== "Tous") {
+      cats.add(selectedSubCategory);
+    }
     return ["Tous", ...Array.from(cats).sort()];
-  }, [allProducts]);
+  }, [allProducts, selectedSubCategory]);
 
   // Max prix global (arrondi à la centaine supérieure)
   const maxPriceInCatalog = useMemo(() => {
@@ -40,7 +97,6 @@ export default function ElectronicsPage() {
     return Math.ceil(max / 100) * 100;
   }, [allProducts]);
 
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string>("Tous");
   const [regionSearchText, setRegionSearchText] = useState<string>("");
   const [selectedProvinceFilter, setSelectedProvinceFilter] = useState<string>("Toutes");
   const [selectedShopFilter, setSelectedShopFilter] = useState<string>("Toutes");
@@ -141,7 +197,7 @@ export default function ElectronicsPage() {
               {t("catalog.breadcrumb_home")}
             </Link>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <Link href="/categories" className="hover:text-primary transition-colors">
+            <Link href="/produits" className="hover:text-primary transition-colors">
               {t("catalog.breadcrumb_categories")}
             </Link>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
@@ -667,5 +723,13 @@ export default function ElectronicsPage() {
       {/* Footer */}
       <Footer />
     </div>
+  );
+}
+
+export default function ElectronicsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface" />}>
+      <ElectronicsContent />
+    </Suspense>
   );
 }

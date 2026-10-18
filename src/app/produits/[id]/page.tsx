@@ -190,7 +190,7 @@ export default function ProductDetailPage({ params }: PageProps) {
             </li>
             <li className="flex items-center gap-2">
               <span className="material-symbols-outlined text-xs">chevron_right</span>
-              <Link href="/categories/electronique" className="hover:text-primary transition">
+              <Link href={`/produits?category=${encodeURIComponent(product.category)}`} className="hover:text-primary transition">
                 {product.category}
               </Link>
             </li>
@@ -750,7 +750,7 @@ export default function ProductDetailPage({ params }: PageProps) {
               </h2>
             </div>
             <Link
-              href="/categories/electronique"
+              href={`/produits?category=${encodeURIComponent(product.category)}`}
               className="text-xs sm:text-sm font-semibold text-secondary hover:underline flex items-center gap-1"
             >
               <span>{t("product_detail.view_all_category")}</span>

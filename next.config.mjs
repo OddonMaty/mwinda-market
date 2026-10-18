@@ -32,6 +32,16 @@ const nextConfig = {
         destination: "/assistance",
         permanent: false,
       },
+      {
+        source: "/categories",
+        destination: "/produits",
+        permanent: false,
+      },
+      {
+        source: "/categories/:slug",
+        destination: "/produits?category=:slug",
+        permanent: false,
+      },
     ];
   },
 };

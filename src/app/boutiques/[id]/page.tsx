@@ -26,8 +26,7 @@ const KIN_FASHION_PRODUCTS: Product[] = [
     title: "Robe Wax Moderne 'Kinshasa Chic'",
     shopName: "Kin Fashion",
     shopCity: "Gombe, Kinshasa",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCOE2VrMn-FaqeeuMuavYM3Ny7R62p-7Ct-EDnNdes0IOgABkcq8CfnAffh8L8fX4oMw1ACTCZjfetZWxxdzD2oYokYDY4s0iH9YoPU3Nbgifis6BXlRvEKo_e2zMo-ERCRc-l9xN7K15B3DXW4SWDkn8NAsqW68-VUivTEPUL8lw7RfPSe9Ue_EAO_EkWk9Kn8yXnTlWS2lGRac2Zbw8cnVKMXXq4ceE6cA2kWjx40DiL9jKNBFO_0",
+    image: "/images/products/robe-wax-kinshasa-chic.jpg",
     usdPrice: 58,
     originalUsdPrice: 72,
     rating: 4.9,
@@ -43,8 +42,7 @@ const KIN_FASHION_PRODUCTS: Product[] = [
     title: "Chemise Lin & Pagne Homme",
     shopName: "Kin Fashion",
     shopCity: "Gombe, Kinshasa",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDNQHpfX9af0c2GK__PlrBdddc5Pm8y1J3RiFl90DIJIIuzTPECT9qv1BqijQQlQQN112w0Ok3RGzuZHkSnGuz_qKrjFnriDAVYX8kN4oxnsRCbRiIZoZwqe8kme1kTGTDp376YlJN4Jtn5FBiDvNxDO5yzCjHFLNNwzJxtnXJNcjXHyvkylaJeuGJFL6RiXUVYwsnkUJwRryDk-qyBDXESY7NOio0QHfecRgSbRGRAVAHITzRTEs67",
+    image: "/images/products/chemise-lin-pagne-homme.jpg",
     usdPrice: 45,
     rating: 4.8,
     reviewCount: 42,
@@ -58,8 +56,7 @@ const KIN_FASHION_PRODUCTS: Product[] = [
     title: "Ensemble Tailleur Indigo Africain",
     shopName: "Kin Fashion",
     shopCity: "Gombe, Kinshasa",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCU_8P68bcW7MZgoUr1mO-uy4G6PmqGSIcHP2P2XhNalKfa521dieQGNVSfOlcDRHo0sFpA2tq9QI9whYBlvF11vbbdMecYMcxvLRh1cHdJsufBNvma8M7fULFRdTxeZlGOMdhqlIVvCO8QMFbOp3c84GKyFbGC-Fsojc43f3uSZfMQT8WlBHsn-TbTZATIEbIUjMD6SujECLNW0vv2PAG1I8UhDUl2xQdrcsxYp4CDZmUDDDdBILzl",
+    image: "/images/products/ensemble-tailleur-africain.jpg",
     usdPrice: 85,
     originalUsdPrice: 95,
     rating: 5.0,
@@ -74,8 +71,7 @@ const KIN_FASHION_PRODUCTS: Product[] = [
     title: "Robe fillette fête 'Princesse Wax'",
     shopName: "Kin Fashion",
     shopCity: "Gombe, Kinshasa",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCHaQ1FeUMygWlaJbSPvPpAFniJdbEMrm4g6J9uGE3nmLwl5HsD61Zick_eMIcTHWEUKNLOYrhnQnI81-WoqtVTsr00W5ReNRpsk556QayRqnZnI8C2Ipv0j8OzKrFI8gxpG63mcma8dr2eqeqdlh8XtknwuMHxd3J9lVV6HtM11t3TZSx8uTvN81Lj5gbyyYHIrfR18C1uxBBMmRPbQc5sbKEiMEF5lMrI1pISAwbZYBx44_qYQye-",
+    image: "/images/products/robe-fillette-princesse-wax.jpg",
     usdPrice: 32,
     rating: 5.0,
     reviewCount: 31,
@@ -89,8 +85,7 @@ const KIN_FASHION_PRODUCTS: Product[] = [
     title: "Veste Blazer Homme Motif Wax",
     shopName: "Kin Fashion",
     shopCity: "Gombe, Kinshasa",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuB9yB4jT_EWllQ0Jyz_6sP8L6U6TJBieCpo4N14iWX44Lqf6NhR_N9cMGUdXx8F8XjBS8k7IQerHHSdF8le-zwEdfj5EWjJXqkcyg6vOIc3yE0r6QgwoXasMPtd0jSvN-qsXOX8MvrfBxAVn58zBX0cgNhLjCSpEVzu7itavFALvXbvbj7DJuByHzzrk4bhHkqddeq9_SceU6ky8m1MTjdphebh1_Pp6of78UnMuVPltjEmvYU5URQf",
+    image: "/images/products/veste-blazer-homme-wax.jpg",
     usdPrice: 95,
     originalUsdPrice: 120,
     rating: 4.9,
@@ -106,8 +101,7 @@ const KIN_FASHION_PRODUCTS: Product[] = [
     title: "Collier Perles Traditionnel Fait Main",
     shopName: "Kin Fashion",
     shopCity: "Gombe, Kinshasa",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBLv0w9vFhqXfBBrpsI8kaoRQcgGfuv8lyZ-pXbuCJCO6uNH1IlE5aNi4TQMkhsqQezXTth0xcPU-SS2gq4zL3wdyTvCvqWa6QeL3eJ5E5j7zv9wj-INodj5ISw8p3HU0fUSqp2Z7TZ_vt7NqZkFBjOUMvj-xNdqgH0yR5IAsMXHjPlsi_8tMbkrM_gMqR7KGw6odIg8LMdAAr5dJ1U_-AZIpJcpIH-J1ehqad6bhHMJtCVif6hVueD",
+    image: "/images/products/collier-perles-traditionnel.jpg",
     usdPrice: 28,
     rating: 4.8,
     reviewCount: 22,
@@ -121,8 +115,7 @@ const KIN_FASHION_PRODUCTS: Product[] = [
     title: "Robe Longue Évasée Soleil Wax",
     shopName: "Kin Fashion",
     shopCity: "Gombe, Kinshasa",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDWU2bWbtoMLyTOHmtE4iRxCDe7_ae1GjCm98oSo8p5q0_dkCxIbIxkMs62LL-gYiIO6S7X3omYaLORGg1EQ1INeHWY0OkgRlyD0W2mrW3nJeghi4bATwgtVzx3anBfZdvrVnC1Po1Cev7N8pehu34w0qVE7zrhx-oGnYyERKrsE8_9Ol1cjyprYgeL3VWg-iMHFXB6C6I65YFtK3AMWXiWmFPq6H0plyZxKhNAQq5LQ5hKIy54noAT",
+    image: "/images/products/robe-longue-evasee-soleil.jpg",
     usdPrice: 62,
     rating: 4.9,
     reviewCount: 39,
@@ -136,8 +129,7 @@ const KIN_FASHION_PRODUCTS: Product[] = [
     title: "Ensemble Abacost Modernisé Anthracite",
     shopName: "Kin Fashion",
     shopCity: "Gombe, Kinshasa",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDTIrtPGP0FtNVZpS5GXNwdZjeQa5a5X-gQnfA0x13shKuDmI3vkNTJYj0KvGnBAQTwii1mJW-P-9Iv3FDw2P7AsEjGWuWBeur5GbR6mJdBkh1WVxTOq7wiC0F0BptlK3ES_iEq_ufmY4vlAYBLv0lsAx1MdjbMKRUMRDaQEy-GIwOZa_DD-p58lenVWdvhNMFT0VWO3kc8zQDj0rv2xUsQnrw0X8Bp6_9zg4UzzuZuEToW2g6ANmOS",
+    image: "/images/products/ensemble-abacost-modernise.jpg",
     usdPrice: 110,
     rating: 5.0,
     reviewCount: 16,
@@ -151,8 +143,7 @@ const KIN_FASHION_PRODUCTS: Product[] = [
     title: "Bomber Wax & Denim 'Gombe Streetwear'",
     shopName: "Kin Fashion",
     shopCity: "Gombe, Kinshasa",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDdQvR06gCWmj-EozuKva-SOOuUlf42bGPD78JJHoPCg2NjbAMh_EE7ysGahFdjo5bi5UOnJZfhq-AYy5D0u9mpXVgPSpDrnQc3rC-_9lOgafb8TywIAegjAGqIDjO6Ci7gQ32j3N8BuaSBfKxSC0uDNQK4BqN7HMOccFEpVfk6IAQ_yb6RBT4rvkz1tdoQ0wMUbpp9_y6CBlt4hiBXuvDTwpH0-bluTvG8f63EsxcKeQfwCAtWj8Ev",
+    image: "/images/products/bomber-wax-denim-gombe.jpg",
     usdPrice: 52.5,
     originalUsdPrice: 70,
     rating: 4.8,

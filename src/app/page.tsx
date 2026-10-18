@@ -135,7 +135,7 @@ export default function HomePage() {
             <div className="lg:col-span-5 flex justify-center">
               <div className="relative w-full max-w-sm aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border-2 border-white/20">
                 <Image
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-vpy6nciVJGdMIFpvc8MTwNl516DpjthYCN6ZpfKuu0ALmMC3w2vkW0ti1jdR2IWw0E57frBfd7yWmrVze7lqNV1NAoKPKhw9rZsyStIXTwNOcoadfyQJ8rZxhD1KRfT7buduuFTiHxeXgv6ziNqyVLDwVXH2XdWMfecBVHU9NbQitXYj9BfC1WLaqQaFqGSX9VRjG3iwvz68cvv2lDB0Mcwo2_BtJ2GYRQBTgJ5UTjTZvVinsN3Y"
+                  src="/images/hero/commerce-moderne.jpg"
                   alt="Commerce moderne"
                   fill
                   priority
@@ -201,7 +201,7 @@ export default function HomePage() {
               <h2 className="text-xl sm:text-2xl font-bold text-primary font-display">{t("home.categories_title")}</h2>
             </div>
             <Link
-              href="/categories"
+              href="/produits"
               className="text-xs sm:text-sm font-semibold text-secondary hover:underline flex items-center gap-1"
             >
               <span>{t("home.all_catalog")}</span>
@@ -212,7 +212,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {/* Cat 1 */}
             <Link
-              href="/categories/electronique"
+              href="/produits?category=electronique"
               className="group bg-surface-container-lowest p-4 sm:p-5 rounded-lg border border-outline-variant hover:border-secondary hover:shadow-card-hover transition-all text-center flex flex-col items-center"
             >
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-secondary-fixed/50 text-secondary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -226,7 +226,7 @@ export default function HomePage() {
 
             {/* Cat 2 */}
             <Link
-              href="/categories/mode"
+              href="/produits?category=mode"
               className="group bg-surface-container-lowest p-4 sm:p-5 rounded-lg border border-outline-variant hover:border-secondary hover:shadow-card-hover transition-all text-center flex flex-col items-center"
             >
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-surface-container text-primary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -240,7 +240,7 @@ export default function HomePage() {
 
             {/* Cat 3 */}
             <Link
-              href="/categories/maison"
+              href="/produits?category=maison"
               className="group bg-surface-container-lowest p-4 sm:p-5 rounded-lg border border-outline-variant hover:border-secondary hover:shadow-card-hover transition-all text-center flex flex-col items-center"
             >
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-surface-container text-primary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -254,7 +254,7 @@ export default function HomePage() {
 
             {/* Cat 4 */}
             <Link
-              href="/categories/beaute"
+              href="/produits?category=beaute"
               className="group bg-surface-container-lowest p-4 sm:p-5 rounded-lg border border-outline-variant hover:border-secondary hover:shadow-card-hover transition-all text-center flex flex-col items-center"
             >
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-secondary-fixed/50 text-secondary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -268,7 +268,7 @@ export default function HomePage() {
 
             {/* Cat 5 */}
             <Link
-              href="/categories/alimentation"
+              href="/produits?category=alimentation"
               className="group bg-surface-container-lowest p-4 sm:p-5 rounded-lg border border-outline-variant hover:border-secondary hover:shadow-card-hover transition-all text-center flex flex-col items-center"
             >
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-surface-container text-primary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -282,7 +282,7 @@ export default function HomePage() {
 
             {/* Cat 6 */}
             <Link
-              href="/categories"
+              href="/produits"
               className="group bg-surface-container-low p-4 sm:p-5 rounded-lg border border-outline-variant hover:border-secondary hover:bg-surface-container transition-all text-center flex flex-col items-center"
             >
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-surface-container-highest text-on-surface flex items-center justify-center mb-3 group-hover:rotate-90 transition-transform">

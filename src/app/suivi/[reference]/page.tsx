@@ -395,7 +395,7 @@ export default function OrderTrackingPage({ params }: PageProps) {
                       <Image
                         className="w-14 h-14 rounded-full object-cover border-2 border-secondary"
                         alt="Patrick M."
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIbhbLLGsX4daXnhRZDJBzHtUDg1Opl1jh2KumN3VCL-SXJuPFoeROFPbzEmV7gCBU2z_gTS_ybK_MY4KUAYittSiv9IxSkmxHLWcpwAtyXts7DSJbSfZmFDXLJ4viPqZW5NBJ3Sf90Wm6RH3aWhcVFHoPcg-IgRaAcjjZOeUys7HaShzGu01SxGMZ19iJ9bIjQUhnIfpxxppBdlYEq2kFg1VcQ2Qzdm5lxUllMC5po9Y794nAH-Un"
+                        src="/images/driver-courier.jpg"
                         width={56}
                         height={56}
                       />
@@ -466,7 +466,7 @@ export default function OrderTrackingPage({ params }: PageProps) {
                 <div className="py-3.5 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <Image
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoFQdUnDlpLxKt_YJi0oYUfaDziiIUi-Xtv96uMeL_B1tL3Q9vrLZPSubeOa7Neqh69XnKMrpYfS-3bS7FM8pjI872JBjdtnnHQLmgrv0iLiFG6DAApbn_ZoIK0XwlA9suS7hFOLdWC1gDvTNTZgyhbKnv-Lt5K7jMib08ZcO6cfp96HVMgfmcz-TNIukREamfABhZL2yznsqWov1MWuzrQPWx98mP04ZM_EB8kNeZxqTRoB2AXTSR"
+                      src="/images/products/station-energie-solaire-1000w.jpg"
                       alt="Station d'Énergie Solaire Hybride 1000W"
                       width={56}
                       height={56}
@@ -490,7 +490,7 @@ export default function OrderTrackingPage({ params }: PageProps) {
                 <div className="py-3.5 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <Image
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgUeMQPo6fLGbXbFYDbG76bGBhkpjK-N1NcbzhLuu1HPbmGnKM-nP4w_TVtx4LQd-FMiNkDj3Yk7NixZCTKpWWEgHlcaV01HQF0j64fLusJG6x7qjdHve4k-jf_TK2C3ycQ-XT8FtvsQPDKA89XzcMidf4WsCksyEzHdTnvSD_bPM9mNtrNplTXhAdOXL9A6rmElUudfeTaL60SPmIo0voTJ8bIdgvB5i9hNTCI_nQgWTkAcrqO7rA"
+                      src="/images/products/brazza-robe-wax-ndoki.jpg"
                       alt="Robe Wax Kin Fashion Création"
                       width={56}
                       height={56}
@@ -514,7 +514,7 @@ export default function OrderTrackingPage({ params }: PageProps) {
                 <div className="py-3.5 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <Image
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPrkP7xd3lO1jaQRCUMHK8msKxNEHxS3Y5Hn1diue0mvvWsFIBzeHZZyWO9w5a3q8bXYuxJFDrMRmmEhd5HJVg4LDfdCs5x2f0I9UMcWBxb_Inr99uuIitkUrknlNiCQdTF1H0IPhW4XpX_zkdV5dGDMwJIm8ZneC1K9KrDf6kTOBc5I17Oczwr9ZilmvVcL812ZK0yq4Yh1Mf3e9-kueGyUZ0f9qfR0cvd4PwHYsVLmIDD0_oC2Om"
+                      src="/images/products/ventilateur-solaire-16-pouces.jpg"
                       alt="Ventilateur Solaire Silencieux Rechargeable"
                       width={56}
                       height={56}
