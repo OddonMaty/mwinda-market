@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { CountrySelector } from "./CountrySelector";
 import { useCart } from "@/context/CartContext";
@@ -159,25 +160,28 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
             <span className="material-symbols-outlined text-2xl">menu</span>
           </button>
 
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group shrink-0">
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-primary flex items-center justify-center shadow-md">
-              <span
-                className="material-symbols-outlined text-xl md:text-2xl text-tertiary"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                light_mode
-              </span>
-            </div>
-            <div className="hidden sm:block">
-              <span className="text-lg font-black text-primary tracking-tight block leading-tight font-display">
-                Mwinda Market
-              </span>
-              <span className="block text-[9px] text-secondary font-bold -mt-0.5 tracking-widest uppercase">
-                {isRDC ? "Congo Éclairé" : "Pan-Africa Market"}
-              </span>
-            </div>
+          {/* Logo — horizontal officiel (M + Mwinda MARKET) */}
+          <Link href="/" className="flex items-center shrink-0 group" aria-label="Mwinda Market — Accueil">
+            {/* Mobile: monogramme seul pour économiser l'espace */}
+            <Image
+              src="/images/logo-mwinda.png"
+              alt="Mwinda Market"
+              width={40}
+              height={40}
+              className="sm:hidden w-9 h-9 object-contain"
+              priority
+            />
+            {/* Desktop/tablette: logo horizontal complet */}
+            <Image
+              src="/images/logo-mwinda-h-light.png"
+              alt="Mwinda Market"
+              width={200}
+              height={56}
+              className="hidden sm:block h-10 md:h-11 w-auto object-contain"
+              priority
+            />
           </Link>
+
 
           {/* Search bar — desktop & tablet */}
           <div className="hidden md:flex flex-1 max-w-xl lg:max-w-2xl">
@@ -393,9 +397,13 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
             {/* Drawer header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                  <span className="material-symbols-outlined text-lg text-tertiary">light_mode</span>
-                </div>
+                <Image
+                  src="/images/logo-mwinda.png"
+                  alt="Mwinda Market"
+                  width={36}
+                  height={36}
+                  className="w-8 h-8 object-contain"
+                />
                 <span className="font-bold text-primary font-display">Mwinda Market</span>
               </div>
               <button

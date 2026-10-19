@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useMarket } from "@/context/MarketContext";
 import { useT } from "@/i18n";
@@ -47,16 +48,14 @@ export const Footer: React.FC = () => {
 
           {/* Col 1 — Logo + about */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1 space-y-4">
-            <Link href="/" className="flex items-center gap-2 w-fit">
-              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow">
-                <span
-                  className="material-symbols-outlined text-xl text-tertiary"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  light_mode
-                </span>
-              </div>
-              <span className="text-lg font-black text-primary tracking-tight font-display">Mwinda Market</span>
+            <Link href="/" className="w-fit" aria-label="Mwinda Market">
+              <Image
+                src="/images/logo-mwinda-h-light.png"
+                alt="Mwinda Market"
+                width={180}
+                height={50}
+                className="h-10 w-auto object-contain"
+              />
             </Link>
             <p className="text-xs text-on-surface-variant leading-relaxed">
               {t("footer.about_text")}
@@ -185,14 +184,15 @@ export const Footer: React.FC = () => {
       <div className="w-full bg-primary text-white/80">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
           {/* Left: logo + copyright */}
-          <div className="flex items-center gap-2">
-            <span
-              className="material-symbols-outlined text-base text-tertiary"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              light_mode
-            </span>
-            <span className="font-semibold text-white">Mwinda Market</span>
+          <div className="flex items-center gap-3">
+            {/* Logo horizontal inversé sur fond marine */}
+            <Image
+              src="/images/logo-mwinda-h-dark.png"
+              alt="Mwinda Market"
+              width={130}
+              height={36}
+              className="h-7 w-auto object-contain"
+            />
             <span className="text-white/50">·</span>
             <span>© {year} — {t("footer.copyright")}</span>
           </div>
