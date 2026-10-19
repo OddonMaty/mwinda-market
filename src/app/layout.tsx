@@ -39,8 +39,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className="scroll-smooth">
-      <body className="bg-background text-on-surface antialiased font-sans min-h-screen flex flex-col selection:bg-secondary selection:text-white max-w-full">
+    <html lang="fr" className="scroll-smooth" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                  navigator.serviceWorker.getRegistrations().then(function(regs) {
+                    for (var r of regs) r.unregister();
+                  });
+                  if ('caches' in window) {
+                    caches.keys().then(function(keys) {
+                      for (var k of keys) caches.delete(k);
+                    });
+                  }
+                }
+              }
+            `,
+          }}
+        />
+      </head>
+      <body
+        className="bg-background text-on-surface antialiased font-sans min-h-screen flex flex-col selection:bg-secondary selection:text-white max-w-full"
+        suppressHydrationWarning
+      >
         <MarketProvider>
           <CartProvider>
             {children}

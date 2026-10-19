@@ -56,7 +56,7 @@ export function formatLocalPrice(
   const formattedNumber = new Intl.NumberFormat("fr-FR", {
     maximumFractionDigits: ["CDF", "XAF", "XOF", "RWF", "BIF", "UGX"].includes(code) ? 0 : 2,
     minimumFractionDigits: ["CDF", "XAF", "XOF", "RWF", "BIF", "UGX"].includes(code) ? 0 : 2,
-  }).format(amount);
+  }).format(amount).replace(/\u202F/g, " ");
 
   const displaySymbol = symbol || code;
   return `${formattedNumber} ${displaySymbol}`;

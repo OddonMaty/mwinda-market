@@ -43,7 +43,7 @@ export const PriceTag: React.FC<PriceTagProps> = ({
   // Comportement RDC (Comportement historique conservé à 100% à l'identique)
   if (isRdcMarket || marketCurrency.code === "CDF") {
     const cdfPrice = Math.round((usdPrice * rate) / 100) * 100;
-    const formattedCdf = new Intl.NumberFormat("fr-CD").format(cdfPrice);
+    const formattedCdf = new Intl.NumberFormat("fr-CD").format(cdfPrice).replace(/\u202F/g, " ");
 
     return (
       <div className={`flex flex-col ${className}`}>
@@ -57,7 +57,7 @@ export const PriceTag: React.FC<PriceTagProps> = ({
             </span>
           )}
         </div>
-        <p className="text-xs text-on-surface-variant font-medium tnum tracking-tight mt-0.5">
+        <p suppressHydrationWarning className="text-xs text-on-surface-variant font-medium tnum tracking-tight mt-0.5">
           ~ {formattedCdf} CDF
         </p>
       </div>
@@ -78,11 +78,11 @@ export const PriceTag: React.FC<PriceTagProps> = ({
   return (
     <div className={`flex flex-col ${className}`}>
       <div className="flex items-baseline gap-1.5">
-        <span className={`${priceSizes[size]} font-bold text-primary tnum leading-tight`}>
+        <span suppressHydrationWarning className={`${priceSizes[size]} font-bold text-primary tnum leading-tight`}>
           {formattedLocal}
         </span>
         {formattedOriginal && (
-          <span className="text-xs sm:text-sm text-disabled line-through tnum">
+          <span suppressHydrationWarning className="text-xs sm:text-sm text-disabled line-through tnum">
             {formattedOriginal}
           </span>
         )}

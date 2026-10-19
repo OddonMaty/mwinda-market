@@ -240,7 +240,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
             >
               <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
               {displayCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-tertiary text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white">
+                <span suppressHydrationWarning className="absolute -top-1 -right-1 bg-tertiary text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white">
                   {displayCartCount}
                 </span>
               )}
