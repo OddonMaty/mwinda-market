@@ -136,7 +136,21 @@
     "seller_title": "Are you a merchant or importer?",
     "seller_desc": "Scale your business and connect with millions of customers on Mwinda Market.",
     "seller_btn": "Create my certified store",
-    "toast_added": "has been added to your cart"
+    "toast_added": "has been added to your cart",
+    "welcome_title": "Welcome to Mwinda Market",
+    "welcome_desc": "The reliable and fast pan-African marketplace.",
+    "welcome_login": "Sign in",
+    "welcome_register": "Register",
+    "trust_secure_pay": "Secure payment",
+    "trust_escrow": "Mwinda Pay Escrow",
+    "trust_delivery": "Delivery available",
+    "trust_certified": "Certified shops",
+    "promo_tiles_title": "Featured departments",
+    "promo_tile_view": "View",
+    "certified_panel_title": "Mwinda Certified Shops",
+    "promo_panel_title": "Best Deals",
+    "view_all": "View all",
+    "cat_solar": "Solar Power & Inverters"
   },
   "catalog": {
     "breadcrumb_home": "Home",
@@ -222,7 +236,8 @@
     "visit_shop": "Visit store",
     "articles_count": "items",
     "reviews_count": "verified reviews",
-    "certified_seller": "Certified seller"
+    "certified_seller": "Certified seller",
+    "article_count_singular": "item"
   },
   "shop_detail": {
     "breadcrumb_home": "Home",

@@ -6,13 +6,16 @@ import Image from "next/image";
 import { PriceTag } from "./PriceTag";
 import { Badge } from "./Badge";
 import { useCart } from "@/context/CartContext";
-import { getShopIdByName } from "@/data/shops";
+import { getShopIdByName, getShopById } from "@/data/shops";
+import { getCountryByCode } from "@/lib/activeCountries";
 
 export interface Product {
   id: string;
   title: string;
   shopName: string;
   shopCity?: string;
+  shopCountryCode?: string;
+  shopVerified?: boolean;
   image: string;
   usdPrice: number;
   originalUsdPrice?: number;
@@ -55,26 +58,40 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     setIsWishlisted(!isWishlisted);
   };
 
+  const shopId = getShopIdByName(product.shopName);
+  const shopObj = getShopById(shopId);
+  const countryCode = product.shopCountryCode || shopObj?.countryCode || "CD";
+  const flag = getCountryByCode(countryCode)?.flag || "🇨🇩";
+  const isVerified = product.shopVerified ?? shopObj?.verified ?? false;
+  const city = product.shopCity || shopObj?.city;
+
+  // Pastille de réduction : utiliser le badge fourni ou calculer si originalUsdPrice existe
+  const discountText =
+    product.badges?.discount ||
+    (product.originalUsdPrice && product.originalUsdPrice > product.usdPrice
+      ? `-${Math.round(((product.originalUsdPrice - product.usdPrice) / product.originalUsdPrice) * 100)}%`
+      : undefined);
+
   return (
     <div
-      className={`bg-surface-container-lowest rounded-lg border border-outline-variant overflow-hidden custom-shadow hover:custom-shadow-hover transition-all flex flex-col group ${className}`}
+      className={`bg-white rounded-lg border border-[#E2E8F0] overflow-hidden hover:shadow-md transition-shadow flex flex-col group ${className}`}
     >
-      {/* Product Image Area */}
-      <div className="relative aspect-square bg-surface-container-low overflow-hidden">
+      {/* ─── Image carrée ──────────────────────────────────────────────── */}
+      <div className="relative aspect-square bg-slate-50 overflow-hidden">
         <Link href={`/produits/${product.id}`} className="block w-full h-full relative">
           <Image
             src={product.image}
             alt={product.title}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         </Link>
 
-        {/* Badges Stack (Upper Left) */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10 pointer-events-none">
-          {product.badges?.discount && (
-            <Badge variant="discount" text={product.badges.discount} />
+        {/* Badges (maximum 2 en haut à gauche) */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none max-w-[80%]">
+          {discountText && (
+            <Badge variant="discount" text={discountText} />
           )}
           {product.badges?.logistics && (
             <Badge
@@ -84,16 +101,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
-        {/* Wishlist Trigger (Upper Right) */}
+        {/* Bouton favori (visible au survol sur desktop, accessible sur mobile) */}
         <button
           type="button"
           onClick={handleToggleWishlist}
           aria-label="Ajouter aux favoris"
-          className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-white/80 backdrop-blur text-outline hover:text-error transition z-10 shadow-sm"
+          className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 backdrop-blur text-slate-400 hover:text-rose-500 transition-all z-10 shadow-sm opacity-90 lg:opacity-0 lg:group-hover:opacity-100"
         >
           <span
-            className={`material-symbols-outlined text-lg transition-colors ${
-              isWishlisted ? "text-error" : ""
+            className={`material-symbols-outlined text-lg leading-none transition-colors ${
+              isWishlisted ? "text-rose-500" : ""
             }`}
             style={isWishlisted ? { fontVariationSettings: "'FILL' 1" } : {}}
           >
@@ -102,56 +119,75 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </button>
       </div>
 
-      {/* Product Details */}
-      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-        <div>
-          <p className="text-xs text-secondary font-medium truncate">
-            <span>Boutique : </span>
+      {/* ─── Détails Produit ───────────────────────────────────────────── */}
+      <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2.5">
+        <div className="space-y-1.5">
+          {/* Ligne vendeur discrète avec coche vérifié et ville/drapeau */}
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 min-w-0">
+            <span className="select-none shrink-0" title={`Pays : ${countryCode}`}>{flag}</span>
             <Link
-              href={`/boutiques/${getShopIdByName(product.shopName)}`}
+              href={`/boutiques/${shopId}`}
               onClick={(e) => e.stopPropagation()}
-              className="hover:underline font-semibold"
+              className="hover:underline font-medium text-slate-600 truncate flex items-center gap-1 max-w-[140px]"
             >
-              {product.shopName}
+              <span className="truncate">{product.shopName}</span>
+              {isVerified && (
+                <span
+                  className="material-symbols-outlined text-[13px] text-[#0284C7] shrink-0"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                  title="Boutique vérifiée"
+                >
+                  verified
+                </span>
+              )}
             </Link>
-          </p>
+            {city && (
+              <span className="text-slate-400 truncate shrink-0">• {city}</span>
+            )}
+          </div>
+
+          {/* Titre sur 2 lignes */}
           <Link href={`/produits/${product.id}`} className="block">
-            <h3 className="text-sm sm:text-base font-semibold text-primary mt-1 group-hover:text-secondary transition-colors line-clamp-2 leading-snug">
+            <h3 className="text-xs sm:text-sm font-semibold text-[#0B1B3D] group-hover:text-[#0284C7] transition-colors line-clamp-2 leading-snug min-h-[2.5rem]">
               {product.title}
             </h3>
           </Link>
-          <div className="flex items-center gap-1 text-on-tertiary-container text-xs mt-1">
+
+          {/* Note avec nombre d'avis */}
+          <div className="flex items-center gap-1 text-[11px] text-slate-600">
             <span
-              className="material-symbols-outlined text-sm text-on-tertiary-container"
+              className="material-symbols-outlined text-sm text-amber-500 shrink-0"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               star
             </span>
-            <span className="font-bold">{product.rating.toFixed(1)}</span>
-            <span className="text-outline">({product.reviewCount} avis)</span>
+            <span className="font-bold text-slate-800">{product.rating.toFixed(1)}</span>
+            <span className="text-slate-400">({product.reviewCount} avis)</span>
           </div>
         </div>
 
-        {/* Pricing and CTA */}
-        <div className="pt-2 border-t border-outline-variant flex items-center justify-between">
-          <PriceTag
-            usdPrice={product.usdPrice}
-            originalUsdPrice={product.originalUsdPrice}
-            size="md"
-          />
+        {/* ─── Prix et Bouton d'ajout au panier ─────────────────────────── */}
+        <div className="pt-2 border-t border-[#E2E8F0] flex items-end justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <PriceTag
+              usdPrice={product.usdPrice}
+              originalUsdPrice={product.originalUsdPrice}
+              size="md"
+            />
+          </div>
 
           <button
             type="button"
             onClick={handleAddToCart}
             aria-label="Ajouter au panier"
-            className={`p-2.5 rounded-lg transition shadow flex items-center justify-center ${
+            className={`p-2.5 rounded-lg transition-all shadow-sm flex items-center justify-center shrink-0 ${
               added
                 ? "bg-emerald-600 text-white"
-                : "bg-tertiary hover:bg-tertiary-hover text-white active:scale-95"
+                : "bg-[#EA580C] hover:bg-[#c2410c] text-white active:scale-95"
             }`}
             title="Ajouter au panier"
           >
-            <span className="material-symbols-outlined text-xl">
+            <span className="material-symbols-outlined text-lg leading-none">
               {added ? "check" : "add_shopping_cart"}
             </span>
           </button>

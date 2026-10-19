@@ -29,7 +29,7 @@ export const Footer: React.FC = () => {
     <footer className="w-full bg-white border-t border-outline-variant mt-16">
       {/* ─── REASSURANCE BAND ─────────────────────────────────────────────── */}
       <div className="w-full bg-surface-container-low border-b border-outline-variant">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-6 py-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {REASSURANCE.map((item) => (
             <div key={item.icon} className="flex items-center gap-2.5">
               <span className="material-symbols-outlined text-secondary text-xl shrink-0">{item.icon}</span>
@@ -42,7 +42,7 @@ export const Footer: React.FC = () => {
       </div>
 
       {/* ─── MAIN COLUMNS ─────────────────────────────────────────────────── */}
-      <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-10">
+      <div className="max-w-[1280px] mx-auto px-4 lg:px-6 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
 
           {/* Col 1 — Logo + about */}
@@ -183,7 +183,7 @@ export const Footer: React.FC = () => {
 
       {/* ─── BOTTOM BAR ───────────────────────────────────────────────────── */}
       <div className="w-full bg-primary text-white/80">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
           {/* Left: logo + copyright */}
           <div className="flex items-center gap-2">
             <span

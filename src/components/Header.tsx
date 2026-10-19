@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
           LEVEL 1 — Utility bar (desktop only, marine background)
       ───────────────────────────────────────────────────────── */}
       <div className="hidden lg:block w-full bg-primary text-white/90 text-[11px]">
-        <div className="max-w-[1280px] mx-auto px-6 flex items-center justify-between h-8 gap-4">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-6 flex items-center justify-between h-8 gap-4">
           {/* Left: hotline */}
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="material-symbols-outlined text-sm text-tertiary">support_agent</span>
@@ -148,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
           LEVEL 2 — Main bar (white, logo + search + actions)
       ───────────────────────────────────────────────────────── */}
       <div className="w-full bg-white border-b border-outline-variant shadow-sm">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-6 flex items-center gap-3 md:gap-4 h-16 md:h-[72px]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-6 flex items-center gap-3 md:gap-4 h-16 md:h-[72px]">
           {/* Mobile hamburger */}
           <button
             type="button"
@@ -328,7 +328,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
           LEVEL 3 — Navigation bar (desktop only, white)
       ───────────────────────────────────────────────────────── */}
       <div className="hidden lg:block w-full bg-white border-b border-outline-variant">
-        <div className="max-w-[1280px] mx-auto px-6 flex items-center gap-0 h-10">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-6 flex items-center gap-0 h-10">
           {/* All Categories button */}
           <div className="relative shrink-0">
             <button

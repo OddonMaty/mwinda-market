@@ -66,24 +66,16 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant bg-surface hover:bg-surface-container-low transition-all text-left shadow-2xs group ${className}`}
+          className={`flex items-center gap-1.5 px-2 py-1 rounded hover:bg-white/10 text-slate-200 hover:text-white transition text-xs font-medium leading-none group ${className}`}
           title={t("country_selector.change_title")}
         >
-          <span className="text-xl leading-none select-none">{country.flag}</span>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-primary truncate max-w-[110px]">
-                {countryDisplayName}
-              </span>
-              <span className="material-symbols-outlined text-sm text-secondary group-hover:translate-y-0.5 transition-transform">
-                expand_more
-              </span>
-            </div>
-            <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
-              <span className="font-bold text-secondary">{country.currency.code}</span>
-              <span>• {t("country_selector.active_currency")}</span>
-            </span>
-          </div>
+          <span className="text-sm select-none">{country.flag}</span>
+          <span className="truncate max-w-[130px]">{countryDisplayName}</span>
+          <span className="text-white/60">·</span>
+          <span className="font-semibold text-secondary-accent">{country.currency.code}</span>
+          <span className="material-symbols-outlined text-xs text-white/70 group-hover:translate-y-0.5 transition-transform">
+            expand_more
+          </span>
         </button>
       )}
 

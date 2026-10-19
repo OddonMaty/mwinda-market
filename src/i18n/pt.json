@@ -136,7 +136,21 @@
     "seller_title": "É comerciante ou importador?",
     "seller_desc": "Expanda o seu negócio e alcance milhões de clientes no Mwinda Market.",
     "seller_btn": "Criar a minha loja certificada",
-    "toast_added": "foi adicionado ao seu carrinho"
+    "toast_added": "foi adicionado ao seu carrinho",
+    "welcome_title": "Bem-vindo ao Mwinda Market",
+    "welcome_desc": "O marketplace pan-africano fiável e rápido.",
+    "welcome_login": "Entrar",
+    "welcome_register": "Registar",
+    "trust_secure_pay": "Pagamento seguro",
+    "trust_escrow": "Depósito Mwinda Pay",
+    "trust_delivery": "Entrega disponível",
+    "trust_certified": "Lojas certificadas",
+    "promo_tiles_title": "Secções em destaque",
+    "promo_tile_view": "Ver",
+    "certified_panel_title": "Lojas Certificadas Mwinda",
+    "promo_panel_title": "Melhores Promoções",
+    "view_all": "Ver tudo",
+    "cat_solar": "Energia Solar & Inversores"
   },
   "catalog": {
     "breadcrumb_home": "Início",
@@ -222,7 +236,8 @@
     "visit_shop": "Visitar a loja",
     "articles_count": "artigos",
     "reviews_count": "avaliações verificadas",
-    "certified_seller": "Vendedor certificado"
+    "certified_seller": "Vendedor certificado",
+    "article_count_singular": "artigo"
   },
   "shop_detail": {
     "breadcrumb_home": "Início",

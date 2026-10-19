@@ -136,7 +136,21 @@
     "seller_title": "Vous êtes commerçant ou importateur ?",
     "seller_desc": "Développez votre activité et touchez des millions de clients sur Mwinda Market.",
     "seller_btn": "Créer ma boutique certifiée",
-    "toast_added": "a été ajouté à votre panier"
+    "toast_added": "a été ajouté à votre panier",
+    "welcome_title": "Bienvenue sur Mwinda Market",
+    "welcome_desc": "La marketplace panafricaine fiable et rapide.",
+    "welcome_login": "Connexion",
+    "welcome_register": "Inscription",
+    "trust_secure_pay": "Paiement sécurisé",
+    "trust_escrow": "Séquestre Mwinda Pay",
+    "trust_delivery": "Livraison disponible",
+    "trust_certified": "Boutiques certifiées",
+    "promo_tiles_title": "Rayons en vedette",
+    "promo_tile_view": "Voir",
+    "certified_panel_title": "Boutiques certifiées Mwinda",
+    "promo_panel_title": "Meilleures promotions",
+    "view_all": "Tout voir",
+    "cat_solar": "Énergie Solaire & Onduleurs"
   },
   "catalog": {
     "breadcrumb_home": "Accueil",
@@ -222,7 +236,8 @@
     "visit_shop": "Visiter la boutique",
     "articles_count": "articles",
     "reviews_count": "avis vérifiés",
-    "certified_seller": "Vendeur certifié"
+    "certified_seller": "Vendeur certifié",
+    "article_count_singular": "article"
   },
   "shop_detail": {
     "breadcrumb_home": "Accueil",

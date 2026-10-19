@@ -164,6 +164,8 @@ export function toProductCard(p: ElectronicProduct) {
     title: p.title,
     shopName: p.shopName,
     shopCity: p.shopCity,
+    shopCountryCode: getProductCountryCode(p),
+    shopVerified: p.shopVerified,
     image: p.image,
     usdPrice: p.usdPrice,
     originalUsdPrice: p.originalUsdPrice,

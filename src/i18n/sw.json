@@ -136,7 +136,21 @@
     "seller_title": "Je, wewe ni mfanyabiashara au mwagizaji?",
     "seller_desc": "Kua biashara yako na uwafikie mamilioni ya wateja kwenye Mwinda Market.",
     "seller_btn": "Fungua duka langu lililoidhinishwa",
-    "toast_added": "imeongezwa kwenye rukwama yako"
+    "toast_added": "imeongezwa kwenye rukwama yako",
+    "welcome_title": "Karibu Mwinda Market",
+    "welcome_desc": "Soko la kuaminika na la haraka la Afrika nzima.",
+    "welcome_login": "Ingia",
+    "welcome_register": "Jisajili",
+    "trust_secure_pay": "Malipo salama",
+    "trust_escrow": "Dhamana ya Mwinda Pay",
+    "trust_delivery": "Uwasilishaji unapatikana",
+    "trust_certified": "Maduka yaliyothibitishwa",
+    "promo_tiles_title": "Idara zilizoangaziwa",
+    "promo_tile_view": "Tazama",
+    "certified_panel_title": "Maduka Yaliyothibitishwa ya Mwinda",
+    "promo_panel_title": "Ofa Bora",
+    "view_all": "Tazama yote",
+    "cat_solar": "Nishati ya Jua na Vigeuzi"
   },
   "catalog": {
     "breadcrumb_home": "Nyumbani",
@@ -222,7 +236,8 @@
     "visit_shop": "Tembelea duka",
     "articles_count": "bidhaa",
     "reviews_count": "maoni yaliyothibitishwa",
-    "certified_seller": "Muuzaji aliyeidhinishwa"
+    "certified_seller": "Muuzaji aliyeidhinishwa",
+    "article_count_singular": "bidhaa"
   },
   "shop_detail": {
     "breadcrumb_home": "Nyumbani",

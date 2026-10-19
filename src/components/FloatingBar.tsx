@@ -34,12 +34,11 @@ export const FloatingBar: React.FC = () => {
         href={whatsapp}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex flex-col items-center gap-0.5 w-12 py-2.5 bg-[#25D366] text-white rounded-xl shadow-lg hover:bg-[#1db954] transition-all hover:-translate-y-0.5 active:translate-y-0"
+        className="w-11 h-11 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:bg-[#1db954] transition-all hover:scale-105 active:scale-95"
         title={t("floatbar.float_support")}
         aria-label={t("floatbar.float_support")}
       >
-        <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
-        <span className="text-[9px] font-bold leading-none text-center">{t("floatbar.float_support")}</span>
+        <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
       </a>
 
       {/* Back to top — only visible after scroll */}
@@ -47,12 +46,11 @@ export const FloatingBar: React.FC = () => {
         <button
           type="button"
           onClick={scrollToTop}
-          className="flex flex-col items-center gap-0.5 w-12 py-2.5 bg-primary text-white rounded-xl shadow-lg hover:bg-primary/90 transition-all hover:-translate-y-0.5 active:translate-y-0 animate-in fade-in slide-in-from-bottom-2 duration-200"
+          className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-2 duration-200"
           title={t("floatbar.float_top")}
           aria-label={t("floatbar.float_top")}
         >
-          <span className="material-symbols-outlined text-xl">arrow_upward</span>
-          <span className="text-[9px] font-bold leading-none">{t("floatbar.float_top")}</span>
+          <span className="material-symbols-outlined text-2xl">arrow_upward</span>
         </button>
       )}
     </div>
