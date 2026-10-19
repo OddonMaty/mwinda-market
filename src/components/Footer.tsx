@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useMarket } from "@/context/MarketContext";
 import { useT } from "@/i18n";
-import { AFRICAN_COUNTRIES } from "@/data/countries";
+import { getActiveCountries } from "@/lib/activeCountries";
 
 const REASSURANCE = [
   { icon: "lock", labelKey: "reassurance_secure_pay" as const },
@@ -18,9 +18,10 @@ const REASSURANCE = [
 const PAYMENT_BADGES = ["M-Pesa", "Airtel Money", "Orange Money", "Visa", "Mastercard"];
 
 export const Footer: React.FC = () => {
-  const { country, isRDC, setCountry } = useMarket();
+  const { country, language, isRDC, setCountry } = useMarket();
   const { t } = useT();
 
+  const activeCountries = getActiveCountries();
   const year = new Date().getFullYear();
   const whatsapp = isRDC ? "+243818900125" : country.phoneCode.replace("+", "") + "800000";
 
@@ -154,24 +155,27 @@ export const Footer: React.FC = () => {
             <h4 className="text-sm font-bold text-on-surface uppercase tracking-wide border-b border-outline-variant pb-1.5">
               {t("footer.col_countries")}
             </h4>
-            <ul className="grid grid-cols-2 md:grid-cols-1 gap-x-4 gap-y-1 max-h-52 overflow-y-auto pr-1">
-              {AFRICAN_COUNTRIES.map((c) => (
-                <li key={c.code}>
-                  <button
-                    type="button"
-                    onClick={() => setCountry(c.code)}
-                    className={`flex items-center gap-1.5 text-xs w-full text-left py-0.5 rounded transition ${
-                      c.code === country.code
-                        ? "text-secondary font-bold"
-                        : "text-on-surface-variant hover:text-secondary"
-                    }`}
-                    title={c.name.fr}
-                  >
-                    <span>{c.flag}</span>
-                    <span className="truncate">{c.name.fr}</span>
-                  </button>
-                </li>
-              ))}
+            <ul className="grid grid-cols-2 md:grid-cols-1 gap-x-4 gap-y-1">
+              {activeCountries.map((c) => {
+                const countryName = language === "en" ? c.name.en : c.name.fr;
+                return (
+                  <li key={c.code}>
+                    <button
+                      type="button"
+                      onClick={() => setCountry(c.code)}
+                      className={`flex items-center gap-1.5 text-xs w-full text-left py-0.5 rounded transition ${
+                        c.code === country.code
+                          ? "text-secondary font-bold"
+                          : "text-on-surface-variant hover:text-secondary"
+                      }`}
+                      title={countryName}
+                    >
+                      <span>{c.flag}</span>
+                      <span className="truncate">{countryName}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

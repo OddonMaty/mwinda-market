@@ -30,6 +30,8 @@ const CATEGORY_SLUG_MAP: Record<string, string> = {
   food: "Alimentation & Produits Frais",
   solaire: "Énergie Solaire & Onduleurs",
   energie: "Énergie Solaire & Onduleurs",
+  "energie-solaire": "Énergie Solaire & Onduleurs",
+  solar: "Énergie Solaire & Onduleurs",
   smartphones: "Smartphones & Tablettes",
   audio: "Audio & Écouteurs",
   informatique: "Informatique & Ordinateurs",
