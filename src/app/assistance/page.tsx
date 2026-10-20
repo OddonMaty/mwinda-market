@@ -5,9 +5,10 @@ import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useT } from "@/i18n";
+import { CONTACT_CONFIG } from "@/config/contact";
 
-const PHONE = "+243 81 000 0000";
-const WHATSAPP_LINK = "https://wa.me/243810000000";
+const PHONE = CONTACT_CONFIG.phoneRaw;
+const WHATSAPP_LINK = CONTACT_CONFIG.whatsappLink;
 
 export default function AssistancePage() {
   const { t } = useT();
@@ -124,8 +125,8 @@ export default function AssistancePage() {
           </div>
           <div className="flex items-center gap-2 text-sm text-white/80 pt-1">
             <span className="material-symbols-outlined text-base">mail</span>
-            <a href={`mailto:${t("help.contact_email")}`} className="hover:text-white transition underline underline-offset-2">
-              {t("help.contact_email")}
+            <a href={`mailto:${CONTACT_CONFIG.email}`} className="hover:text-white transition underline underline-offset-2">
+              {CONTACT_CONFIG.email}
             </a>
           </div>
         </div>

@@ -17,6 +17,7 @@ import {
   getAllShopNames,
   toProductCard,
 } from "@/lib/marketData";
+import { matchProductToCategory } from "@/config/categories";
 
 const CATEGORY_SLUG_MAP: Record<string, string> = {
   electronique: "Électronique",
@@ -25,10 +26,10 @@ const CATEGORY_SLUG_MAP: Record<string, string> = {
   fashion: "Mode & Habillement",
   maison: "Maison & Décoration",
   home: "Maison & Décoration",
-  beaute: "Beauté & Cosmétiques",
-  beauty: "Beauté & Cosmétiques",
-  alimentation: "Alimentation & Produits Frais",
-  food: "Alimentation & Produits Frais",
+  beaute: "Beauté & Santé",
+  beauty: "Beauté & Santé",
+  alimentation: "Alimentation",
+  food: "Alimentation",
   solaire: "Énergie Solaire & Onduleurs",
   energie: "Énergie Solaire & Onduleurs",
   "energie-solaire": "Énergie Solaire & Onduleurs",
@@ -176,7 +177,7 @@ function CatalogContent() {
     let result = [...allProducts];
 
     if (selectedSubCategory !== "Tous") {
-      result = result.filter((p) => p.category === selectedSubCategory);
+      result = result.filter((p) => matchProductToCategory(p.category, selectedSubCategory));
     }
 
     if (regionSearchText.trim()) {

@@ -7,6 +7,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Badge } from "@/components/Badge";
 import { PriceTag } from "@/components/PriceTag";
+import { CONTACT_CONFIG } from "@/config/contact";
 import { useT } from "@/i18n";
 
 interface PageProps {
@@ -32,9 +33,9 @@ export default function OrderTrackingPage({ params }: PageProps) {
 
   const statusVariant = isDelivered ? "verified" : isTransit ? "interprovincial" : "express";
 
-  // B-03: une référence valide suit le pattern MWD-YYYY-NNN
-  // Les patterns connus de simulation (MWD-2024-*, MWD-2025-*) sont acceptés
-  const isValidRef = /^MWD-\d{4}-\d{3,}$/i.test(reference) ||
+  // Référence valide : format MW-XXXX ou historique MWD-YYYY-NNN
+  const isValidRef = /^MW-\d{4,}/i.test(reference) ||
+    /^MWD-\d{4}-\d{3,}$/i.test(reference) ||
     reference.includes("MW-") ||
     reference.includes("MWD");
 
@@ -171,7 +172,7 @@ export default function OrderTrackingPage({ params }: PageProps) {
               </button>
 
               <a
-                href="tel:+243818900125"
+                href={`tel:${CONTACT_CONFIG.phoneRaw}`}
                 className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-primary hover:bg-slate-800 text-white text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95"
               >
                 <span className="material-symbols-outlined text-base text-emerald-400">call</span>
@@ -431,14 +432,14 @@ export default function OrderTrackingPage({ params }: PageProps) {
 
                   <div className="flex items-center gap-2 self-stretch sm:self-auto print:hidden">
                     <a
-                      href="tel:+243818900125"
+                      href={`tel:${CONTACT_CONFIG.phoneRaw}`}
                       className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 h-10 px-3.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-slate-800 transition shadow-sm"
                     >
                       <span className="material-symbols-outlined text-base">phone</span>
-                      <span>{t("tracking.call_courier")} (+243 81...)</span>
+                      <span>{t("tracking.call_courier")}</span>
                     </a>
                     <a
-                      href="https://wa.me/243818900125"
+                      href={CONTACT_CONFIG.whatsappLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 h-10 px-3.5 rounded-xl bg-[#25D366] text-white text-xs font-bold hover:bg-[#1EBE5D] transition shadow-sm"
@@ -744,9 +745,9 @@ export default function OrderTrackingPage({ params }: PageProps) {
               <div className="pt-3 border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
                 <span className="text-on-surface-variant font-medium">{t("tracking.support_race")}</span>
                 <div className="flex items-center gap-3">
-                  <a href="tel:+243810009999" className="text-secondary font-bold hover:underline flex items-center gap-1">
+                  <a href={`tel:${CONTACT_CONFIG.phoneRaw}`} className="text-secondary font-bold hover:underline flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">support_agent</span>
-                    <span>{t("tracking.support_247")} (+243 81)</span>
+                    <span>{t("tracking.support_247")} ({CONTACT_CONFIG.phone})</span>
                   </a>
                 </div>
               </div>

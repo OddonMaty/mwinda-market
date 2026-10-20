@@ -9,9 +9,12 @@ import { useCart } from "@/context/CartContext";
 import { getShopIdByName, getShopById } from "@/data/shops";
 import { getCountryByCode } from "@/lib/activeCountries";
 
+import { getDiscountBadgeText } from "@/lib/discounts";
+
 export interface Product {
   id: string;
   title: string;
+  shopId?: string;
   shopName: string;
   shopCity?: string;
   shopCountryCode?: string;
@@ -60,19 +63,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     setIsWishlisted(!isWishlisted);
   };
 
-  const shopId = getShopIdByName(product.shopName);
+  const shopId = product.shopId || getShopIdByName(product.shopName);
   const shopObj = getShopById(shopId);
   const countryCode = product.shopCountryCode || shopObj?.countryCode || "CD";
   const flag = getCountryByCode(countryCode)?.flag || "🇨🇩";
   const isVerified = product.shopVerified ?? shopObj?.verified ?? false;
   const city = product.shopCity || shopObj?.city;
 
-  // Pastille de réduction : utiliser le badge fourni ou calculer si originalUsdPrice existe
+  // Pastille de réduction : calculée dynamiquement à partir des prix réels
+  const computedDiscount = getDiscountBadgeText(product.usdPrice, product.originalUsdPrice);
   const discountText =
-    product.badges?.discount ||
-    (product.originalUsdPrice && product.originalUsdPrice > product.usdPrice
-      ? `-${Math.round(((product.originalUsdPrice - product.usdPrice) / product.originalUsdPrice) * 100)}%`
-      : undefined);
+    computedDiscount ||
+    (product.badges?.discount?.includes("%") ? undefined : product.badges?.discount);
 
   return (
     <div
@@ -91,7 +93,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             src={product.image}
             alt={product.title}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            sizes={
+              layout === "list"
+                ? "(max-width: 640px) 100vw, 176px"
+                : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
+            }
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         </Link>

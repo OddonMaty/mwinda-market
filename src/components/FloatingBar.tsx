@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useMarket } from "@/context/MarketContext";
 import { useT } from "@/i18n";
+import { CONTACT_CONFIG } from "@/config/contact";
 
 export const FloatingBar: React.FC = () => {
   const [showTop, setShowTop] = useState(false);
-  const { country, isRDC } = useMarket();
   const { t } = useT();
 
   useEffect(() => {
@@ -18,9 +17,7 @@ export const FloatingBar: React.FC = () => {
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  const whatsapp = isRDC
-    ? "https://wa.me/243818900125"
-    : `https://wa.me/${country.phoneCode.replace("+", "")}800000`;
+  const whatsapp = CONTACT_CONFIG.whatsappLink;
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 

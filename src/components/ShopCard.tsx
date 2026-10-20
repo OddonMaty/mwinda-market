@@ -112,16 +112,22 @@ export const ShopCard: React.FC<ShopCardProps> = ({ shop, className = "" }) => {
             <span className="material-symbols-outlined text-[15px] text-slate-400">
               inventory_2
             </span>
-            <span>
-              <strong className="font-bold text-[#0B1B3D]">{shop.productCount}</strong>{" "}
-              {shop.productCount > 1
-                ? t("shops.articles_count")
-                : t("shops.article_count_singular")}
-            </span>
+            {shop.productCount > 0 ? (
+              <span>
+                <strong className="font-bold text-[#0B1B3D]">{shop.productCount}</strong>{" "}
+                {shop.productCount > 1
+                  ? t("shops.articles_count")
+                  : t("shops.article_count_singular")}
+              </span>
+            ) : (
+              <span className="text-slate-500 italic">
+                {t("shops.catalog_coming_soon")}
+              </span>
+            )}
           </div>
 
-          {/* Miniatures des produits phares */}
-          {shop.productPreviews && shop.productPreviews.length > 0 && (
+          {/* Miniatures des produits phares ou état catalogue bientôt disponible */}
+          {shop.productCount > 0 && shop.productPreviews && shop.productPreviews.length > 0 ? (
             <div className="pt-2.5 mt-2 border-t border-[#E2E8F0]">
               <span className="text-[10px] text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
                 {t("shops.featured_products")}
@@ -142,6 +148,14 @@ export const ShopCard: React.FC<ShopCardProps> = ({ shop, className = "" }) => {
                     />
                   </div>
                 ))}
+              </div>
+            </div>
+          ) : (
+            <div className="pt-2.5 mt-2 border-t border-[#E2E8F0]">
+              <div className="rounded bg-slate-50 border border-dashed border-[#E2E8F0] py-3 px-2 text-center">
+                <span className="text-xs text-slate-500 font-medium">
+                  {t("shops.catalog_coming_soon")}
+                </span>
               </div>
             </div>
           )}

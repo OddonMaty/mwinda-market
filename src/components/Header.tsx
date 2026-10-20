@@ -7,34 +7,18 @@ import { CountrySelector } from "./CountrySelector";
 import { useCart } from "@/context/CartContext";
 import { useMarket, SupportedLanguage, SUPPORTED_LANGUAGES } from "@/context/MarketContext";
 import { useT } from "@/i18n";
+import { CONTACT_CONFIG } from "@/config/contact";
+import { getActiveCategories } from "@/config/categories";
+import { getAllProducts } from "@/lib/marketData";
 
 interface HeaderProps {
   cartCount?: number;
 }
 
-const CATEGORIES = [
-  { slug: "electronique", labelKey: "cat_electronics" as const, icon: "devices" },
-  { slug: "energie-solaire", labelKey: "cat_solar" as const, icon: "solar_power" },
-  { slug: "mode", labelKey: "cat_fashion" as const, icon: "checkroom" },
-  { slug: "maison", labelKey: "cat_home" as const, icon: "chair" },
-  { slug: "beaute", labelKey: "cat_beauty" as const, icon: "spa" },
-  { slug: "alimentation", labelKey: "cat_food" as const, icon: "restaurant" },
-];
-
-// Fallback labels when keys might not be in i18n yet
-const CAT_LABELS_FR: Record<string, string> = {
-  cat_electronics: "Électronique",
-  cat_solar: "Énergie Solaire",
-  cat_fashion: "Mode & Wax",
-  cat_home: "Maison & Artisanat",
-  cat_beauty: "Beauté & Bien-être",
-  cat_food: "Alimentation",
-};
-
 export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const { totalCount } = useCart();
   const displayCartCount = totalCount !== undefined ? totalCount : (cartCount ?? 0);
-  const { country, language, setLanguage, availableLanguages, isRDC } = useMarket();
+  const { language, setLanguage, availableLanguages } = useMarket();
   const { t } = useT();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -43,6 +27,9 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const [catPanelOpen, setCatPanelOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const catBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Catégories actives (exclut celles ayant 0 produit)
+  const activeCategories = React.useMemo(() => getActiveCategories(getAllProducts()), []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +41,8 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const currentLangObj =
     SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0];
 
-  const hotline = isRDC ? "+243 81 000 9999" : `${country.phoneCode} 800 000`;
+  const hotline = CONTACT_CONFIG.phone;
+  const hotlineRaw = CONTACT_CONFIG.phoneRaw;
 
   // Close cat panel on outside click
   useEffect(() => {
@@ -79,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="material-symbols-outlined text-sm text-tertiary">support_agent</span>
             <span className="font-medium">{t("header.utility_hotline_prefix")}</span>
-            <a href={`tel:${hotline}`} className="font-bold hover:text-secondary-accent transition">
+            <a href={`tel:${hotlineRaw}`} className="font-bold hover:text-secondary-accent transition">
               {hotline}
             </a>
           </div>
@@ -350,7 +338,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setCatPanelOpen(false)} />
                 <div className="absolute left-0 top-full mt-0 w-56 bg-white border border-outline-variant rounded-b-xl shadow-modal z-40 py-1 overflow-hidden">
-                  {CATEGORIES.map((cat) => (
+                  {activeCategories.map((cat) => (
                     <Link
                       key={cat.slug}
                       href={`/produits?category=${cat.slug}`}
@@ -358,7 +346,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                       className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container-low hover:text-secondary transition"
                     >
                       <span className="material-symbols-outlined text-base text-secondary">{cat.icon}</span>
-                      <span>{CAT_LABELS_FR[cat.labelKey] || cat.slug}</span>
+                      <span>{t(`header.${cat.labelKey}`) || cat.defaultLabel}</span>
                     </Link>
                   ))}
                 </div>

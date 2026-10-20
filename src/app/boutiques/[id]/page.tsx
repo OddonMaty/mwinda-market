@@ -8,7 +8,6 @@ import { Footer } from "@/components/Footer";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { ProductCard, Product } from "@/components/ProductCard";
 import { SHOPS_DATA, getShopById, Shop } from "@/data/shops";
-import { ELECTRONICS_PRODUCTS } from "@/data/electronics";
 import { getCountryByCode } from "@/lib/activeCountries";
 import { getShopCountryCode, getProductsByShop, toProductCard } from "@/lib/marketData";
 import { useT } from "@/i18n";
@@ -18,143 +17,6 @@ interface PageProps {
     id: string;
   };
 }
-
-// Dedicated catalogue items for Kin Fashion matching the Stitch mockup
-const KIN_FASHION_PRODUCTS: Product[] = [
-  {
-    id: "robe-wax-kinshasa-chic",
-    title: "Robe Wax Moderne 'Kinshasa Chic'",
-    shopName: "Kin Fashion",
-    shopCity: "Gombe, Kinshasa",
-    image: "/images/products/robe-wax-kinshasa-chic.jpg",
-    usdPrice: 58,
-    originalUsdPrice: 72,
-    rating: 4.9,
-    reviewCount: 64,
-    badges: {
-      discount: "-20%",
-      logistics: "express",
-      logisticsText: "Kin Express 24h",
-    },
-  },
-  {
-    id: "chemise-lin-pagne-homme",
-    title: "Chemise Lin & Pagne Homme",
-    shopName: "Kin Fashion",
-    shopCity: "Gombe, Kinshasa",
-    image: "/images/products/chemise-lin-pagne-homme.jpg",
-    usdPrice: 45,
-    rating: 4.8,
-    reviewCount: 42,
-    badges: {
-      logistics: "express",
-      logisticsText: "Nouveau",
-    },
-  },
-  {
-    id: "ensemble-tailleur-africain",
-    title: "Ensemble Tailleur Indigo Africain",
-    shopName: "Kin Fashion",
-    shopCity: "Gombe, Kinshasa",
-    image: "/images/products/ensemble-tailleur-africain.jpg",
-    usdPrice: 85,
-    originalUsdPrice: 95,
-    rating: 5.0,
-    reviewCount: 29,
-    badges: {
-      logistics: "origin-rdc",
-      logisticsText: "Fait main RDC",
-    },
-  },
-  {
-    id: "robe-fillette-princesse-wax",
-    title: "Robe fillette fête 'Princesse Wax'",
-    shopName: "Kin Fashion",
-    shopCity: "Gombe, Kinshasa",
-    image: "/images/products/robe-fillette-princesse-wax.jpg",
-    usdPrice: 32,
-    rating: 5.0,
-    reviewCount: 31,
-    badges: {
-      logistics: "express",
-      logisticsText: "Kin Express 24h",
-    },
-  },
-  {
-    id: "veste-blazer-homme-wax",
-    title: "Veste Blazer Homme Motif Wax",
-    shopName: "Kin Fashion",
-    shopCity: "Gombe, Kinshasa",
-    image: "/images/products/veste-blazer-homme-wax.jpg",
-    usdPrice: 95,
-    originalUsdPrice: 120,
-    rating: 4.9,
-    reviewCount: 47,
-    badges: {
-      discount: "Top Vente",
-      logistics: "express",
-      logisticsText: "Kin Express 24h",
-    },
-  },
-  {
-    id: "collier-perles-traditionnel",
-    title: "Collier Perles Traditionnel Fait Main",
-    shopName: "Kin Fashion",
-    shopCity: "Gombe, Kinshasa",
-    image: "/images/products/collier-perles-traditionnel.jpg",
-    usdPrice: 28,
-    rating: 4.8,
-    reviewCount: 22,
-    badges: {
-      logistics: "origin-rdc",
-      logisticsText: "Fait main RDC",
-    },
-  },
-  {
-    id: "robe-longue-evasee-soleil",
-    title: "Robe Longue Évasée Soleil Wax",
-    shopName: "Kin Fashion",
-    shopCity: "Gombe, Kinshasa",
-    image: "/images/products/robe-longue-evasee-soleil.jpg",
-    usdPrice: 62,
-    rating: 4.9,
-    reviewCount: 39,
-    badges: {
-      logistics: "express",
-      logisticsText: "Kin Express 24h",
-    },
-  },
-  {
-    id: "ensemble-abacost-modernise",
-    title: "Ensemble Abacost Modernisé Anthracite",
-    shopName: "Kin Fashion",
-    shopCity: "Gombe, Kinshasa",
-    image: "/images/products/ensemble-abacost-modernise.jpg",
-    usdPrice: 110,
-    rating: 5.0,
-    reviewCount: 16,
-    badges: {
-      logistics: "origin-rdc",
-      logisticsText: "Nouveau",
-    },
-  },
-  {
-    id: "bomber-wax-denim-gombe",
-    title: "Bomber Wax & Denim 'Gombe Streetwear'",
-    shopName: "Kin Fashion",
-    shopCity: "Gombe, Kinshasa",
-    image: "/images/products/bomber-wax-denim-gombe.jpg",
-    usdPrice: 52.5,
-    originalUsdPrice: 70,
-    rating: 4.8,
-    reviewCount: 58,
-    badges: {
-      discount: "-25%",
-      logistics: "express",
-      logisticsText: "Streetwear",
-    },
-  },
-];
 
 export default function ShopDetailPage({ params }: PageProps) {
   const shopId = params?.id || "kin-fashion";
@@ -174,25 +36,10 @@ export default function ShopDetailPage({ params }: PageProps) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [contactFeedback, setContactFeedback] = useState<string | null>(null);
 
-  // Déterminer la liste des produits de la boutique
+  // Déterminer la liste des produits réels de la boutique (aucune donnée fictive)
   const baseProducts: Product[] = useMemo(() => {
-    if (shop.id === "kin-fashion" || shop.category.includes("Mode")) {
-      return KIN_FASHION_PRODUCTS;
-    }
-    const directShopProducts = getProductsByShop(shop.id);
-    if (directShopProducts.length > 0) {
-      return directShopProducts.map(toProductCard);
-    }
-    const matched = ELECTRONICS_PRODUCTS.filter(
-      (p) =>
-        p.shopName.toLowerCase().includes(shop.name.toLowerCase().split(" ")[0]) ||
-        shop.specialties.some((s) => p.title.toLowerCase().includes(s.toLowerCase()))
-    );
-    if (matched.length > 0) {
-      return matched.map(toProductCard);
-    }
-    return ELECTRONICS_PRODUCTS.slice(0, 8).map(toProductCard);
-  }, [shop]);
+    return getProductsByShop(shop.id).map(toProductCard);
+  }, [shop.id]);
 
   // Filtrer et trier les produits
   const displayedProducts = useMemo(() => {
@@ -294,7 +141,7 @@ export default function ShopDetailPage({ params }: PageProps) {
               </span>
               <span className="bg-[#0B1B3D]/80 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold text-white border border-white/20 flex items-center gap-1 shadow-xs">
                 <span className="material-symbols-outlined text-sm text-[#EA580C]">local_shipping</span>
-                <span>{shopCountryCode === "cd" ? "26 Provinces" : t("shop_detail.regions_covered")}</span>
+                <span>{shopCountryCode === "cd" ? t("shop_detail.shipping_rdc") : t("shop_detail.regions_covered")}</span>
               </span>
             </div>
           </div>
@@ -540,7 +387,26 @@ export default function ShopDetailPage({ params }: PageProps) {
               </span>
             </div>
 
-            {displayedProducts.length === 0 ? (
+            {baseProducts.length === 0 ? (
+              <div className="bg-white rounded-lg border border-[#E2E8F0] p-10 text-center space-y-3 shadow-2xs">
+                <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
+                  <span className="material-symbols-outlined text-3xl">inventory_2</span>
+                </div>
+                <h3 className="text-base font-bold text-[#0B1B3D]">
+                  {t("shops.catalog_coming_soon")}
+                </h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  {t("shop_detail.catalog_prep_desc")}
+                </p>
+                <Link
+                  href="/boutiques"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#EA580C] text-white text-xs font-bold hover:bg-[#c2410c] transition shadow-xs mt-2"
+                >
+                  <span className="material-symbols-outlined text-sm">storefront</span>
+                  <span>{t("shops.view_other_shops")}</span>
+                </Link>
+              </div>
+            ) : displayedProducts.length === 0 ? (
               <div className="bg-white rounded-lg border border-[#E2E8F0] p-8 text-center space-y-3 shadow-2xs">
                 <span className="material-symbols-outlined text-3xl text-slate-400">inventory</span>
                 <h3 className="text-sm font-bold text-[#0B1B3D]">

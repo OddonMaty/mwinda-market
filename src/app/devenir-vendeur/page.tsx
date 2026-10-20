@@ -103,19 +103,19 @@ export default function DevenirVendeurPage() {
                   </a>
                 </div>
 
-                {/* Micro stats */}
+                {/* Micro engagements réels */}
                 <div className="grid grid-cols-3 gap-3 pt-6 border-t border-outline-variant/60 w-full max-w-lg">
                   <div className="flex flex-col">
-                    <span className="text-base font-bold text-primary">+2 450</span>
-                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_active_shops")}</span>
+                    <span className="text-base font-bold text-primary">100%</span>
+                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_free_registration") || "Inscription gratuite"}</span>
                   </div>
                   <div className="flex flex-col border-x border-outline-variant/50 px-3">
                     <span className="text-base font-bold text-secondary">24h</span>
-                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_payout_delay")}</span>
+                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_payout_delay") || "Reversement Mobile Money"}</span>
                   </div>
                   <div className="flex flex-col pl-2">
-                    <span className="text-base font-bold text-primary">98%</span>
-                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_satisfaction")}</span>
+                    <span className="text-base font-bold text-primary">7j/7</span>
+                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_dedicated_support") || "Support WhatsApp dédié"}</span>
                   </div>
                 </div>
               </div>
@@ -152,16 +152,16 @@ export default function DevenirVendeurPage() {
                       </div>
                     </div>
 
-                    {/* Badge bottom-right: monthly revenue */}
+                    {/* Badge bottom-right: reversement garanti */}
                     <div className="absolute bottom-4 right-4 bg-primary-container/95 text-white backdrop-blur-md px-4 py-2.5 rounded-lg border border-white/10 shadow-lg flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-[#EA580C] flex items-center justify-center text-white">
-                        <span className="material-symbols-outlined text-xl">trending_up</span>
+                        <span className="material-symbols-outlined text-xl">payments</span>
                       </div>
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300 block">
-                          {t("become_seller.badge_monthly_sales")}
+                          {t("become_seller.badge_payout_direct") || "Paiements vérifiés"}
                         </span>
-                        <span className="text-base font-black text-white">+4 800 $</span>
+                        <span className="text-xs font-bold text-white">Mobile Money & Banque</span>
                       </div>
                     </div>
 
@@ -701,7 +701,7 @@ export default function DevenirVendeurPage() {
                     <div>
                       <label className="block text-sm font-semibold text-primary mb-1.5">
                         {t("become_seller.label_logo")}{" "}
-                        <span className="text-on-surface-variant font-normal">{t("cart.optional") || "(optionnel)"}</span>
+                        <span className="text-on-surface-variant font-normal">{t("vendor.optional") || "(optionnel)"}</span>
                       </label>
                       <div className="border-2 border-dashed border-outline-variant rounded-lg p-2.5 text-center hover:border-secondary transition-colors bg-surface-container-low/40 cursor-pointer">
                         <p className="text-xs text-on-surface-variant">
@@ -780,86 +780,66 @@ export default function DevenirVendeurPage() {
           </div>
         </section>
 
-        {/* ─── RÉASSURANCE (TÉMOIGNAGES + STATS) ──────────────────── */}
+        {/* ─── RÉASSURANCE & ENGAGEMENTS VENDEURS ──────────────────── */}
         <section className="py-14 bg-surface-container-low/60 border-t border-outline-variant">
           <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-10">
-            {/* Stats bar */}
+            {/* Engagements bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12 text-center">
               <div className="flex flex-col">
-                <span className="text-3xl font-black text-primary font-display">+2 450</span>
-                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.certified_vendors_stat")}</span>
+                <span className="text-3xl font-black text-primary font-display">0 $</span>
+                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.stat_zero_fees") || "Frais d'ouverture"}</span>
               </div>
               <div className="flex flex-col border-outline-variant/40 md:border-x px-4">
-                <span className="text-3xl font-black text-secondary font-display">26</span>
-                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.provinces_covered_stat")}</span>
+                <span className="text-3xl font-black text-secondary font-display">24h</span>
+                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.validation_delay_stat") || "Délai de validation"}</span>
               </div>
               <div className="flex flex-col border-outline-variant/40 md:border-r px-4">
-                <span className="text-3xl font-black text-[#EA580C] font-display">98%</span>
-                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.stat_satisfaction")}</span>
+                <span className="text-3xl font-black text-[#EA580C] font-display">100%</span>
+                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.stat_guaranteed_payouts") || "Paiements sécurisés"}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-3xl font-black text-primary font-display">24h</span>
-                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.validation_delay_stat")}</span>
+                <span className="text-3xl font-black text-primary font-display">7j/7</span>
+                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.stat_whatsapp_support") || "Assistance technique"}</span>
               </div>
             </div>
 
-            {/* Testimonials */}
+            {/* Garanties concrètes pour les vendeurs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {[
-                {
-                  name: "Aline Nzuzi",
-                  shop: "Maison Nzuzi Wax • Kinshasa",
-                  quote:
-                    "J'ai lancé ma boutique mode en 48h seulement. En 3 mois, je vends maintenant dans 5 provinces différentes grâce à Mwinda Express !",
-                  rating: 5,
-                },
-                {
-                  name: "Bienvenu Kabila",
-                  shop: "Kazi Tech Electronics • Lubumbashi",
-                  quote:
-                    "Les paiements Mobile Money sont virés le lendemain. Plus de risque d'impayé, je peux gérer mon stock sereinement depuis mon tableau de bord.",
-                  rating: 5,
-                },
-                {
-                  name: "Grâce Mutombo",
-                  shop: "Saveurs du Kivu • Bukavu",
-                  quote:
-                    "Le conseiller dédié m'a aidé à importer tout mon catalogue en une journée. Mes produits locaux sont maintenant accessibles depuis Kinshasa !",
-                  rating: 5,
-                },
-              ].map((tItem, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-xl p-6 border border-outline-variant shadow-sm hover:shadow-md transition-shadow"
-                >
-                  {/* Stars */}
-                  <div className="flex gap-1 mb-3">
-                    {Array.from({ length: tItem.rating }).map((_, s) => (
-                      <span
-                        key={s}
-                        className="material-symbols-outlined text-[#EA580C] text-base"
-                        style={{ fontVariationSettings: "'FILL' 1" }}
-                      >
-                        star
-                      </span>
-                    ))}
-                  </div>
-                  {/* Quote */}
-                  <p className="text-sm text-on-surface-variant leading-relaxed italic mb-4">
-                    &ldquo;{tItem.quote}&rdquo;
-                  </p>
-                  {/* Author */}
-                  <div className="flex items-center gap-3 pt-3 border-t border-outline-variant/40">
-                    <div className="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-white font-bold text-sm">
-                      {tItem.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-primary">{tItem.name}</p>
-                      <p className="text-xs text-on-surface-variant">{tItem.shop}</p>
-                    </div>
-                  </div>
+              <div className="bg-white rounded-xl p-6 border border-outline-variant shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
                 </div>
-              ))}
+                <h3 className="text-base font-bold text-primary mb-2">
+                  {t("become_seller.pillar_payout_title") || "Versements garantis sous 24h"}
+                </h3>
+                <p className="text-sm text-on-surface-variant leading-relaxed">
+                  {t("become_seller.pillar_payout_desc") || "Recevez automatiquement vos revenus de vente directement sur votre compte M-Pesa, Airtel Money, Orange Money ou compte bancaire sans tracas."}
+                </p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 border border-outline-variant shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined text-2xl">local_shipping</span>
+                </div>
+                <h3 className="text-base font-bold text-primary mb-2">
+                  {t("become_seller.pillar_logistics_title") || "Réseau logistique intégré"}
+                </h3>
+                <p className="text-sm text-on-surface-variant leading-relaxed">
+                  {t("become_seller.pillar_logistics_desc") || "Profitez de notre réseau de hubs relais et transporteurs partenaires pour faire livrer vos colis de manière fiable et tracée."}
+                </p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 border border-outline-variant shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-xl bg-[#EA580C]/10 text-[#EA580C] flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined text-2xl">support_agent</span>
+                </div>
+                <h3 className="text-base font-bold text-primary mb-2">
+                  {t("become_seller.pillar_support_title") || "Accompagnement local dédié"}
+                </h3>
+                <p className="text-sm text-on-surface-variant leading-relaxed">
+                  {t("become_seller.pillar_support_desc") || "Notre équipe technique locale est à votre disposition par WhatsApp pour vous aider à numériser votre catalogue et optimiser vos ventes."}
+                </p>
+              </div>
             </div>
 
             {/* Final CTA banner */}

@@ -9,6 +9,8 @@ import { ProductCard, Product } from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
 import { useT } from "@/i18n";
 import { getAllProducts, getAllShops, toProductCard } from "@/lib/marketData";
+import { getActiveCategories, countProductsInCategory } from "@/config/categories";
+import { getMaxRealDiscount } from "@/lib/discounts";
 
 // Palettes de couleurs pour les cartes boutiques
 const SHOP_COLORS = [
@@ -16,16 +18,6 @@ const SHOP_COLORS = [
   "bg-[#0284C7] text-white",
   "bg-[#EA580C] text-white",
   "bg-slate-700 text-white",
-];
-
-// Liste des catégories principales pour la colonne gauche desktop et la grille mobile
-const MAIN_CATEGORIES = [
-  { slug: "electronique", labelKey: "cat_electronics" as const, icon: "devices" },
-  { slug: "energie-solaire", labelKey: "cat_solar" as const, icon: "solar_power" },
-  { slug: "mode", labelKey: "cat_fashion" as const, icon: "checkroom" },
-  { slug: "maison", labelKey: "cat_home" as const, icon: "chair" },
-  { slug: "beaute", labelKey: "cat_beauty" as const, icon: "spa" },
-  { slug: "alimentation", labelKey: "cat_food" as const, icon: "restaurant" },
 ];
 
 export default function HomePage() {
@@ -46,27 +38,11 @@ export default function HomePage() {
   const allProducts = useMemo(() => getAllProducts(), []);
   const totalCatalogCount = allProducts.length;
 
-  // Calcul du nombre réel de produits par catégorie
-  const getCategoryCount = (slug: string) => {
-    return allProducts.filter((p) => {
-      const cat = p.category.toLowerCase();
-      if (slug === "electronique") {
-        return (
-          cat.includes("électronique") ||
-          cat.includes("smartphones") ||
-          cat.includes("audio") ||
-          cat.includes("informatique") ||
-          cat.includes("électroménager")
-        );
-      }
-      if (slug === "energie-solaire") return cat.includes("solaire") || cat.includes("énergie");
-      if (slug === "mode") return cat.includes("mode");
-      if (slug === "maison") return cat.includes("maison");
-      if (slug === "beaute") return cat.includes("beauté") || cat.includes("cosmétique");
-      if (slug === "alimentation") return cat.includes("alimentation");
-      return false;
-    }).length;
-  };
+  // Catégories actives (uniquement celles ayant au moins 1 produit réel)
+  const activeCategories = useMemo(() => getActiveCategories(allProducts), [allProducts]);
+
+  // Remise maximale réelle calculée à partir des produits du catalogue
+  const maxRealDiscount = useMemo(() => getMaxRealDiscount(allProducts), [allProducts]);
 
   // 4 Tuiles promo colorées sous la zone principale (images locales réelles)
   const promoTiles = useMemo(
@@ -114,28 +90,31 @@ export default function HomePage() {
     return allProducts.slice(0, 15).map((p) => toProductCard(p));
   }, [allProducts]);
 
-  // Boutiques populaires avec compteurs d'articles réels
+  // Boutiques populaires : ne montre QUE des boutiques ayant au moins 1 produit réel
   const popularShops = useMemo(() => {
     const prominentShopIds = ["solaris-rdc", "kazi-tech", "brazza-wax-couture", "abidjan-elegance-deco"];
     const allShops = getAllShops();
     const selected = prominentShopIds
       .map((id) => allShops.find((s) => s.id === id))
-      .filter(Boolean);
+      .filter((s): s is NonNullable<typeof s> => Boolean(s && s.productCount > 0));
 
-    // Fallback si une boutique manque
-    const pool = selected.length === 4 ? selected : allShops.slice(0, 4);
+    // Fallback avec d'autres boutiques ayant au moins 1 produit si nécessaire
+    const pool =
+      selected.length >= 4
+        ? selected.slice(0, 4)
+        : [
+            ...selected,
+            ...allShops.filter((s) => s.productCount > 0 && !selected.some((sel) => sel.id === s.id)),
+          ].slice(0, 4);
 
     return pool.map((s, i) => {
-      if (!s) return null;
-      // Compter les produits réels appartenant à cette boutique
-      const realCount = allProducts.filter((p) => p.shopId === s.id || p.shopName === s.name).length;
+      const realCount = s.productCount;
       return {
         id: s.id,
         name: s.name,
         tag: s.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
         location: `${s.city}, ${s.province}`,
         rating: s.rating.toFixed(1),
-        // Si aucun article n'est recensé dans le catalogue, on masque le compteur
         productsCount:
           realCount > 0
             ? `${realCount} ${realCount > 1 ? t("shops.articles_count") : t("shops.article_count_singular")}`
@@ -143,8 +122,8 @@ export default function HomePage() {
         verified: s.verified,
         colorBg: SHOP_COLORS[i % SHOP_COLORS.length],
       };
-    }).filter(Boolean);
-  }, [allProducts, t]);
+    });
+  }, [t]);
 
   const handleAddToCart = (product: Product) => {
     addToCart(product);
@@ -192,7 +171,7 @@ export default function HomePage() {
           {/* Colonne gauche (~256px) : Catégories verticales */}
           <aside className="hidden lg:flex w-64 shrink-0 bg-white rounded-lg border border-[#E2E8F0] p-2 flex-col justify-between shadow-2xs">
             <div className="space-y-0.5">
-              {MAIN_CATEGORIES.map((cat) => (
+              {activeCategories.map((cat) => (
                 <Link
                   key={cat.slug}
                   href={`/produits?category=${cat.slug}`}
@@ -284,7 +263,7 @@ export default function HomePage() {
                           {t("home.hero_offer_special")}
                         </span>
                         <span className="text-[9px] font-bold bg-[#EA580C] text-white px-1.5 py-0.5 rounded">
-                          {t("home.hero_offer_discount")}
+                          {maxRealDiscount > 0 ? `-${maxRealDiscount}%` : t("home.hero_offer_special")}
                         </span>
                       </div>
                       <p className="text-xs font-bold text-[#0B1B3D] mt-0.5 truncate">{t("home.hero_offer_pack")}</p>
@@ -378,7 +357,7 @@ export default function HomePage() {
         {/* ─── Grille mobile/tablette compacte des catégories (<1024px) ───── */}
         <section className="lg:hidden">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {MAIN_CATEGORIES.map((cat) => (
+            {activeCategories.map((cat) => (
               <Link
                 key={cat.slug}
                 href={`/produits?category=${cat.slug}`}
@@ -564,8 +543,8 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {MAIN_CATEGORIES.slice(0, 5).map((cat) => {
-              const count = getCategoryCount(cat.slug);
+            {activeCategories.slice(0, 5).map((cat) => {
+              const count = countProductsInCategory(allProducts, cat.slug);
               return (
                 <Link
                   key={cat.slug}
@@ -576,7 +555,7 @@ export default function HomePage() {
                     <span className="material-symbols-outlined text-2xl">{cat.icon}</span>
                   </div>
                   <h3 className="text-xs font-bold text-[#0B1B3D] group-hover:text-[#0284C7] line-clamp-1 transition-colors">
-                    {t(`home.${cat.labelKey}`)}
+                    {t(`home.${cat.labelKey}`) || cat.defaultLabel}
                   </h3>
                   <span className="text-[11px] text-slate-500 mt-1 font-medium">
                     {count} {count > 1 ? t("shops.articles_count") : t("shops.article_count_singular")}

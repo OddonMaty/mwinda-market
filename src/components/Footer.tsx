@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useMarket } from "@/context/MarketContext";
 import { useT } from "@/i18n";
 import { getActiveCountries } from "@/lib/activeCountries";
+import { CONTACT_CONFIG } from "@/config/contact";
 
 const REASSURANCE = [
   { icon: "lock", labelKey: "reassurance_secure_pay" as const },
@@ -19,12 +20,11 @@ const REASSURANCE = [
 const PAYMENT_BADGES = ["M-Pesa", "Airtel Money", "Orange Money", "Visa", "Mastercard"];
 
 export const Footer: React.FC = () => {
-  const { country, language, isRDC, setCountry } = useMarket();
+  const { country, language, setCountry } = useMarket();
   const { t } = useT();
 
   const activeCountries = getActiveCountries();
   const year = new Date().getFullYear();
-  const whatsapp = isRDC ? "+243818900125" : country.phoneCode.replace("+", "") + "800000";
 
   return (
     <footer className="w-full bg-white border-t border-outline-variant mt-16">
@@ -111,7 +111,6 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2">
               {[
                 { href: "/devenir-vendeur", label: t("footer.col_sell_become") },
-                { href: "/vendeur/dashboard", label: t("footer.col_sell_dashboard") },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -209,7 +208,7 @@ export const Footer: React.FC = () => {
             <Link href="/confidentialite" className="hover:text-white transition">{t("footer.col_help_privacy")}</Link>
             <Link href="/conditions" className="hover:text-white transition">{t("footer.col_help_terms")}</Link>
             <a
-              href={`https://wa.me/${whatsapp}`}
+              href={CONTACT_CONFIG.whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 hover:text-white transition"

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Badge } from "@/components/Badge";
+import { CONTACT_CONFIG } from "@/config/contact";
 import { useT } from "@/i18n";
 
 function TrackingSearchContent() {
@@ -274,10 +275,10 @@ function TrackingSearchContent() {
               <span>{t("tracking.assistance_callout")}</span>
             </div>
             <a
-              href="tel:+243810009999"
+              href={`tel:${CONTACT_CONFIG.phoneRaw}`}
               className="font-bold text-secondary hover:text-primary transition font-mono text-sm"
             >
-              +243 81 000 9999
+              {CONTACT_CONFIG.phone}
             </a>
           </div>
         </div>

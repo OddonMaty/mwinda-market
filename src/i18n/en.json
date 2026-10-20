@@ -218,7 +218,8 @@
     "total_price": "Total price",
     "specs_detailed": "Detailed specifications",
     "reviews_verified": "Verified customer reviews",
-    "reviews_sub": "Certified buyer ratings after delivery."
+    "reviews_sub": "Certified buyer ratings after delivery.",
+    "breadcrumb_catalog": "Catalog"
   },
   "shops": {
     "breadcrumb_home": "Home",
@@ -249,7 +250,9 @@
     "sort_by": "Sort by",
     "top_seller": "Top seller",
     "featured_products": "Featured products:",
-    "sort_popular": "Popularity"
+    "sort_popular": "Popularity",
+    "catalog_coming_soon": "Catalog coming soon",
+    "view_other_shops": "View other shops"
   },
   "shop_detail": {
     "breadcrumb_home": "Home",
@@ -292,7 +295,9 @@
     "secure_payments": "Certified secure payments",
     "not_found_title": "Shop Not Found",
     "not_found_desc": "This shop doesn't exist in our directory. It may have been deactivated or the URL is incorrect.",
-    "not_found_cta": "See all shops"
+    "not_found_cta": "See all shops",
+    "shipping_rdc": "DRC & Region",
+    "catalog_prep_desc": "This shop is currently setting up its product catalog. Check back soon!"
   },
   "cart": {
     "breadcrumb_home": "Home",
@@ -434,7 +439,7 @@
     "support_race": "Need assistance on this delivery?",
     "support_247": "24/7 Support",
     "not_found_title": "Order Not Found",
-    "not_found_desc": "This reference doesn't match any order in our system. Check the format (e.g. MWD-2024-001) or contact our support.",
+    "not_found_desc": "This reference doesn't match any order in our system. Check the format (e.g. MW-1250) or contact our support.",
     "not_found_cta": "Back to tracking"
   },
   "become_seller": {
@@ -514,7 +519,7 @@
     "provinces_covered_stat": "Regions covered",
     "validation_delay_stat": "Review turnaround time",
     "final_cta_title": "Ready to scale your commerce?",
-    "final_cta_desc": "Join over 2,450 certified sellers trusting Mwinda Market to expand their reach.",
+    "final_cta_desc": "Join certified shops growing their sales on Mwinda Market.",
     "start_free": "Start for free",
     "label_shipping_country": "Shipping Country",
     "select_country": "Select your shipping country",
@@ -525,7 +530,19 @@
     "payout_mobile_money": "Guaranteed Mobile Money payouts",
     "payout_bank_transfer": "Bank transfer",
     "registered_country": "Registered country:",
-    "registered_region": "Region / City:"
+    "registered_region": "Region / City:",
+    "stat_free_registration": "Free registration",
+    "stat_dedicated_support": "Dedicated WhatsApp support",
+    "badge_payout_direct": "Verified payouts",
+    "stat_zero_fees": "Setup fees",
+    "stat_guaranteed_payouts": "Secure payouts",
+    "stat_whatsapp_support": "Technical assistance",
+    "pillar_payout_title": "Payouts within 24h",
+    "pillar_payout_desc": "Automatically receive your sales revenue straight to your M-Pesa, Airtel Money, Orange Money or bank account hassle-free.",
+    "pillar_logistics_title": "Integrated logistics network",
+    "pillar_logistics_desc": "Benefit from our network of relay hubs and courier partners to have your parcels delivered reliably and tracked.",
+    "pillar_support_title": "Dedicated local support",
+    "pillar_support_desc": "Our local tech team is available on WhatsApp to assist you in digitizing your catalog and boosting your sales."
   },
   "vendor_dashboard": {
     "seller_central": "SELLER CENTRAL",
@@ -604,7 +621,8 @@
     "all_orders_desc": "Track the complete shipping flow to regional hubs and customers.",
     "vendor_country": "Seller country:",
     "settlement_currency": "Payout currency:",
-    "settlement_method": "Payout:"
+    "settlement_method": "Payout:",
+    "demo_banner": "Demo Mode — Simulated data for managing your shop."
   },
   "legal": {
     "title": "Legal Notice",
@@ -676,7 +694,7 @@
     "faq_q2": "What are the delivery times?",
     "faq_a2": "Times vary by zone: 24-48h for Kinshasa and major cities, 3-7 days for accessible provinces, and 7-14 days for remote areas.",
     "faq_q3": "How do I track my order?",
-    "faq_a3": "Go to the Order Tracking page and enter your reference (e.g. MWD-2024-001). You'll see real-time status and your parcel's estimated position.",
+    "faq_a3": "Go to the Order Tracking page and enter your reference (e.g. MW-1250). You'll see real-time status and your parcel's estimated position.",
     "faq_q4": "How do I become a seller?",
     "faq_a4": "Click 'Become a Seller', fill in the registration form with your shop details and await our team's validation (within 48h).",
     "faq_q5": "What if my parcel doesn't arrive?",
@@ -724,5 +742,8 @@
   "floatbar": {
     "float_support": "Support",
     "float_top": "Top"
+  },
+  "vendor": {
+    "optional": "(optional)"
   }
 }

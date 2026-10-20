@@ -657,5 +657,10 @@ export function getShopIdByName(name: string): string {
   if (normalized.includes("pharmacie") || normalized.includes("maluku")) return "pharmacie-soins-maluku";
   if (normalized.includes("boma")) return "boma-agro-business";
   if (normalized.includes("kisangani")) return "kisangani-meubles-bois";
+  if (normalized.includes("brazza")) return "brazza-wax-couture";
+  if (normalized.includes("kigali")) return "kigali-solar-tech";
+  if (normalized.includes("nairobi")) return "nairobi-artisan-hub";
+  if (normalized.includes("abidjan")) return "abidjan-elegance-deco";
+  if (normalized.includes("luanda")) return "luanda-moda-tropical";
   return "kazi-tech";
 }

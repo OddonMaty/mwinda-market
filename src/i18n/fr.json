@@ -218,7 +218,8 @@
     "total_price": "Prix total",
     "specs_detailed": "Fiche technique détaillée",
     "reviews_verified": "Avis clients vérifiés",
-    "reviews_sub": "Évaluations certifiées par les acheteurs après livraison."
+    "reviews_sub": "Évaluations certifiées par les acheteurs après livraison.",
+    "breadcrumb_catalog": "Catalogue"
   },
   "shops": {
     "breadcrumb_home": "Accueil",
@@ -249,7 +250,9 @@
     "sort_by": "Trier par",
     "top_seller": "Top Vendeur",
     "featured_products": "Produits phares :",
-    "sort_popular": "Popularité"
+    "sort_popular": "Popularité",
+    "catalog_coming_soon": "Catalogue bientôt disponible",
+    "view_other_shops": "Voir d'autres boutiques"
   },
   "shop_detail": {
     "breadcrumb_home": "Accueil",
@@ -292,7 +295,9 @@
     "secure_payments": "Paiements sécurisés certifiés",
     "not_found_title": "Boutique introuvable",
     "not_found_desc": "Cette boutique n'existe pas dans notre répertoire. Elle a peut-être été désactivée ou l'URL est incorrecte.",
-    "not_found_cta": "Voir toutes les boutiques"
+    "not_found_cta": "Voir toutes les boutiques",
+    "shipping_rdc": "RDC & Région",
+    "catalog_prep_desc": "Cette boutique est en train de mettre en ligne son catalogue de produits. Revenez très bientôt !"
   },
   "cart": {
     "breadcrumb_home": "Accueil",
@@ -434,7 +439,7 @@
     "support_race": "Besoin d'assistance sur cette course ?",
     "support_247": "Assistance 24/7",
     "not_found_title": "Commande introuvable",
-    "not_found_desc": "Cette référence ne correspond à aucune commande dans notre système. Vérifiez le format (ex. MWD-2024-001) ou contactez notre assistance.",
+    "not_found_desc": "Cette référence ne correspond à aucune commande dans notre système. Vérifiez le format (ex. MW-1250) ou contactez notre assistance.",
     "not_found_cta": "Retour au suivi"
   },
   "become_seller": {
@@ -514,7 +519,7 @@
     "provinces_covered_stat": "Régions couvertes",
     "validation_delay_stat": "Délai validation dossier",
     "final_cta_title": "Prêt à développer votre activité commerciale ?",
-    "final_cta_desc": "Rejoignez plus de 2 450 vendeurs certifiés qui font confiance à Mwinda Market.",
+    "final_cta_desc": "Rejoignez les boutiques certifiées qui développent leurs ventes sur Mwinda Market.",
     "start_free": "Commencer gratuitement",
     "label_shipping_country": "Pays d'expédition",
     "select_country": "Sélectionnez votre pays d'expédition",
@@ -525,7 +530,19 @@
     "payout_mobile_money": "Versements garantis par Mobile Money",
     "payout_bank_transfer": "Virement bancaire",
     "registered_country": "Pays enregistré :",
-    "registered_region": "Région / Ville :"
+    "registered_region": "Région / Ville :",
+    "stat_free_registration": "Inscription gratuite",
+    "stat_dedicated_support": "Support WhatsApp dédié",
+    "badge_payout_direct": "Paiements vérifiés",
+    "stat_zero_fees": "Frais d'ouverture",
+    "stat_guaranteed_payouts": "Paiements sécurisés",
+    "stat_whatsapp_support": "Assistance technique",
+    "pillar_payout_title": "Versements garantis sous 24h",
+    "pillar_payout_desc": "Recevez automatiquement vos revenus de vente directement sur votre compte M-Pesa, Airtel Money, Orange Money ou compte bancaire sans tracas.",
+    "pillar_logistics_title": "Réseau logistique intégré",
+    "pillar_logistics_desc": "Profitez de notre réseau de hubs relais et transporteurs partenaires pour faire livrer vos colis de manière fiable et tracée.",
+    "pillar_support_title": "Accompagnement local dédié",
+    "pillar_support_desc": "Notre équipe technique locale est à votre disposition par WhatsApp pour vous aider à numériser votre catalogue et optimiser vos ventes."
   },
   "vendor_dashboard": {
     "seller_central": "SELLER CENTRAL",
@@ -604,7 +621,8 @@
     "all_orders_desc": "Suivez le flux complet des expéditions vers les hubs provinciaux et clients.",
     "vendor_country": "Pays d'attache :",
     "settlement_currency": "Devise de règlement :",
-    "settlement_method": "Règlement :"
+    "settlement_method": "Règlement :",
+    "demo_banner": "Espace de démonstration — Données simulées pour la gestion de votre boutique."
   },
   "legal": {
     "title": "Mentions Légales",
@@ -676,7 +694,7 @@
     "faq_q2": "Quels sont les délais de livraison ?",
     "faq_a2": "Les délais varient selon votre zone : 24-48h pour Kinshasa et les grandes villes, 3-7 jours pour les provinces accessibles, et 7-14 jours pour les zones éloignées.",
     "faq_q3": "Comment suivre ma commande ?",
-    "faq_a3": "Rendez-vous sur la page Suivi de commande et entrez votre référence (ex. MWD-2024-001). Vous verrez l'état en temps réel et la position estimée de votre colis.",
+    "faq_a3": "Rendez-vous sur la page Suivi de commande et entrez votre référence (ex. MW-1250). Vous verrez l'état en temps réel et la position estimée de votre colis.",
     "faq_q4": "Comment devenir vendeur ?",
     "faq_a4": "Cliquez sur « Devenir Vendeur », remplissez le formulaire d'inscription avec les informations de votre boutique et attendez la validation de notre équipe (sous 48h).",
     "faq_q5": "Que faire si mon colis n'arrive pas ?",
@@ -724,5 +742,8 @@
   "floatbar": {
     "float_support": "Assistance",
     "float_top": "Haut"
+  },
+  "vendor": {
+    "optional": "(optionnel)"
   }
 }

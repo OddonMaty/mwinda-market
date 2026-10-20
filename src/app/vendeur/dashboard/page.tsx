@@ -106,6 +106,15 @@ export default function VendorDashboardPage() {
         </div>
       )}
 
+      {/* Bandeau Mode Démonstration */}
+      <aside
+        aria-label="Mode démonstration"
+        className="w-full bg-amber-500/10 border-b border-amber-500/30 text-amber-900 px-4 py-1.5 flex items-center justify-center gap-2 text-xs font-semibold shrink-0"
+      >
+        <span className="material-symbols-outlined text-sm text-amber-600">info</span>
+        <span>{t("vendor_dashboard.demo_banner")}</span>
+      </aside>
+
       {/* ─── 1. TOP HEADER BACK-OFFICE ───────────────────────────────── */}
       <header className="bg-surface-container-lowest border-b border-outline-variant z-40 flex-shrink-0 h-16">
         <div className="h-full px-4 lg:px-6 flex items-center justify-between gap-4">

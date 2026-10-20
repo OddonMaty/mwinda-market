@@ -27,10 +27,30 @@ export function getProductCountryCode(product: ElectronicProduct): string {
 // ─── Boutiques ────────────────────────────────────────────────────────────────
 
 /**
- * Retourne TOUTES les boutiques (catalogue global panafricain sans filtre pays).
+ * Enrichit une boutique avec les données calculées issues de ses vrais produits :
+ * - Nombre d'articles réels (productCount calculé)
+ * - 3 premiers produits réels en aperçu (productPreviews)
+ */
+export function enrichShopWithRealProducts(shop: Shop): Shop {
+  const products = ELECTRONICS_PRODUCTS.filter((p) => p.shopId === shop.id);
+  return {
+    ...shop,
+    productCount: products.length,
+    productPreviews: products.slice(0, 3).map((p) => ({
+      id: p.id,
+      title: p.title,
+      image: p.image,
+      usdPrice: p.usdPrice,
+    })),
+  };
+}
+
+/**
+ * Retourne TOUTES les boutiques (catalogue global panafricain sans filtre pays),
+ * avec compteurs et aperçus calculés à partir des vrais produits.
  */
 export function getAllShops(): Shop[] {
-  return SHOPS_DATA;
+  return SHOPS_DATA.map(enrichShopWithRealProducts);
 }
 
 /**
@@ -39,14 +59,17 @@ export function getAllShops(): Shop[] {
  */
 export function getShopsByCountry(countryCode: string): Shop[] {
   const code = (countryCode || "CD").toUpperCase();
-  return SHOPS_DATA.filter((s) => getShopCountryCode(s) === code);
+  return SHOPS_DATA.filter((s) => getShopCountryCode(s) === code).map(
+    enrichShopWithRealProducts
+  );
 }
 
 /**
- * Retourne une boutique par son ID.
+ * Retourne une boutique par son ID, enrichie de ses vrais produits.
  */
 export function getShopById(id: string): Shop | undefined {
-  return SHOPS_DATA.find((s) => s.id === id);
+  const shop = SHOPS_DATA.find((s) => s.id === id);
+  return shop ? enrichShopWithRealProducts(shop) : undefined;
 }
 
 // ─── Produits ─────────────────────────────────────────────────────────────────
@@ -162,6 +185,7 @@ export function toProductCard(p: ElectronicProduct) {
   return {
     id: p.id,
     title: p.title,
+    shopId: p.shopId,
     shopName: p.shopName,
     shopCity: p.shopCity,
     shopCountryCode: getProductCountryCode(p),

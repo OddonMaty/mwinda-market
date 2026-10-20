@@ -14,6 +14,8 @@ import { useCart } from "@/context/CartContext";
 import { getShopIdByName, getShopById } from "@/data/shops";
 import { getCountryByCode } from "@/lib/activeCountries";
 import { getAllProducts, toProductCard } from "@/lib/marketData";
+import { getCategoryForProduct } from "@/config/categories";
+import { getDiscountBadgeText } from "@/lib/discounts";
 import { useT } from "@/i18n";
 
 interface PageProps {
@@ -79,13 +81,29 @@ export default function ProductDetailPage({ params }: PageProps) {
     }, 1000);
   };
 
-  // Produits similaires dans la même catégorie
+  // Produits similaires dans la même catégorie / boutique / populaires (max 4, dédupliqués)
+  const resolvedShopId = product.shopId || getShopIdByName(product.shopName);
+  const categoryConfig = useMemo(() => getCategoryForProduct(product.category), [product.category]);
+
   const similarProducts = useMemo(() => {
-    return getAllProducts()
-      .filter((p) => p.id !== product.id && p.category === product.category)
-      .slice(0, 4)
-      .map((p) => toProductCard(p));
-  }, [product.id, product.category]);
+    const all = getAllProducts();
+    const sameCat = all.filter((p) => p.id !== product.id && p.category === product.category);
+    const sameShop = all.filter(
+      (p) =>
+        p.id !== product.id &&
+        (p.shopId || getShopIdByName(p.shopName)) === resolvedShopId &&
+        !sameCat.some((c) => c.id === p.id)
+    );
+    const others = all.filter(
+      (p) =>
+        p.id !== product.id &&
+        !sameCat.some((c) => c.id === p.id) &&
+        !sameShop.some((s) => s.id === p.id)
+    );
+
+    const combined = [...sameCat, ...sameShop, ...others].slice(0, 4);
+    return combined.map((p) => toProductCard(p));
+  }, [product.id, product.category, resolvedShopId]);
 
   // Spécifications techniques
   const specifications = product.specifications || {
@@ -129,14 +147,16 @@ export default function ProductDetailPage({ params }: PageProps) {
   const breadcrumbItems = useMemo(
     () => [
       { label: t("product_detail.breadcrumb_home") || "Accueil", href: "/", icon: "home" },
-      { label: t("catalog.title") || "Catalogue", href: "/produits" },
+      { label: t("product_detail.breadcrumb_catalog") || t("catalog.title") || "Catalogue", href: "/produits" },
       {
-        label: product.category,
-        href: `/produits?category=${encodeURIComponent(product.category)}`,
+        label: categoryConfig ? categoryConfig.defaultLabel : product.category,
+        href: categoryConfig
+          ? `/produits?category=${categoryConfig.slug}`
+          : `/produits?category=${encodeURIComponent(product.category)}`,
       },
       { label: product.title, href: undefined },
     ],
-    [t, product.category, product.title]
+    [t, categoryConfig, product.category, product.title]
   );
 
   // État produit introuvable
@@ -211,8 +231,8 @@ export default function ProductDetailPage({ params }: PageProps) {
 
               {/* Badges en haut à gauche */}
               <div className="absolute top-3 left-3 flex flex-col gap-1 z-10 pointer-events-none">
-                {product.badges.discount && (
-                  <Badge variant="discount" text={product.badges.discount} />
+                {getDiscountBadgeText(product) && (
+                  <Badge variant="discount" text={getDiscountBadgeText(product)!} />
                 )}
                 {product.badges.logistics && (
                   <Badge

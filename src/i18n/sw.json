@@ -218,7 +218,8 @@
     "total_price": "Bei kamili",
     "specs_detailed": "Maelezo ya kina ya kiufundi",
     "reviews_verified": "Maoni ya wateja yaliyothibitishwa",
-    "reviews_sub": "Ukadiriaji uliothibitishwa wa wanunuzi baada ya uwasilishaji."
+    "reviews_sub": "Ukadiriaji uliothibitishwa wa wanunuzi baada ya uwasilishaji.",
+    "breadcrumb_catalog": "Katalogi"
   },
   "shops": {
     "breadcrumb_home": "Nyumbani",
@@ -249,7 +250,9 @@
     "sort_by": "Panga kwa",
     "top_seller": "Muuzaji bora",
     "featured_products": "Bidhaa mashuhuri:",
-    "sort_popular": "Umaarufu"
+    "sort_popular": "Umaarufu",
+    "catalog_coming_soon": "Katalogi inakuja hivi karibuni",
+    "view_other_shops": "Tazama maduka mengine"
   },
   "shop_detail": {
     "breadcrumb_home": "Nyumbani",
@@ -292,7 +295,9 @@
     "secure_payments": "Malipo salama yaliyoidhinishwa",
     "not_found_title": "Duka Halipatikani",
     "not_found_desc": "Duka hili halipo katika saraka yetu. Inawezekana lilizimwa au URL si sahihi.",
-    "not_found_cta": "Tazama maduka yote"
+    "not_found_cta": "Tazama maduka yote",
+    "shipping_rdc": "DRC na Ukanda",
+    "catalog_prep_desc": "Duka hili linaweka katalogi yake ya bidhaa mtandaoni. Rudi hivi karibuni!"
   },
   "cart": {
     "breadcrumb_home": "Mwanzo",
@@ -434,7 +439,7 @@
     "support_race": "Unahitaji msaada kuhusu safari hii?",
     "support_247": "Msaada 24/7",
     "not_found_title": "Agizo Halipatikani",
-    "not_found_desc": "Nambari hii hailingani na agizo lolote katika mfumo wetu. Angalia muundo (mfano MWD-2024-001) au wasiliana na msaada wetu.",
+    "not_found_desc": "Nambari hii hailingani na agizo lolote katika mfumo wetu. Angalia muundo (mfano MW-1250) au wasiliana na msaada wetu.",
     "not_found_cta": "Rudi kufuatilia"
   },
   "become_seller": {
@@ -514,7 +519,7 @@
     "provinces_covered_stat": "Maeneo yanayohudumiwa",
     "validation_delay_stat": "Muda wa kukagua",
     "final_cta_title": "Uko tayari kukuza biashara yako?",
-    "final_cta_desc": "Jiunge na wauzaji zaidi ya 2,450 walioidhinishwa wanaoiamini Mwinda Market.",
+    "final_cta_desc": "Jiunge na maduka yaliyoidhinishwa yanayokuza mauzo yao kwenye Mwinda Market.",
     "start_free": "Anza bure",
     "label_shipping_country": "Nchi ya usafirishaji",
     "select_country": "Chagua nchi yako ya usafirishaji",
@@ -525,7 +530,19 @@
     "payout_mobile_money": "Malipo ya uhakika kupitia Mobile Money",
     "payout_bank_transfer": "Uhamisho wa benki",
     "registered_country": "Nchi iliyosajiliwa:",
-    "registered_region": "Eneo / Mji:"
+    "registered_region": "Eneo / Mji:",
+    "stat_free_registration": "Kujisajili bure",
+    "stat_dedicated_support": "Msaada wa WhatsApp uliojitolea",
+    "badge_payout_direct": "Malipo yaliyothibitishwa",
+    "stat_zero_fees": "Gharama za kufungua",
+    "stat_guaranteed_payouts": "Malipo salama",
+    "stat_whatsapp_support": "Msaada wa kiufundi",
+    "pillar_payout_title": "Malipo ndani ya saa 24",
+    "pillar_payout_desc": "Pokea mapato yako ya mauzo moja kwa moja kwenye akaunti yako ya M-Pesa, Airtel Money, Orange Money au akaunti ya benki bila shida.",
+    "pillar_logistics_title": "Mtandao wa usafirishaji uliounganishwa",
+    "pillar_logistics_desc": "Nufaika na mtandao wetu wa vituo na wasafirishaji washirika kufikisha vifurushi vyako kwa uaminifu na kufuatiliwa.",
+    "pillar_support_title": "Msaada wa eneo uliojitolea",
+    "pillar_support_desc": "Timu yetu ya kiufundi iko tayari kwenye WhatsApp kukusaidia kuweka katalogi yako mtandaoni na kuongeza mauzo."
   },
   "vendor_dashboard": {
     "seller_central": "SELLER CENTRAL",
@@ -604,7 +621,8 @@
     "all_orders_desc": "Fuatilia mzunguko mzima wa usafirishaji kwenda vituo vya mikoani na wateja.",
     "vendor_country": "Nchi ya muuzaji:",
     "settlement_currency": "Sarafu ya malipo:",
-    "settlement_method": "Malipo:"
+    "settlement_method": "Malipo:",
+    "demo_banner": "Hali ya majaribio — Data ya mfano kwa usimamizi wa duka lako."
   },
   "legal": {
     "title": "Taarifa za Kisheria",
@@ -676,7 +694,7 @@
     "faq_q2": "Muda wa utoaji ni gani?",
     "faq_a2": "Muda hutofautiana kulingana na eneo: masaa 24-48 kwa Kinshasa na miji mikubwa, siku 3-7 kwa mikoa inayofikika, na siku 7-14 kwa maeneo ya mbali.",
     "faq_q3": "Ninawezaje kufuatilia agizo langu?",
-    "faq_a3": "Nenda kwenye ukurasa wa Kufuatilia Agizo na ingiza nambari yako (mfano MWD-2024-001). Utaona hali ya sasa na eneo la kishuriti cha kifurushi chako.",
+    "faq_a3": "Nenda kwenye ukurasa wa Kufuatilia Agizo na ingiza nambari yako (mfano MW-1250). Utaona hali ya sasa na eneo la kishuriti cha kifurushi chako.",
     "faq_q4": "Ninawezaje kuwa muuzaji?",
     "faq_a4": "Bonyeza 'Kuwa Muuzaji', jaza fomu ya usajili na taarifa za duka lako na subiri uthibitisho wa timu yetu (ndani ya masaa 48).",
     "faq_q5": "Nifanye nini ikiwa kifurushi changu hakifiki?",
@@ -724,5 +742,8 @@
   "floatbar": {
     "float_support": "Msaada",
     "float_top": "Juu"
+  },
+  "vendor": {
+    "optional": "(hiari)"
   }
 }
