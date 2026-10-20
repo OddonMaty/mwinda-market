@@ -124,13 +124,17 @@ export default function VendorDashboardPage() {
             </button>
 
             {/* Logo Brand */}
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-lg bg-primary-container flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
-                M
-              </div>
+            <Link href="/" className="flex items-center gap-2.5 group" aria-label="Mwinda Market — Accueil">
+              <Image
+                src="/images/logo-mwinda.png"
+                alt="Mwinda Market"
+                width={36}
+                height={36}
+                className="w-9 h-9 object-contain group-hover:scale-105 transition-transform"
+              />
               <div className="hidden sm:block">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-base text-primary-container tracking-tight">
+                  <span className="font-bold text-base text-primary tracking-tight font-display">
                     Mwinda Market
                   </span>
                   <span className="bg-secondary-fixed text-on-secondary-fixed font-bold text-[10px] px-2 py-0.5 rounded-full border border-secondary-fixed-dim uppercase tracking-wider">

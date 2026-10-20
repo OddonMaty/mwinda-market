@@ -52,9 +52,9 @@ export const Footer: React.FC = () => {
               <Image
                 src="/images/logo-mwinda-h-light.png"
                 alt="Mwinda Market"
-                width={180}
-                height={50}
-                className="h-10 w-auto object-contain"
+                width={195}
+                height={44}
+                className="h-[44px] w-auto object-contain"
               />
             </Link>
             <p className="text-xs text-on-surface-variant leading-relaxed">
@@ -189,9 +189,9 @@ export const Footer: React.FC = () => {
             <Image
               src="/images/logo-mwinda-h-dark.png"
               alt="Mwinda Market"
-              width={130}
-              height={36}
-              className="h-7 w-auto object-contain"
+              width={142}
+              height={32}
+              className="h-[32px] w-auto object-contain"
             />
             <span className="text-white/50">·</span>
             <span>© {year} — {t("footer.copyright")}</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -38,9 +39,21 @@ export default function ConnexionPage() {
         <div className="w-full max-w-lg space-y-8">
           {/* État principal */}
           <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-8 sm:p-10 shadow-card text-center space-y-6">
+            {/* Logo officiel Mwinda Market */}
+            <div className="flex justify-center pb-2">
+              <Image
+                src="/images/logo-mwinda-h-light.png"
+                alt="Mwinda Market"
+                width={195}
+                height={44}
+                className="h-[44px] w-auto object-contain"
+                priority
+              />
+            </div>
+
             {/* Icône animée */}
-            <div className="w-20 h-20 bg-secondary-fixed text-on-secondary-container rounded-full flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-4xl">person_add</span>
+            <div className="w-16 h-16 bg-secondary-fixed text-on-secondary-container rounded-full flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-3xl">person_add</span>
             </div>
 
             <div className="space-y-2">

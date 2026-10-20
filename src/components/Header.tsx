@@ -168,16 +168,16 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
               alt="Mwinda Market"
               width={40}
               height={40}
-              className="sm:hidden w-9 h-9 object-contain"
+              className="sm:hidden h-[40px] w-auto object-contain"
               priority
             />
             {/* Desktop/tablette: logo horizontal complet */}
             <Image
               src="/images/logo-mwinda-h-light.png"
               alt="Mwinda Market"
-              width={200}
-              height={56}
-              className="hidden sm:block h-10 md:h-11 w-auto object-contain"
+              width={195}
+              height={44}
+              className="hidden sm:block h-[44px] w-auto object-contain"
               priority
             />
           </Link>
@@ -400,9 +400,9 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                 <Image
                   src="/images/logo-mwinda.png"
                   alt="Mwinda Market"
-                  width={36}
-                  height={36}
-                  className="w-8 h-8 object-contain"
+                  width={40}
+                  height={40}
+                  className="h-[40px] w-auto object-contain"
                 />
                 <span className="font-bold text-primary font-display">Mwinda Market</span>
               </div>

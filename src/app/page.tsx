@@ -189,8 +189,8 @@ export default function HomePage() {
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 lg:px-6 py-5 sm:py-6 space-y-10">
         {/* ─── 1. ZONE PRINCIPALE EN 3 COLONNES (Style Kikuu/Alibaba) ──────── */}
         <section className="flex flex-col lg:flex-row gap-4 items-stretch">
-          {/* Colonne gauche (~240px) : Catégories verticales */}
-          <aside className="hidden lg:flex w-60 shrink-0 bg-white rounded-lg border border-[#E2E8F0] p-2 flex-col justify-between shadow-2xs">
+          {/* Colonne gauche (~256px) : Catégories verticales */}
+          <aside className="hidden lg:flex w-64 shrink-0 bg-white rounded-lg border border-[#E2E8F0] p-2 flex-col justify-between shadow-2xs">
             <div className="space-y-0.5">
               {MAIN_CATEGORIES.map((cat) => (
                 <Link
@@ -198,11 +198,11 @@ export default function HomePage() {
                   href={`/produits?category=${cat.slug}`}
                   className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-slate-50 text-slate-700 hover:text-[#0B1B3D] transition group text-xs font-semibold"
                 >
-                  <div className="flex items-center gap-2.5 truncate">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-1">
                     <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-[#0284C7] transition-colors shrink-0">
                       {cat.icon}
                     </span>
-                    <span className="truncate">{t(`home.${cat.labelKey}`)}</span>
+                    <span className="line-clamp-2 leading-tight">{t(`home.${cat.labelKey}`)}</span>
                   </div>
                   <span className="material-symbols-outlined text-sm text-slate-300 group-hover:text-slate-600 transition-colors shrink-0">
                     chevron_right
@@ -298,17 +298,21 @@ export default function HomePage() {
           {/* Colonne droite (~260px) : Bienvenue Mwinda Market */}
           <aside className="hidden lg:flex w-64 shrink-0 bg-white rounded-lg border border-[#E2E8F0] p-4 flex-col justify-between shadow-2xs">
             <div>
-              <div className="flex items-center gap-2.5 pb-3 border-b border-[#E2E8F0]">
-                <div className="w-10 h-10 rounded-full bg-[#0B1B3D] text-[#EA580C] flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    light_mode
-                  </span>
+              <div className="flex items-center gap-3 pb-3 border-b border-[#E2E8F0]">
+                <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                  <Image
+                    src="/images/logo-mwinda.png"
+                    alt="Mwinda Market"
+                    width={40}
+                    height={40}
+                    className="w-10 h-10 object-contain"
+                  />
                 </div>
-                <div className="min-w-0">
-                  <h3 className="text-xs font-bold text-[#0B1B3D] font-display truncate">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-xs font-bold text-[#0B1B3D] font-display line-clamp-2 leading-snug">
                     {t("home.welcome_title")}
                   </h3>
-                  <p className="text-[11px] text-slate-500 leading-tight truncate">
+                  <p className="text-[11px] text-slate-500 leading-tight line-clamp-2 mt-0.5">
                     {t("home.welcome_desc")}
                   </p>
                 </div>
@@ -383,7 +387,7 @@ export default function HomePage() {
                 <span className="material-symbols-outlined text-xl text-[#0284C7] shrink-0">
                   {cat.icon}
                 </span>
-                <span className="text-xs font-semibold truncate">{t(`home.${cat.labelKey}`)}</span>
+                <span className="text-xs font-semibold line-clamp-2 leading-tight">{t(`home.${cat.labelKey}`)}</span>
               </Link>
             ))}
           </div>
@@ -397,8 +401,8 @@ export default function HomePage() {
               href={`/produits?category=${tile.slug}`}
               className="group relative rounded-lg border border-[#E2E8F0] bg-white p-3.5 hover:shadow-md hover:border-[#0284C7] transition-all flex items-center justify-between overflow-hidden"
             >
-              <div className="space-y-1 min-w-0 pr-2">
-                <h3 className="text-xs sm:text-sm font-bold text-[#0B1B3D] group-hover:text-[#0284C7] transition-colors truncate">
+              <div className="space-y-1 min-w-0 flex-1 pr-2">
+                <h3 className="text-xs sm:text-sm font-bold text-[#0B1B3D] group-hover:text-[#0284C7] transition-colors line-clamp-2 leading-snug">
                   {tile.name}
                 </h3>
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#EA580C] group-hover:underline">
