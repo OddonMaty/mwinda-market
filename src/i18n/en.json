@@ -176,7 +176,9 @@
     "products_found": "products found",
     "no_products": "No products match your filters",
     "add": "Add",
-    "toast_added": "added to cart"
+    "toast_added": "added to cart",
+    "sort_newest": "Newest",
+    "sort_popular": "Popular"
   },
   "product_detail": {
     "breadcrumb_home": "Home",
@@ -210,7 +212,13 @@
     "delivery_available_badge": "Available",
     "delivery_available_sub": "Delivery available with order tracking",
     "delivery_card_desc": "Careful dispatch and secure delivery. Real-time tracking available for every order.",
-    "delivery_tab_desc": "Delivery is available for this product with secure real-time tracking and buyer protection under Mwinda Pay escrow."
+    "delivery_tab_desc": "Delivery is available for this product with secure real-time tracking and buyer protection under Mwinda Pay escrow.",
+    "in_stock_count": "In stock",
+    "seller_rating": "Seller rating:",
+    "total_price": "Total price",
+    "specs_detailed": "Detailed specifications",
+    "reviews_verified": "Verified customer reviews",
+    "reviews_sub": "Certified buyer ratings after delivery."
   },
   "shops": {
     "breadcrumb_home": "Home",
@@ -237,7 +245,11 @@
     "articles_count": "items",
     "reviews_count": "verified reviews",
     "certified_seller": "Certified seller",
-    "article_count_singular": "item"
+    "article_count_singular": "item",
+    "sort_by": "Sort by",
+    "top_seller": "Top seller",
+    "featured_products": "Featured products:",
+    "sort_popular": "Popularity"
   },
   "shop_detail": {
     "breadcrumb_home": "Home",

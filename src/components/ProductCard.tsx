@@ -32,12 +32,14 @@ interface ProductCardProps {
   product: Product;
   onAddToCart?: (product: Product) => void;
   className?: string;
+  layout?: "grid" | "list";
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onAddToCart,
   className = "",
+  layout = "grid",
 }) => {
   const { addToCart } = useCart();
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -74,10 +76,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <div
-      className={`bg-white rounded-lg border border-[#E2E8F0] overflow-hidden hover:shadow-md transition-shadow flex flex-col group ${className}`}
+      className={`bg-white rounded-lg border border-[#E2E8F0] overflow-hidden hover:shadow-md transition-shadow group ${
+        layout === "list" ? "flex flex-col sm:flex-row items-stretch" : "flex flex-col"
+      } ${className}`}
     >
       {/* ─── Image carrée ──────────────────────────────────────────────── */}
-      <div className="relative aspect-square bg-slate-50 overflow-hidden">
+      <div
+        className={`relative bg-slate-50 overflow-hidden ${
+          layout === "list" ? "aspect-square w-full sm:w-44 sm:h-44 shrink-0" : "aspect-square"
+        }`}
+      >
         <Link href={`/produits/${product.id}`} className="block w-full h-full relative">
           <Image
             src={product.image}

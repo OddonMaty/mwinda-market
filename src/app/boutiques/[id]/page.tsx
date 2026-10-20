@@ -5,12 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { ProductCard, Product } from "@/components/ProductCard";
 import { SHOPS_DATA, getShopById, Shop } from "@/data/shops";
 import { ELECTRONICS_PRODUCTS } from "@/data/electronics";
 import { getCountryByCode } from "@/lib/activeCountries";
 import { getShopCountryCode, getProductsByShop, toProductCard } from "@/lib/marketData";
-// Note: country filtering removed — catalogue is now global
 import { useT } from "@/i18n";
 
 interface PageProps {
@@ -158,15 +158,15 @@ const KIN_FASHION_PRODUCTS: Product[] = [
 
 export default function ShopDetailPage({ params }: PageProps) {
   const shopId = params?.id || "kin-fashion";
-  // B-03: null when ID truly doesn't exist
   const shopFound: Shop | undefined = getShopById(shopId);
   const shop: Shop = shopFound || SHOPS_DATA[0];
 
   const { t, language } = useT();
   const shopCountryCode = getShopCountryCode(shop);
   const shopCountry = getCountryByCode(shopCountryCode);
-  const shopCountryName = shopCountry?.name?.[language as "fr" | "en"] || shopCountry?.name?.fr || shopCountryCode;
-  const shopCountryFlag = shopCountry?.flag || "";
+  const shopCountryName =
+    shopCountry?.name?.[language as "fr" | "en"] || shopCountry?.name?.fr || shopCountryCode;
+  const shopCountryFlag = shopCountry?.flag || "🇨🇩";
 
   const [activeTab, setActiveTab] = useState<string>("Tout");
   const [inStoreQuery, setInStoreQuery] = useState("");
@@ -174,7 +174,7 @@ export default function ShopDetailPage({ params }: PageProps) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [contactFeedback, setContactFeedback] = useState<string | null>(null);
 
-  // Determine which product list to use for this shop
+  // Déterminer la liste des produits de la boutique
   const baseProducts: Product[] = useMemo(() => {
     if (shop.id === "kin-fashion" || shop.category.includes("Mode")) {
       return KIN_FASHION_PRODUCTS;
@@ -183,7 +183,6 @@ export default function ShopDetailPage({ params }: PageProps) {
     if (directShopProducts.length > 0) {
       return directShopProducts.map(toProductCard);
     }
-    // Pull matching or mapped products from electronics catalog
     const matched = ELECTRONICS_PRODUCTS.filter(
       (p) =>
         p.shopName.toLowerCase().includes(shop.name.toLowerCase().split(" ")[0]) ||
@@ -195,13 +194,22 @@ export default function ShopDetailPage({ params }: PageProps) {
     return ELECTRONICS_PRODUCTS.slice(0, 8).map(toProductCard);
   }, [shop]);
 
-  // Filter and sort products
+  // Filtrer et trier les produits
   const displayedProducts = useMemo(() => {
     let list = [...baseProducts];
 
     if (inStoreQuery.trim()) {
       const q = inStoreQuery.toLowerCase();
       list = list.filter((p) => p.title.toLowerCase().includes(q));
+    }
+
+    if (activeTab !== "Tout") {
+      const tabLower = activeTab.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.title.toLowerCase().includes(tabLower) ||
+          p.badges?.logisticsText?.toLowerCase().includes(tabLower)
+      );
     }
 
     if (sortOption === "price-asc") {
@@ -213,36 +221,45 @@ export default function ShopDetailPage({ params }: PageProps) {
     }
 
     return list;
-  }, [baseProducts, inStoreQuery, sortOption]);
+  }, [baseProducts, inStoreQuery, activeTab, sortOption]);
 
   const handleContact = () => {
     setContactFeedback("Ligne WhatsApp & GSM : " + shop.phone);
     setTimeout(() => setContactFeedback(null), 4000);
   };
 
-  // B-03: état visuel si la boutique est introuvable
+  const breadcrumbItems = useMemo(
+    () => [
+      { label: t("shop_detail.breadcrumb_home") || "Accueil", href: "/", icon: "home" },
+      { label: t("shop_detail.breadcrumb_shops") || "Boutiques", href: "/boutiques" },
+      { label: shop.name, href: undefined },
+    ],
+    [t, shop.name]
+  );
+
+  // État boutique introuvable
   if (!shopFound) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
         <Header />
         <main className="flex-1 flex items-center justify-center px-4 py-16">
-          <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-8 sm:p-16 text-center max-w-md mx-auto shadow-card space-y-6">
-            <div className="w-20 h-20 bg-surface-container text-outline rounded-full flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-4xl">store_off</span>
+          <div className="bg-white rounded-lg border border-[#E2E8F0] p-8 sm:p-12 text-center max-w-md mx-auto shadow-2xs space-y-4">
+            <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-3xl">store_off</span>
             </div>
-            <div className="space-y-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-primary font-display">
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold text-[#0B1B3D] font-display">
                 {t("shop_detail.not_found_title")}
               </h1>
-              <p className="text-xs sm:text-sm text-on-surface-variant max-w-xs mx-auto leading-relaxed">
+              <p className="text-xs text-slate-500 max-w-xs mx-auto">
                 {t("shop_detail.not_found_desc")}
               </p>
             </div>
             <Link
               href="/boutiques"
-              className="inline-flex items-center gap-2 px-6 py-3.5 bg-tertiary hover:bg-tertiary-hover text-white rounded-lg font-bold text-xs sm:text-sm transition shadow-md"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#EA580C] hover:bg-[#c2410c] text-white rounded-lg font-bold text-xs transition shadow-xs"
             >
-              <span className="material-symbols-outlined text-lg">arrow_back</span>
+              <span className="material-symbols-outlined text-base">arrow_back</span>
               <span>{t("shop_detail.not_found_cta")}</span>
             </Link>
           </div>
@@ -253,115 +270,104 @@ export default function ShopDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-secondary selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] selection:bg-[#EA580C] selection:text-white">
       <Header />
 
-      {/* Catalogue global — pas de bandeau de restriction par pays */}
-
-      {/* Main Container */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 lg:px-10 py-4 sm:py-6 space-y-6">
-        {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-outline">
-          <Link href="/" className="hover:text-primary transition flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm">home</span>
-            <span>{t("shop_detail.breadcrumb_home")}</span>
-          </Link>
-          <span className="material-symbols-outlined text-xs">chevron_right</span>
-          <Link href="/boutiques" className="hover:text-primary transition">
-            {t("shop_detail.breadcrumb_shops")}
-          </Link>
-          <span className="material-symbols-outlined text-xs">chevron_right</span>
-          <span className="text-on-surface font-semibold truncate max-w-xs">{shop.name}</span>
-        </nav>
+      {/* Main Container unifié max-w-[1280px] */}
+      <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 lg:px-6 py-4 sm:py-6 space-y-5">
+        <Breadcrumb items={breadcrumbItems} />
 
         {/* 1. STOREFRONT HERO BANNER */}
-        <section className="relative rounded-2xl overflow-hidden bg-primary text-white shadow-card border border-outline-variant">
-          {/* Ambient Store Banner Background */}
+        <section className="relative rounded-lg overflow-hidden bg-[#0B1B3D] text-white shadow-2xs border border-[#E2E8F0]">
+          {/* Bannière de fond */}
           <div
-            className="h-56 sm:h-72 w-full bg-cover bg-center relative"
+            className="h-48 sm:h-60 w-full bg-cover bg-center relative"
             style={{ backgroundImage: `url('${shop.bannerImage}')` }}
           >
-            <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0B1B3D] via-[#0B1B3D]/65 to-transparent" />
 
-            {/* Top Badges overlay */}
-            <div className="absolute top-4 right-4 flex items-center gap-2">
-              <span className="bg-primary/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-sky-200 border border-secondary/40 flex items-center gap-1.5 shadow-sm">
+            {/* Badges en haut à droite */}
+            <div className="absolute top-3 right-3 flex items-center gap-2">
+              <span className="bg-[#0B1B3D]/80 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold text-sky-200 border border-sky-400/30 flex items-center gap-1 shadow-xs">
                 <span className="material-symbols-outlined text-sm text-sky-300">bolt</span>
                 <span>{t("shop_detail.fast_shipping")}</span>
               </span>
-              <span className="bg-primary/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-white border border-white/20 flex items-center gap-1.5 shadow-sm">
-                <span className="material-symbols-outlined text-sm text-tertiary">local_shipping</span>
+              <span className="bg-[#0B1B3D]/80 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold text-white border border-white/20 flex items-center gap-1 shadow-xs">
+                <span className="material-symbols-outlined text-sm text-[#EA580C]">local_shipping</span>
                 <span>{shopCountryCode === "cd" ? "26 Provinces" : t("shop_detail.regions_covered")}</span>
               </span>
             </div>
           </div>
 
-          {/* Seller Identity & Actions */}
-          <div className="px-5 sm:px-8 pb-6 pt-0 relative -mt-16 sm:-mt-20 space-y-6">
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-              {/* Avatar + Title + Bio */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5">
+          {/* Identité Vendeur & Actions */}
+          <div className="px-5 sm:px-8 pb-5 pt-0 relative -mt-14 sm:-mt-16 space-y-5">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
+              {/* Avatar + Titre + Bio */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
                 <div className="relative shrink-0">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center p-1 relative">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-white border-2 border-white shadow-md overflow-hidden flex items-center justify-center p-0.5 relative">
                     <Image
                       src={shop.logoImage}
                       alt={shop.name}
-                      width={112}
-                      height={112}
-                      className="w-full h-full object-cover rounded-xl"
+                      width={96}
+                      height={96}
+                      className="w-full h-full object-cover rounded-md"
                     />
                   </div>
                   {shop.verified && (
                     <span
-                      className="absolute bottom-1 right-1 bg-secondary text-white rounded-full p-1 border-2 border-white shadow"
+                      className="absolute -bottom-1 -right-1 bg-[#0284C7] text-white rounded-full p-1 border-2 border-white shadow-xs"
                       title="Boutique Certifiée Mwinda"
                     >
-                      <span className="material-symbols-outlined text-sm block" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      <span
+                        className="material-symbols-outlined text-xs block"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
                         verified
                       </span>
                     </span>
                   )}
                 </div>
 
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <h1 className="text-2xl sm:text-3xl font-black text-white font-display tracking-tight">
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white font-display tracking-tight">
                       {shop.name}
                     </h1>
-                    <span className="bg-white/10 text-white/90 border border-white/20 px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1">
+                    <span className="bg-white/10 text-white/90 border border-white/20 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
                       <span>{shopCountryFlag}</span>
                       <span>{shop.city}, {shopCountryName}</span>
                     </span>
                     {shop.verified && (
-                      <span className="bg-secondary-fixed/20 text-sky-200 border border-secondary-fixed/40 px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1">
+                      <span className="bg-[#0284C7]/30 text-sky-200 border border-[#0284C7]/50 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
                         <span className="material-symbols-outlined text-xs">workspace_premium</span>
                         <span>{t("shop_detail.certified_seller")}</span>
                       </span>
                     )}
                     {shop.topSeller && (
-                      <span className="bg-tertiary/30 text-amber-200 border border-tertiary/40 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                      <span className="bg-[#EA580C]/30 text-orange-200 border border-[#EA580C]/50 px-2 py-0.5 rounded text-xs font-bold">
                         {t("shop_detail.top_seller")}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                  <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
                     {shop.bio}
                   </p>
                 </div>
               </div>
 
-              {/* CTAs: Follow, Contact */}
-              <div className="flex flex-wrap items-center gap-3 self-start lg:self-end">
+              {/* Boutons Suivre / Contacter */}
+              <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-end">
                 <button
                   type="button"
                   onClick={() => setIsFollowing(!isFollowing)}
-                  className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all shadow flex items-center gap-2 active:scale-95 ${
+                  className={`px-3.5 py-2 rounded-lg font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 active:scale-95 ${
                     isFollowing
                       ? "bg-emerald-600 text-white"
-                      : "bg-tertiary hover:bg-tertiary-hover text-white"
+                      : "bg-[#EA580C] hover:bg-[#c2410c] text-white"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-base">
+                  <span className="material-symbols-outlined text-sm">
                     {isFollowing ? "check" : "notifications_active"}
                   </span>
                   <span>{isFollowing ? t("shop_detail.following") : t("shop_detail.follow")}</span>
@@ -370,19 +376,19 @@ export default function ShopDetailPage({ params }: PageProps) {
                 <button
                   type="button"
                   onClick={handleContact}
-                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/30 font-bold text-xs sm:text-sm transition-all flex items-center gap-2 active:scale-95 backdrop-blur-sm"
+                  className="px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/30 font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95 backdrop-blur-sm"
                 >
-                  <span className="material-symbols-outlined text-base text-sky-200">chat</span>
+                  <span className="material-symbols-outlined text-sm text-sky-200">chat</span>
                   <span>{t("shop_detail.contact_seller")}</span>
                 </button>
               </div>
             </div>
 
-            {/* Contact Feedback Banner */}
+            {/* Notification de contact */}
             {contactFeedback && (
-              <div className="p-3 bg-secondary/30 border border-secondary/50 rounded-xl text-xs text-white flex items-center justify-between animate-in fade-in">
+              <div className="p-3 bg-[#0284C7]/20 border border-[#0284C7]/40 rounded-lg text-xs text-white flex items-center justify-between animate-in fade-in">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-400">info</span>
+                  <span className="material-symbols-outlined text-emerald-400 text-sm">info</span>
                   <span>{contactFeedback}</span>
                 </div>
                 <a
@@ -394,72 +400,81 @@ export default function ShopDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Metrics Strip */}
-            <div className="pt-4 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 shrink-0">
-                  <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+            {/* Bandeau de statistiques clés */}
+            <div className="pt-3 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-400 shrink-0">
+                  <span
+                    className="material-symbols-outlined text-base"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
                     star
                   </span>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1 font-bold text-white text-sm sm:text-base">
+                  <div className="flex items-center gap-1 font-bold text-white text-sm">
                     <span>{shop.rating.toFixed(1)}</span>
-                    <span className="text-slate-400 text-xs font-normal">/5</span>
+                    <span className="text-slate-400 text-[10px] font-normal">/5</span>
                   </div>
-                  <p className="text-[11px] text-slate-300">{shop.reviewCount} {t("shop_detail.verified_reviews")}</p>
+                  <p className="text-[10px] text-slate-300">
+                    {shop.reviewCount} {t("shop_detail.verified_reviews")}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-sky-300 shrink-0">
-                  <span className="material-symbols-outlined text-xl">inventory_2</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-sky-300 shrink-0">
+                  <span className="material-symbols-outlined text-base">inventory_2</span>
                 </div>
                 <div>
-                  <span className="font-bold text-white text-sm sm:text-base">{shop.productCount}</span>
-                  <p className="text-[11px] text-slate-300">{t("shop_detail.online_articles")}</p>
+                  <span className="font-bold text-white text-sm">{shop.productCount}</span>
+                  <p className="text-[10px] text-slate-300">{t("shop_detail.online_articles")}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-emerald-300 shrink-0">
-                  <span className="material-symbols-outlined text-xl">schedule</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-300 shrink-0">
+                  <span className="material-symbols-outlined text-base">schedule</span>
                 </div>
                 <div>
-                  <span className="font-bold text-white text-sm sm:text-base">{shop.responseRate}</span>
-                  <p className="text-[11px] text-slate-300">{t("shop_detail.response_rate")}</p>
+                  <span className="font-bold text-white text-sm">{shop.responseRate}</span>
+                  <p className="text-[10px] text-slate-300">{t("shop_detail.response_rate")}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-amber-300 shrink-0">
-                  <span className="material-symbols-outlined text-xl">verified_user</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-300 shrink-0">
+                  <span className="material-symbols-outlined text-base">verified_user</span>
                 </div>
                 <div>
-                  <span className="font-bold text-white text-sm sm:text-base">{t("shop_detail.since")} {shop.yearEstablished}</span>
-                  <p className="text-[11px] text-slate-300">{t("shops.certified_seller")} {shopCountryName}</p>
+                  <span className="font-bold text-white text-sm">
+                    {t("shop_detail.since")} {shop.yearEstablished}
+                  </span>
+                  <p className="text-[10px] text-slate-300">
+                    {t("shops.certified_seller")} {shopCountryName}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 2. STORE TOOLBAR (CATEGORIES & SEARCH) */}
-        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-card p-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Category Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none text-xs">
+        {/* 2. BARRE D'ONGLETS & RECHERCHE INTERNE */}
+        <div className="bg-white rounded-lg border border-[#E2E8F0] shadow-2xs p-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Onglets spécialités */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 text-xs">
               <button
                 type="button"
                 onClick={() => setActiveTab("Tout")}
-                className={`px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                className={`px-3 py-1.5 rounded-md font-bold transition flex items-center gap-1.5 shrink-0 ${
                   activeTab === "Tout"
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-on-surface-variant hover:bg-surface-container-low"
+                    ? "bg-[#0B1B3D] text-white shadow-2xs"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <span>{t("shop_detail.all_catalog")}</span>
-                <span className="text-[10px] bg-tertiary px-1.5 py-0.5 rounded-full text-white">
+                <span className="text-[10px] bg-[#EA580C] px-1.5 py-0.2 rounded-full text-white">
                   {displayedProducts.length}
                 </span>
               </button>
@@ -469,10 +484,10 @@ export default function ShopDetailPage({ params }: PageProps) {
                   key={spec}
                   type="button"
                   onClick={() => setActiveTab(spec)}
-                  className={`px-3.5 py-2 rounded-xl font-semibold transition flex items-center gap-1.5 shrink-0 ${
+                  className={`px-3 py-1.5 rounded-md font-semibold transition flex items-center gap-1 shrink-0 ${
                     activeTab === spec
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-on-surface-variant hover:bg-surface-container-low"
+                      ? "bg-[#0B1B3D] text-white shadow-2xs"
+                      : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   <span>{spec}</span>
@@ -480,17 +495,17 @@ export default function ShopDetailPage({ params }: PageProps) {
               ))}
             </div>
 
-            {/* In-Store Search & Sorting */}
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="relative flex-1 md:w-60">
+            {/* Recherche interne et Tri */}
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="relative flex-1 md:w-56">
                 <input
                   type="text"
                   value={inStoreQuery}
                   onChange={(e) => setInStoreQuery(e.target.value)}
-                  placeholder={`${t("shop_detail.search_placeholder")}`}
-                  className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary text-primary placeholder:text-outline"
+                  placeholder={t("shop_detail.search_placeholder")}
+                  className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-slate-50 border border-[#E2E8F0] rounded-md focus:outline-none focus:border-[#0284C7] text-[#0B1B3D] placeholder:text-slate-400"
                 />
-                <span className="material-symbols-outlined absolute left-2.5 top-2.5 text-outline text-base">
+                <span className="material-symbols-outlined absolute left-2 top-2 text-slate-400 text-sm">
                   search
                 </span>
               </div>
@@ -498,7 +513,7 @@ export default function ShopDetailPage({ params }: PageProps) {
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
-                className="py-2 px-3 rounded-xl border border-outline-variant bg-surface-container-low text-xs text-primary font-semibold focus:outline-none focus:ring-2 focus:ring-secondary cursor-pointer"
+                className="py-1.5 px-2.5 rounded-md border border-[#E2E8F0] bg-white text-xs text-[#0B1B3D] font-semibold focus:outline-none cursor-pointer"
               >
                 <option value="newest">{t("catalog.sort_newest")}</option>
                 <option value="rating">{t("catalog.sort_popular")}</option>
@@ -509,23 +524,29 @@ export default function ShopDetailPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* 3. 2-COLUMN LAYOUT: PRODUCTS (LEFT ~8 COLS) + STORE SIDEBAR (RIGHT ~4 COLS) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Main Products Grid */}
-          <div className="lg:col-span-8 xl:col-span-8 space-y-6">
-            <div className="flex items-center justify-between pb-2 border-b border-outline-variant">
-              <h2 className="text-base sm:text-lg font-bold text-primary font-display flex items-center gap-2">
+        {/* 3. DISPOSITION 2 COLONNES : PRODUITS (8 COLS) + INFORMATIONS (4 COLS) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Grille des produits de la boutique */}
+          <div className="lg:col-span-8 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
+              <h2 className="text-sm sm:text-base font-bold text-[#0B1B3D] font-display flex items-center gap-2">
                 <span>{t("shop_detail.available_articles")}</span>
-                <span className="text-xs font-semibold text-outline">({displayedProducts.length})</span>
+                <span className="text-xs font-semibold text-slate-500">
+                  ({displayedProducts.length})
+                </span>
               </h2>
-              <span className="text-xs text-secondary font-semibold">{t("shop_detail.certified_stock")} {shopCountryName}</span>
+              <span className="text-xs text-[#0284C7] font-semibold">
+                {t("shop_detail.certified_stock")} {shopCountryName}
+              </span>
             </div>
 
             {displayedProducts.length === 0 ? (
-              <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-10 text-center space-y-3">
-                <span className="material-symbols-outlined text-4xl text-outline">inventory</span>
-                <h3 className="text-sm font-bold text-primary">{t("shop_detail.no_articles_found")}</h3>
-                <p className="text-xs text-on-surface-variant">
+              <div className="bg-white rounded-lg border border-[#E2E8F0] p-8 text-center space-y-3 shadow-2xs">
+                <span className="material-symbols-outlined text-3xl text-slate-400">inventory</span>
+                <h3 className="text-sm font-bold text-[#0B1B3D]">
+                  {t("shop_detail.no_articles_found")}
+                </h3>
+                <p className="text-xs text-slate-500">
                   {t("shop_detail.no_articles_desc")}
                 </p>
                 <button
@@ -534,13 +555,13 @@ export default function ShopDetailPage({ params }: PageProps) {
                     setInStoreQuery("");
                     setActiveTab("Tout");
                   }}
-                  className="px-4 py-2 rounded-xl bg-secondary text-white text-xs font-bold"
+                  className="px-4 py-2 rounded-lg bg-[#EA580C] text-white text-xs font-bold hover:bg-[#c2410c] transition shadow-xs"
                 >
                   {t("shop_detail.show_all_articles")}
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                 {displayedProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -548,142 +569,141 @@ export default function ShopDetailPage({ params }: PageProps) {
             )}
           </div>
 
-          {/* Right Store Sidebar */}
-          <aside className="lg:col-span-4 xl:col-span-4 space-y-6">
-            {/* About the Store */}
-            <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 sm:p-6 shadow-card space-y-5">
-              <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
-                <h3 className="text-sm sm:text-base font-bold text-primary font-display">
+          {/* Colonne latérale d'informations de la boutique */}
+          <aside className="lg:col-span-4 space-y-4">
+            <div className="bg-white border border-[#E2E8F0] rounded-lg p-4 sm:p-5 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
+                <h3 className="text-sm font-bold text-[#0B1B3D] font-display">
                   {t("shop_detail.about_shop")} {shop.name}
                 </h3>
-                <span className="material-symbols-outlined text-secondary text-xl">storefront</span>
+                <span className="material-symbols-outlined text-[#0284C7] text-lg">storefront</span>
               </div>
 
-              {/* Physical Location */}
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0 text-secondary">
-                  <span className="material-symbols-outlined text-lg">pin_drop</span>
+              {/* Adresse physique */}
+              <div className="flex items-start gap-2.5">
+                <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center shrink-0 text-[#0284C7]">
+                  <span className="material-symbols-outlined text-sm">pin_drop</span>
                 </div>
                 <div>
-                  <p className="text-[11px] text-outline font-semibold uppercase tracking-wider">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                     {t("shop_detail.physical_store")}
                   </p>
-                  <p className="text-xs sm:text-sm font-semibold text-primary mt-0.5">
+                  <p className="text-xs font-semibold text-[#0B1B3D] mt-0.5">
                     {shop.fullAddress}
                   </p>
-                  <span className="text-[11px] text-secondary font-medium inline-block mt-0.5">
+                  <span className="text-[10px] text-[#0284C7] font-medium inline-block mt-0.5">
                     {t("shop_detail.gps_verified")}
                   </span>
                 </div>
               </div>
 
-              {/* Shipping Delay */}
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0 text-tertiary">
-                  <span className="material-symbols-outlined text-lg">timer</span>
+              {/* Vitesse de livraison */}
+              <div className="flex items-start gap-2.5">
+                <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center shrink-0 text-[#EA580C]">
+                  <span className="material-symbols-outlined text-sm">timer</span>
                 </div>
                 <div>
-                  <p className="text-[11px] text-outline font-semibold uppercase tracking-wider">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                     {t("shop_detail.shipping_speed")}
                   </p>
-                  <p className="text-xs sm:text-sm font-semibold text-primary mt-0.5">
+                  <p className="text-xs font-semibold text-[#0B1B3D] mt-0.5">
                     {shop.shippingSpeed}
                   </p>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5">
+                  <p className="text-[11px] text-slate-500 mt-0.5">
                     {shop.city} : livraison le jour même. Autres provinces : 48 à 72h via hub Mwinda.
                   </p>
                 </div>
               </div>
 
-              {/* Covered Territories */}
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0 text-secondary">
-                  <span className="material-symbols-outlined text-lg">public</span>
+              {/* Territoires couverts */}
+              <div className="flex items-start gap-2.5">
+                <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center shrink-0 text-[#0284C7]">
+                  <span className="material-symbols-outlined text-sm">public</span>
                 </div>
                 <div>
-                  <p className="text-[11px] text-outline font-semibold uppercase tracking-wider">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                     {t("shop_detail.covered_territories")}
                   </p>
-                  <p className="text-xs sm:text-sm font-semibold text-primary mt-0.5">
+                  <p className="text-xs font-semibold text-[#0B1B3D] mt-0.5">
                     {shop.coveredTerritories}
                   </p>
-                  <span className="inline-block mt-1 bg-surface-container-low px-2 py-0.5 rounded text-[10px] font-bold text-secondary">
+                  <span className="inline-block mt-1 bg-slate-100 px-2 py-0.5 rounded text-[10px] font-bold text-[#0284C7]">
                     Mwinda Express Inter-provinces
                   </span>
                 </div>
               </div>
 
-              {/* Opening Hours */}
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0 text-outline">
-                  <span className="material-symbols-outlined text-lg">alarm</span>
+              {/* Horaires */}
+              <div className="flex items-start gap-2.5">
+                <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center shrink-0 text-slate-500">
+                  <span className="material-symbols-outlined text-sm">alarm</span>
                 </div>
                 <div>
-                  <p className="text-[11px] text-outline font-semibold uppercase tracking-wider">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                     {t("shop_detail.opening_hours")}
                   </p>
-                  <p className="text-xs sm:text-sm font-semibold text-primary mt-0.5">
+                  <p className="text-xs font-semibold text-[#0B1B3D] mt-0.5">
                     {shop.openingHours}
                   </p>
                 </div>
               </div>
 
-              {/* Performance Score */}
-              <div className="pt-4 border-t border-outline-variant space-y-3">
+              {/* Score de performance */}
+              <div className="pt-3 border-t border-[#E2E8F0] space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-primary">{t("shop_detail.performance_score")}</span>
-                  <span className="font-bold text-secondary font-mono">{shop.performanceScore.overall}</span>
+                  <span className="font-bold text-[#0B1B3D]">{t("shop_detail.performance_score")}</span>
+                  <span className="font-bold text-[#0284C7] font-mono">{shop.performanceScore.overall}</span>
                 </div>
 
-                <div className="space-y-2 text-[11px]">
+                <div className="space-y-1.5 text-[11px]">
                   <div>
-                    <div className="flex justify-between text-on-surface-variant mb-1">
+                    <div className="flex justify-between text-slate-600 mb-0.5">
                       <span>{t("shop_detail.item_quality")}</span>
-                      <span className="font-bold text-primary">{shop.performanceScore.itemQuality} / 5</span>
+                      <span className="font-bold text-[#0B1B3D]">{shop.performanceScore.itemQuality} / 5</span>
                     </div>
-                    <div className="w-full bg-surface-container-low rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-secondary h-full rounded-full" style={{ width: "98%" }}></div>
+                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-[#0284C7] h-full rounded-full" style={{ width: "98%" }}></div>
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-on-surface-variant mb-1">
+                    <div className="flex justify-between text-slate-600 mb-0.5">
                       <span>{t("shop_detail.communication")}</span>
-                      <span className="font-bold text-primary">{shop.performanceScore.communication} / 5</span>
+                      <span className="font-bold text-[#0B1B3D]">{shop.performanceScore.communication} / 5</span>
                     </div>
-                    <div className="w-full bg-surface-container-low rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-secondary h-full rounded-full" style={{ width: "100%" }}></div>
+                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-[#0284C7] h-full rounded-full" style={{ width: "100%" }}></div>
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-on-surface-variant mb-1">
+                    <div className="flex justify-between text-slate-600 mb-0.5">
                       <span>{t("shop_detail.shipping_speed_score")}</span>
-                      <span className="font-bold text-primary">{shop.performanceScore.shippingSpeed} / 5</span>
+                      <span className="font-bold text-[#0B1B3D]">{shop.performanceScore.shippingSpeed} / 5</span>
                     </div>
-                    <div className="w-full bg-surface-container-low rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-secondary h-full rounded-full" style={{ width: "96%" }}></div>
+                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-[#0284C7] h-full rounded-full" style={{ width: "96%" }}></div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Accepted Payment Badges */}
-              <div className="pt-4 border-t border-outline-variant space-y-2">
-                <p className="text-[11px] text-outline font-bold uppercase tracking-wider">
+              {/* Moyens de paiement acceptés */}
+              <div className="pt-3 border-t border-[#E2E8F0] space-y-1.5">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                   {t("shop_detail.secure_payments")}
                 </p>
-                <div className="grid grid-cols-2 gap-2 text-center text-[10px] font-bold">
-                  <div className="p-2 rounded-lg bg-surface-container-low border border-outline-variant text-primary">
+                <div className="grid grid-cols-2 gap-1.5 text-center text-[10px] font-bold">
+                  <div className="p-1.5 rounded bg-slate-50 border border-[#E2E8F0] text-[#0B1B3D]">
                     M-Pesa
                   </div>
-                  <div className="p-2 rounded-lg bg-surface-container-low border border-outline-variant text-primary">
+                  <div className="p-1.5 rounded bg-slate-50 border border-[#E2E8F0] text-[#0B1B3D]">
                     Orange Money
                   </div>
-                  <div className="p-2 rounded-lg bg-surface-container-low border border-outline-variant text-primary">
+                  <div className="p-1.5 rounded bg-slate-50 border border-[#E2E8F0] text-[#0B1B3D]">
                     Airtel Money
                   </div>
-                  <div className="p-2 rounded-lg bg-surface-container-low border border-outline-variant text-primary">
+                  <div className="p-1.5 rounded bg-slate-50 border border-[#E2E8F0] text-[#0B1B3D]">
                     Visa / Mastercard
                   </div>
                 </div>

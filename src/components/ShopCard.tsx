@@ -4,6 +4,9 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Shop } from "@/data/shops";
+import { getCountryByCode } from "@/lib/activeCountries";
+import { getShopCountryCode } from "@/lib/marketData";
+import { useT } from "@/i18n";
 
 interface ShopCardProps {
   shop: Shop;
@@ -11,127 +14,147 @@ interface ShopCardProps {
 }
 
 export const ShopCard: React.FC<ShopCardProps> = ({ shop, className = "" }) => {
+  const { t } = useT();
+  const countryCode = getShopCountryCode(shop);
+  const flag = getCountryByCode(countryCode)?.flag || "🇨🇩";
+
   return (
     <article
-      className={`bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden hover:border-secondary hover:shadow-card-hover transition-all flex flex-col group ${className}`}
+      className={`bg-white rounded-lg border border-[#E2E8F0] overflow-hidden hover:shadow-md hover:border-[#0284C7] transition-all flex flex-col group ${className}`}
     >
-      {/* Banner Container with Badges */}
-      <div className="relative h-28 sm:h-32 w-full bg-primary-container overflow-hidden z-0">
-        <div
-          className="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-300"
-          style={{ backgroundImage: `url('${shop.bannerImage}')` }}
+      {/* ─── Bannière de couverture courte (~96px = h-24) ──────────────────── */}
+      <div className="relative h-24 w-full bg-slate-100 overflow-hidden">
+        <Image
+          src={shop.bannerImage}
+          alt={shop.name}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
 
-        {/* Top Badges */}
-        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+        {/* Badges sur la bannière */}
+        <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
           {shop.verified && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
-              <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#0284C7] text-white text-[10px] font-bold shadow-xs">
+              <span
+                className="material-symbols-outlined text-[12px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
                 verified
               </span>
-              <span>Certifié Mwinda</span>
+              <span>{t("shops.certified_seller")}</span>
             </span>
           )}
         </div>
 
         {shop.topSeller && (
-          <span className="absolute top-2.5 right-2.5 inline-flex items-center px-2 py-0.5 rounded-md bg-white/95 text-primary text-[10px] font-bold shadow-sm z-10">
-            Top Vendeur
+          <span className="absolute top-2 right-2 inline-flex items-center px-2 py-0.5 rounded bg-white/95 text-[#0B1B3D] text-[10px] font-bold shadow-xs z-10">
+            {t("shops.top_seller")}
           </span>
         )}
       </div>
 
-      {/* Vendor Identity Block */}
-      <div className="px-4 sm:px-5 pt-0 pb-4 sm:pb-5 flex-1 flex flex-col relative z-10 bg-surface-container-lowest">
-        {/* Avatar + Title Header */}
-        <div className="flex items-start mb-3 gap-2.5 sm:gap-3">
-          <Link
-            href={`/boutiques/${shop.id}`}
-            className="-mt-7 sm:-mt-8 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border-2 border-white bg-white shadow-md overflow-hidden shrink-0 flex items-center justify-center p-0.5 sm:p-1 group-hover:scale-105 transition-transform relative z-20"
-          >
-            <Image
-              src={shop.logoImage}
-              alt={shop.name}
-              width={56}
-              height={56}
-              className="w-full h-full object-cover rounded-xl"
-            />
-          </Link>
-          <div className="min-w-0 flex-1 pt-1.5 sm:pt-2">
-            <Link href={`/boutiques/${shop.id}`} className="block">
-              <h3 className="text-sm sm:text-base font-bold text-primary font-display truncate hover:text-secondary transition-colors leading-snug">
-                {shop.name}
-              </h3>
-            </Link>
-            <p className="flex items-center gap-1 text-outline text-xs truncate mt-0.5">
-              <span className="material-symbols-outlined text-[14px] text-secondary shrink-0">location_on</span>
-              <span className="truncate">
-                {shop.city}, {shop.province}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* Category & Rating */}
-        <div className="flex items-center justify-between mb-3 text-xs">
-          <span className="inline-block px-2.5 py-0.5 rounded-full bg-surface-container-low text-secondary font-semibold text-[11px] truncate max-w-[170px]">
-            {shop.category}
-          </span>
-          <div className="flex items-center gap-1 shrink-0">
-            <span
-              className="material-symbols-outlined text-[16px] text-amber-500"
-              style={{ fontVariationSettings: "'FILL' 1" }}
+      {/* ─── Bloc Identité (fond blanc, nom et ville jamais masqués) ───────── */}
+      <div className="p-4 flex-1 flex flex-col justify-between space-y-3 bg-white">
+        <div>
+          {/* Avatar débordant sur la bannière + Nom & Ville */}
+          <div className="flex items-start gap-3 -mt-8 mb-2">
+            <Link
+              href={`/boutiques/${shop.id}`}
+              className="w-12 h-12 rounded-lg border-2 border-white bg-white shadow-sm overflow-hidden shrink-0 flex items-center justify-center relative z-10 group-hover:scale-105 transition-transform"
             >
-              star
-            </span>
-            <span className="font-bold text-primary">{shop.rating.toFixed(1)}</span>
-            <span className="text-[11px] text-outline">({shop.reviewCount})</span>
-          </div>
-        </div>
+              <Image
+                src={shop.logoImage}
+                alt={shop.name}
+                width={48}
+                height={48}
+                className="w-full h-full object-cover rounded-md"
+              />
+            </Link>
 
-        {/* Catalog summary */}
-        <div className="text-xs text-on-surface-variant flex items-center gap-1.5 mb-3">
-          <span className="material-symbols-outlined text-[16px] text-outline">inventory_2</span>
-          <span>
-            <strong className="font-semibold text-primary">{shop.productCount}+ créations</strong> en catalogue direct
-          </span>
-        </div>
-
-        {/* 3 Miniature Featured Products (if available) */}
-        {shop.productPreviews && shop.productPreviews.length > 0 && (
-          <div className="border-t border-outline-variant/60 pt-2.5 mb-4">
-            <span className="text-[10px] text-outline block mb-1.5 font-bold uppercase tracking-wider">
-              Produits phares de la boutique :
-            </span>
-            <div className="grid grid-cols-3 gap-2">
-              {shop.productPreviews.slice(0, 3).map((item, idx) => (
-                <div
-                  key={idx}
-                  className="aspect-square rounded-lg border border-outline-variant/60 overflow-hidden bg-surface-container-low group/item relative"
-                >
-                  <Image
-                    src={item.image}
-                    alt={item.title}
-                    fill
-                    sizes="(max-width: 768px) 33vw, 100px"
-                    className="w-full h-full object-cover group-hover/item:scale-105 transition-transform"
-                    title={item.title}
-                  />
-                </div>
-              ))}
+            <div className="min-w-0 flex-1 pt-6">
+              <Link href={`/boutiques/${shop.id}`} className="block">
+                <h3 className="text-sm font-bold text-[#0B1B3D] font-display truncate hover:text-[#0284C7] transition-colors leading-tight">
+                  {shop.name}
+                </h3>
+              </Link>
+              <p className="flex items-center gap-1 text-slate-500 text-xs truncate mt-0.5">
+                <span className="select-none text-xs" title={`Pays: ${countryCode}`}>
+                  {flag}
+                </span>
+                <span className="truncate">
+                  {shop.city}, {shop.province}
+                </span>
+              </p>
             </div>
           </div>
-        )}
 
-        {/* Action Button */}
-        <div className="mt-auto pt-2">
+          {/* Catégorie et Note */}
+          <div className="flex items-center justify-between text-xs py-1 border-t border-[#E2E8F0]/60">
+            <span className="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px] truncate max-w-[160px]">
+              {shop.category}
+            </span>
+            <div className="flex items-center gap-1 shrink-0">
+              <span
+                className="material-symbols-outlined text-sm text-amber-500"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                star
+              </span>
+              <span className="font-bold text-[#0B1B3D]">{shop.rating.toFixed(1)}</span>
+              <span className="text-[11px] text-slate-400">({shop.reviewCount})</span>
+            </div>
+          </div>
+
+          {/* Nombre réel de produits */}
+          <div className="text-xs text-slate-600 flex items-center gap-1.5 pt-1.5">
+            <span className="material-symbols-outlined text-[15px] text-slate-400">
+              inventory_2
+            </span>
+            <span>
+              <strong className="font-bold text-[#0B1B3D]">{shop.productCount}</strong>{" "}
+              {shop.productCount > 1
+                ? t("shops.articles_count")
+                : t("shops.article_count_singular")}
+            </span>
+          </div>
+
+          {/* Miniatures des produits phares */}
+          {shop.productPreviews && shop.productPreviews.length > 0 && (
+            <div className="pt-2.5 mt-2 border-t border-[#E2E8F0]">
+              <span className="text-[10px] text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
+                {t("shops.featured_products")}
+              </span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {shop.productPreviews.slice(0, 3).map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="aspect-square rounded border border-[#E2E8F0] overflow-hidden bg-slate-50 relative group/item"
+                  >
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      sizes="80px"
+                      className="w-full h-full object-cover group-hover/item:scale-105 transition-transform"
+                      title={item.title}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bouton Voir la boutique (orange action) */}
+        <div className="pt-2">
           <Link
             href={`/boutiques/${shop.id}`}
-            className="w-full h-10 rounded-xl bg-tertiary hover:bg-tertiary-hover text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow group-hover:shadow-md active:scale-95"
+            className="w-full py-2.5 px-3 rounded-lg bg-[#EA580C] hover:bg-[#c2410c] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95"
           >
-            <span>Voir la boutique</span>
-            <span className="material-symbols-outlined text-base">arrow_forward</span>
+            <span>{t("shops.visit_shop")}</span>
+            <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </Link>
         </div>
       </div>

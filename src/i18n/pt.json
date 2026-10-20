@@ -176,7 +176,9 @@
     "products_found": "produtos encontrados",
     "no_products": "Nenhum produto corresponde aos seus filtros",
     "add": "Adicionar",
-    "toast_added": "adicionado ao carrinho"
+    "toast_added": "adicionado ao carrinho",
+    "sort_newest": "Mais recentes",
+    "sort_popular": "Populares"
   },
   "product_detail": {
     "breadcrumb_home": "Início",
@@ -210,7 +212,13 @@
     "delivery_available_badge": "Disponível",
     "delivery_available_sub": "Entrega disponível com rastreamento da encomenda",
     "delivery_card_desc": "Envio cuidadoso e entrega segura. Rastreamento em direto disponível para todas as encomendas.",
-    "delivery_tab_desc": "A entrega está disponível para este produto com rastreamento seguro em tempo real e proteção ao comprador sob custódia Mwinda Pay."
+    "delivery_tab_desc": "A entrega está disponível para este produto com rastreamento seguro em tempo real e proteção ao comprador sob custódia Mwinda Pay.",
+    "in_stock_count": "Em estoque",
+    "seller_rating": "Classificação do vendedor:",
+    "total_price": "Preço total",
+    "specs_detailed": "Especificações detalhadas",
+    "reviews_verified": "Avaliações verificadas de clientes",
+    "reviews_sub": "Avaliações certificadas de compradores após entrega."
   },
   "shops": {
     "breadcrumb_home": "Início",
@@ -237,7 +245,11 @@
     "articles_count": "artigos",
     "reviews_count": "avaliações verificadas",
     "certified_seller": "Vendedor certificado",
-    "article_count_singular": "artigo"
+    "article_count_singular": "artigo",
+    "sort_by": "Ordenar por",
+    "top_seller": "Mais vendido",
+    "featured_products": "Produtos em destaque:",
+    "sort_popular": "Popularidade"
   },
   "shop_detail": {
     "breadcrumb_home": "Início",

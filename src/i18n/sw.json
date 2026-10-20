@@ -176,7 +176,9 @@
     "products_found": "bidhaa zilizopatikana",
     "no_products": "Hakuna bidhaa inayolingana na vichujio vyako",
     "add": "Ongeza",
-    "toast_added": "imeongezwa kwenye rukwama"
+    "toast_added": "imeongezwa kwenye rukwama",
+    "sort_newest": "Vipya zaidi",
+    "sort_popular": "Maarufu"
   },
   "product_detail": {
     "breadcrumb_home": "Nyumbani",
@@ -210,7 +212,13 @@
     "delivery_available_badge": "Inapatikana",
     "delivery_available_sub": "Uwasilishaji unapatikana kwa ufuatiliaji wa agizo",
     "delivery_card_desc": "Usafirishaji wa uangalifu na uwasilishaji salama. Ufuatiliaji wa moja kwa moja unapatikana kwa kila agizo.",
-    "delivery_tab_desc": "Uwasilishaji unapatikana kwa bidhaa hii na ufuatiliaji salama wa wakati halisi na ulinzi wa mnunuzi chini ya dhamana ya Mwinda Pay."
+    "delivery_tab_desc": "Uwasilishaji unapatikana kwa bidhaa hii na ufuatiliaji salama wa wakati halisi na ulinzi wa mnunuzi chini ya dhamana ya Mwinda Pay.",
+    "in_stock_count": "Iko ghalani",
+    "seller_rating": "Kiwango cha muuzaji:",
+    "total_price": "Bei kamili",
+    "specs_detailed": "Maelezo ya kina ya kiufundi",
+    "reviews_verified": "Maoni ya wateja yaliyothibitishwa",
+    "reviews_sub": "Ukadiriaji uliothibitishwa wa wanunuzi baada ya uwasilishaji."
   },
   "shops": {
     "breadcrumb_home": "Nyumbani",
@@ -237,7 +245,11 @@
     "articles_count": "bidhaa",
     "reviews_count": "maoni yaliyothibitishwa",
     "certified_seller": "Muuzaji aliyeidhinishwa",
-    "article_count_singular": "bidhaa"
+    "article_count_singular": "bidhaa",
+    "sort_by": "Panga kwa",
+    "top_seller": "Muuzaji bora",
+    "featured_products": "Bidhaa mashuhuri:",
+    "sort_popular": "Umaarufu"
   },
   "shop_detail": {
     "breadcrumb_home": "Nyumbani",

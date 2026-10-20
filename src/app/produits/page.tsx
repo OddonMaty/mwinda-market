@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from "react";
-import Link from "next/link";
-import Image from "next/image";
+
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { Breadcrumb } from "@/components/Breadcrumb";
+import { ProductCard } from "@/components/ProductCard";
 import { ElectronicProduct } from "@/data/electronics";
-import { PriceTag } from "@/components/PriceTag";
 import { useMarket } from "@/context/MarketContext";
 import { useCart } from "@/context/CartContext";
 import { useT } from "@/i18n";
@@ -15,6 +15,7 @@ import {
   getAllProducts,
   getAllProductProvinces,
   getAllShopNames,
+  toProductCard,
 } from "@/lib/marketData";
 
 const CATEGORY_SLUG_MAP: Record<string, string> = {
@@ -53,7 +54,7 @@ function resolveCategoryParam(param: string | null, availableCategories: string[
   return param;
 }
 
-function ElectronicsContent() {
+function CatalogContent() {
   const { country } = useMarket();
   const { addToCart } = useCart();
   const { t } = useT();
@@ -82,7 +83,7 @@ function ElectronicsContent() {
     }
   }, [searchParams, catalogCategories]);
 
-  // Catégories disponibles globalement (inclut la catégorie sélectionnée même si 0 produit)
+  // Catégories disponibles globalement
   const subCategories = useMemo(() => {
     const cats = new Set<string>();
     allProducts.forEach((p) => cats.add(p.category));
@@ -92,7 +93,7 @@ function ElectronicsContent() {
     return ["Tous", ...Array.from(cats).sort()];
   }, [allProducts, selectedSubCategory]);
 
-  // Max prix global (arrondi à la centaine supérieure)
+  // Max prix global
   const maxPriceInCatalog = useMemo(() => {
     if (allProducts.length === 0) return 700;
     const max = Math.max(...allProducts.map((p) => p.usdPrice));
@@ -102,11 +103,26 @@ function ElectronicsContent() {
   const [regionSearchText, setRegionSearchText] = useState<string>("");
   const [selectedProvinceFilter, setSelectedProvinceFilter] = useState<string>("Toutes");
   const [selectedShopFilter, setSelectedShopFilter] = useState<string>("Toutes");
+  const [minRatingFilter, setMinRatingFilter] = useState<number>(0);
+  const [onlyVerifiedShops, setOnlyVerifiedShops] = useState<boolean>(false);
   const [priceMax, setPriceMax] = useState<number>(700);
   const [sortOption, setSortOption] = useState<string>("pertinence");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Sections repliables de la colonne de filtres
+  const [openSections, setOpenSections] = useState({
+    categories: true,
+    price: true,
+    region: true,
+    rating: true,
+    shops: true,
+  });
+
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const handleAddToCart = (product: ElectronicProduct) => {
     addToCart({
@@ -129,9 +145,32 @@ function ElectronicsContent() {
     setRegionSearchText("");
     setSelectedProvinceFilter("Toutes");
     setSelectedShopFilter("Toutes");
+    setMinRatingFilter(0);
+    setOnlyVerifiedShops(false);
     setPriceMax(maxPriceInCatalog);
     setSortOption("pertinence");
   };
+
+  const hasActiveFilters = useMemo(() => {
+    return (
+      selectedSubCategory !== "Tous" ||
+      regionSearchText.trim() !== "" ||
+      selectedProvinceFilter !== "Toutes" ||
+      selectedShopFilter !== "Toutes" ||
+      minRatingFilter > 0 ||
+      onlyVerifiedShops ||
+      priceMax < maxPriceInCatalog
+    );
+  }, [
+    selectedSubCategory,
+    regionSearchText,
+    selectedProvinceFilter,
+    selectedShopFilter,
+    minRatingFilter,
+    onlyVerifiedShops,
+    priceMax,
+    maxPriceInCatalog,
+  ]);
 
   const filteredProducts = useMemo(() => {
     let result = [...allProducts];
@@ -157,6 +196,14 @@ function ElectronicsContent() {
       result = result.filter((p) => p.shopName.includes(selectedShopFilter));
     }
 
+    if (minRatingFilter > 0) {
+      result = result.filter((p) => p.rating >= minRatingFilter);
+    }
+
+    if (onlyVerifiedShops) {
+      result = result.filter((p) => p.shopVerified);
+    }
+
     result = result.filter((p) => p.usdPrice <= priceMax);
 
     if (sortOption === "prix-asc") {
@@ -168,13 +215,298 @@ function ElectronicsContent() {
     }
 
     return result;
-  }, [allProducts, selectedSubCategory, regionSearchText, selectedProvinceFilter, selectedShopFilter, priceMax, sortOption]);
+  }, [
+    allProducts,
+    selectedSubCategory,
+    regionSearchText,
+    selectedProvinceFilter,
+    selectedShopFilter,
+    minRatingFilter,
+    onlyVerifiedShops,
+    priceMax,
+    sortOption,
+  ]);
+
+  // Éléments du fil d'Ariane
+  const breadcrumbItems = useMemo(() => {
+    const items = [
+      { label: t("catalog.breadcrumb_home") || "Accueil", href: "/", icon: "home" },
+      {
+        label: t("catalog.title") || "Catalogue",
+        href: selectedSubCategory !== "Tous" ? "/produits" : undefined,
+      },
+    ];
+    if (selectedSubCategory !== "Tous") {
+      items.push({ label: selectedSubCategory, href: undefined });
+    }
+    return items;
+  }, [t, selectedSubCategory]);
+
+  // Contenu du volet de filtres (partagé desktop / tiroir mobile)
+  const FilterPanelContent = () => (
+    <div className="space-y-4">
+      {/* Header filtres */}
+      <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[#0284C7] text-lg">tune</span>
+          <span className="font-bold text-[#0B1B3D] font-display text-sm">
+            {t("catalog.filters")}
+          </span>
+        </div>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="text-xs font-semibold text-[#EA580C] hover:underline"
+          >
+            {t("catalog.reset")}
+          </button>
+        )}
+      </div>
+
+      {/* 1. Catégories */}
+      <div className="border-b border-[#E2E8F0] pb-3">
+        <button
+          type="button"
+          onClick={() => toggleSection("categories")}
+          className="w-full flex items-center justify-between py-1 text-xs font-bold text-[#0B1B3D] uppercase tracking-wider"
+        >
+          <span>{t("catalog.subcategories")}</span>
+          <span className="material-symbols-outlined text-sm text-slate-400">
+            {openSections.categories ? "expand_less" : "expand_more"}
+          </span>
+        </button>
+        {openSections.categories && (
+          <div className="mt-2 space-y-1 text-xs">
+            {subCategories.map((cat) => (
+              <label
+                key={cat}
+                className="flex items-center justify-between cursor-pointer py-1 px-1.5 rounded hover:bg-slate-50 transition"
+              >
+                <span className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="subcategory-filter"
+                    checked={selectedSubCategory === cat}
+                    onChange={() => setSelectedSubCategory(cat)}
+                    className="text-[#0284C7] focus:ring-[#0284C7]"
+                  />
+                  <span
+                    className={
+                      selectedSubCategory === cat
+                        ? "font-bold text-[#0B1B3D]"
+                        : "text-slate-700"
+                    }
+                  >
+                    {cat === "Tous" ? t("catalog.all_subcategories") : cat}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 2. Prix */}
+      <div className="border-b border-[#E2E8F0] pb-3">
+        <button
+          type="button"
+          onClick={() => toggleSection("price")}
+          className="w-full flex items-center justify-between py-1 text-xs font-bold text-[#0B1B3D] uppercase tracking-wider"
+        >
+          <span>{t("catalog.max_price")}</span>
+          <span className="text-xs font-bold text-[#0284C7]">{priceMax} $</span>
+        </button>
+        {openSections.price && (
+          <div className="mt-2 space-y-2">
+            <input
+              type="range"
+              min="30"
+              max={maxPriceInCatalog}
+              step="10"
+              value={priceMax}
+              onChange={(e) => setPriceMax(Number(e.target.value))}
+              className="w-full accent-[#0284C7] cursor-pointer"
+            />
+            <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+              <span>30 $</span>
+              <span>{maxPriceInCatalog} $</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 3. Ville / Région */}
+      <div className="border-b border-[#E2E8F0] pb-3">
+        <button
+          type="button"
+          onClick={() => toggleSection("region")}
+          className="w-full flex items-center justify-between py-1 text-xs font-bold text-[#0B1B3D] uppercase tracking-wider"
+        >
+          <span>{t("catalog.origin_province")}</span>
+          <span className="material-symbols-outlined text-sm text-slate-400">
+            {openSections.region ? "expand_less" : "expand_more"}
+          </span>
+        </button>
+        {openSections.region && (
+          <div className="mt-2 space-y-2">
+            <div className="relative">
+              <input
+                type="text"
+                value={regionSearchText}
+                onChange={(e) => setRegionSearchText(e.target.value)}
+                placeholder="Rechercher ville..."
+                className="w-full pl-7 pr-2.5 py-1.5 bg-slate-50 border border-[#E2E8F0] rounded-md text-xs placeholder:text-slate-400 focus:outline-none focus:border-[#0284C7]"
+              />
+              <span className="material-symbols-outlined absolute left-2 top-2 text-slate-400 text-sm">
+                search
+              </span>
+            </div>
+            <div className="space-y-1 text-xs max-h-40 overflow-y-auto pr-1">
+              {["Toutes", ...availableProvinces].map((prov) => (
+                <label
+                  key={prov}
+                  className="flex items-center justify-between cursor-pointer py-0.5 px-1 rounded hover:bg-slate-50 transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="province-filter"
+                      checked={selectedProvinceFilter === prov}
+                      onChange={() => setSelectedProvinceFilter(prov)}
+                      className="text-[#0284C7] focus:ring-[#0284C7]"
+                    />
+                    <span
+                      className={
+                        selectedProvinceFilter === prov
+                          ? "font-bold text-[#0B1B3D]"
+                          : "text-slate-700"
+                      }
+                    >
+                      {prov === "Toutes" ? t("catalog.all_provinces") : prov}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Note minimale */}
+      <div className="border-b border-[#E2E8F0] pb-3">
+        <button
+          type="button"
+          onClick={() => toggleSection("rating")}
+          className="w-full flex items-center justify-between py-1 text-xs font-bold text-[#0B1B3D] uppercase tracking-wider"
+        >
+          <span>Avis &amp; Notes</span>
+          <span className="material-symbols-outlined text-sm text-slate-400">
+            {openSections.rating ? "expand_less" : "expand_more"}
+          </span>
+        </button>
+        {openSections.rating && (
+          <div className="mt-2 space-y-1.5 text-xs">
+            {[
+              { val: 0, label: "Toutes les notes" },
+              { val: 4.5, label: "4.5★ et plus" },
+              { val: 4.0, label: "4.0★ et plus" },
+              { val: 3.5, label: "3.5★ et plus" },
+            ].map((r) => (
+              <label
+                key={r.val}
+                className="flex items-center gap-2 cursor-pointer py-0.5 px-1 rounded hover:bg-slate-50 transition"
+              >
+                <input
+                  type="radio"
+                  name="rating-filter"
+                  checked={minRatingFilter === r.val}
+                  onChange={() => setMinRatingFilter(r.val)}
+                  className="text-[#0284C7] focus:ring-[#0284C7]"
+                />
+                <span
+                  className={
+                    minRatingFilter === r.val ? "font-bold text-[#0B1B3D]" : "text-slate-700"
+                  }
+                >
+                  {r.label}
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 5. Vendeur certifié & Boutiques */}
+      <div className="pb-1">
+        <button
+          type="button"
+          onClick={() => toggleSection("shops")}
+          className="w-full flex items-center justify-between py-1 text-xs font-bold text-[#0B1B3D] uppercase tracking-wider"
+        >
+          <span>{t("catalog.certified_shop")}</span>
+          <span className="material-symbols-outlined text-sm text-slate-400">
+            {openSections.shops ? "expand_less" : "expand_more"}
+          </span>
+        </button>
+        {openSections.shops && (
+          <div className="mt-2 space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer py-1 px-1 bg-slate-50 rounded border border-[#E2E8F0]">
+              <input
+                type="checkbox"
+                checked={onlyVerifiedShops}
+                onChange={(e) => setOnlyVerifiedShops(e.target.checked)}
+                className="rounded text-[#0284C7] focus:ring-[#0284C7]"
+              />
+              <span className="text-xs font-bold text-[#0B1B3D] flex items-center gap-1">
+                <span
+                  className="material-symbols-outlined text-xs text-[#0284C7]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  verified
+                </span>
+                <span>Vendeurs certifiés uniquement</span>
+              </span>
+            </label>
+
+            <div className="space-y-1 text-xs max-h-36 overflow-y-auto pr-1">
+              {["Toutes", ...availableShops].map((shop) => (
+                <label
+                  key={shop}
+                  className="flex items-center justify-between cursor-pointer py-0.5 px-1 rounded hover:bg-slate-50 transition"
+                >
+                  <span className="flex items-center gap-2 truncate">
+                    <input
+                      type="radio"
+                      name="shop-filter"
+                      checked={selectedShopFilter === shop}
+                      onChange={() => setSelectedShopFilter(shop)}
+                      className="text-[#0284C7] focus:ring-[#0284C7]"
+                    />
+                    <span
+                      className={`truncate ${
+                        selectedShopFilter === shop
+                          ? "font-bold text-[#0B1B3D]"
+                          : "text-slate-700"
+                      }`}
+                    >
+                      {shop === "Toutes" ? t("catalog.all_shops") : shop}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-secondary selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] selection:bg-[#EA580C] selection:text-white">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-[999] bg-primary text-white px-4 py-3 rounded-xl shadow-modal border border-outline-variant flex items-center gap-3 animate-in slide-in-from-bottom duration-200">
+        <div className="fixed bottom-5 right-5 z-[999] bg-[#0B1B3D] text-white px-4 py-3 rounded-lg shadow-lg border border-slate-700 flex items-center gap-3 animate-in slide-in-from-bottom duration-200">
           <span className="material-symbols-outlined text-emerald-400">check_circle</span>
           <span className="text-xs sm:text-sm font-medium">{toastMessage}</span>
           <button
@@ -190,455 +522,288 @@ function ElectronicsContent() {
       {/* Header */}
       <Header />
 
-      {/* Category Hero & Subcategory Bar */}
-      <section className="bg-surface-container-lowest border-b border-outline-variant">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-10 py-5">
-          {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-outline mb-2">
-            <Link href="/" className="hover:text-primary transition-colors">
-              {t("catalog.breadcrumb_home")}
-            </Link>
-            <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <Link href="/produits" className="hover:text-primary transition-colors">
-              {t("catalog.breadcrumb_categories")}
-            </Link>
-            <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span className="text-on-surface font-semibold">{t("catalog.breadcrumb_current")}</span>
-          </nav>
+      {/* Main Canvas Conteneur unifié max-w-[1280px] */}
+      <main className="w-full max-w-[1280px] mx-auto px-4 lg:px-6 py-5 sm:py-6 flex-1 space-y-5">
+        {/* En-tête de page : Fil d'Ariane, Titre, Nombre de résultats, Tri & Vue */}
+        <div className="space-y-3 pb-3 border-b border-[#E2E8F0]">
+          <Breadcrumb items={breadcrumbItems} />
 
-          {/* Title & Logistics Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-primary tracking-tight font-display">
-                  {t("catalog.title")}
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-black text-[#0B1B3D] font-display tracking-tight">
+                  {selectedSubCategory !== "Tous"
+                    ? selectedSubCategory
+                    : t("catalog.title")}
                 </h1>
-                <span className="bg-surface-container text-secondary text-xs font-bold px-2.5 py-0.5 rounded-full border border-secondary/20">
-                  {allProducts.length}+ {t("shops.articles_count")}
+                <span className="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-slate-200">
+                  {filteredProducts.length} {t("catalog.products_found")}
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-on-surface-variant mt-1 max-w-3xl leading-relaxed">
-                {t("catalog.subtitle")}
+              <p className="text-xs text-slate-500 mt-0.5">
+                Marché Panafricain • {country.flag} {country.currency.code} — {t("catalog.subtitle")}
               </p>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary/10 text-secondary rounded-lg border border-secondary/20 self-start md:self-auto text-xs font-medium">
-              <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
-                public
-              </span>
-              <span>Marché Panafricain • {country.currency.code}</span>
-            </div>
-          </div>
-
-          {/* Subcategories Horizontal Scroll */}
-          <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-1">
-            {subCategories.map((sub) => (
+            {/* Contrôles Desktop : Tri + Vue Grille/Liste */}
+            <div className="flex items-center gap-2.5 self-start sm:self-auto">
+              {/* Bouton Filtres Mobile */}
               <button
-                key={sub}
                 type="button"
-                onClick={() => setSelectedSubCategory(sub)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
-                  selectedSubCategory === sub
-                    ? "bg-primary text-white shadow-sm"
-                    : "bg-surface-container-low text-on-surface border border-outline-variant hover:bg-surface-container"
-                }`}
+                onClick={() => setMobileFilterOpen(true)}
+                className="lg:hidden flex items-center gap-1.5 px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-xs font-bold text-[#0B1B3D] shadow-2xs hover:bg-slate-50"
               >
-                {sub.includes("Solaire") && (
-                  <span className="material-symbols-outlined text-sm text-tertiary" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    solar_power
-                  </span>
+                <span className="material-symbols-outlined text-base text-[#0284C7]">tune</span>
+                <span>{t("catalog.filters")}</span>
+                {hasActiveFilters && (
+                  <span className="w-2 h-2 rounded-full bg-[#EA580C]" />
                 )}
-                <span>{sub === "Tous" ? t("catalog.all_subcategories") : sub}</span>
               </button>
-            ))}
+
+              {/* Tri */}
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="hidden md:inline text-slate-500 font-medium">
+                  {t("catalog.sort_by")} :
+                </span>
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value)}
+                  className="bg-white border border-[#E2E8F0] rounded-lg px-2.5 py-2 text-xs font-semibold text-[#0B1B3D] outline-none cursor-pointer hover:border-slate-300"
+                >
+                  <option value="pertinence">{t("catalog.sort_relevance")}</option>
+                  <option value="prix-asc">{t("catalog.sort_price_asc")}</option>
+                  <option value="prix-desc">{t("catalog.sort_price_desc")}</option>
+                  <option value="notes">{t("catalog.sort_rating")}</option>
+                </select>
+              </div>
+
+              {/* Bascule Grille / Liste */}
+              <div className="flex items-center border border-[#E2E8F0] rounded-lg p-0.5 bg-white shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("grid")}
+                  className={`p-1.5 rounded transition ${
+                    viewMode === "grid"
+                      ? "bg-slate-100 text-[#0B1B3D]"
+                      : "text-slate-400 hover:text-slate-700"
+                  }`}
+                  title="Vue Grille"
+                >
+                  <span className="material-symbols-outlined text-base leading-none">
+                    grid_view
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  className={`p-1.5 rounded transition ${
+                    viewMode === "list"
+                      ? "bg-slate-100 text-[#0B1B3D]"
+                      : "text-slate-400 hover:text-slate-700"
+                  }`}
+                  title="Vue Liste"
+                >
+                  <span className="material-symbols-outlined text-base leading-none">
+                    view_list
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* Main Grid: 3-col Sidebar (Filters) + 9-col Content */}
-      <main className="w-full max-w-7xl mx-auto px-4 md:px-8 lg:px-10 py-8 flex-1">
-        {/* Mobile Filter Toggle */}
-        <div className="lg:hidden flex items-center justify-between mb-4">
-          <button
-            type="button"
-            onClick={() => setMobileFilterOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-xs font-bold text-primary shadow-sm"
-          >
-            <span className="material-symbols-outlined text-base text-secondary">tune</span>
-            <span>{t("catalog.filters")} ({filteredProducts.length})</span>
-          </button>
-
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className="bg-surface-container-lowest border border-outline-variant rounded-lg px-2.5 py-2 text-xs font-semibold text-on-surface outline-none"
-          >
-            <option value="pertinence">{t("catalog.sort_relevance")}</option>
-            <option value="prix-asc">{t("catalog.sort_price_asc")}</option>
-            <option value="prix-desc">{t("catalog.sort_price_desc")}</option>
-            <option value="notes">{t("catalog.sort_rating")}</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-          {/* ================= LEFT FILTERS SIDEBAR (3 Columns) ================= */}
-          <aside className="hidden lg:block lg:col-span-3 space-y-4">
-            {/* Header Card */}
-            <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-card flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary text-xl">tune</span>
-                <span className="font-bold text-primary font-display text-sm">{t("catalog.filters")}</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="text-xs font-semibold text-secondary hover:underline"
-              >
-                {t("catalog.reset")}
-              </button>
-            </div>
-
-            {/* Filter: Sous-catégories */}
-            <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-card space-y-2.5">
-              <h3 className="font-bold text-primary text-xs uppercase tracking-wider">{t("catalog.subcategories")}</h3>
-              <div className="space-y-1.5 text-xs">
-                {subCategories.slice(1).map((cat) => (
-                  <label key={cat} className="flex items-center justify-between cursor-pointer group py-0.5">
-                    <span className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="subcategory-filter"
-                        checked={selectedSubCategory === cat}
-                        onChange={() => setSelectedSubCategory(cat)}
-                        className="text-secondary focus:ring-secondary"
-                      />
-                      <span className="text-on-surface group-hover:text-secondary transition-colors">
-                        {cat}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Filter: Prix Max */}
-            <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-card space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-primary text-xs uppercase tracking-wider">{t("catalog.max_price")}</h3>
-                <span className="text-xs font-bold text-secondary">{priceMax} $</span>
-              </div>
-              <input
-                type="range"
-                min="30"
-                max="700"
-                step="10"
-                value={priceMax}
-                onChange={(e) => setPriceMax(Number(e.target.value))}
-                className="w-full accent-secondary cursor-pointer"
-              />
-              <div className="flex items-center justify-between text-[11px] text-outline font-medium">
-                <span>30 $</span>
-                <span>700 $</span>
-              </div>
-            </div>
-
-            {/* Filter: Région de provenance (texte libre global + liste) */}
-            <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-card space-y-2.5">
-              <h3 className="font-bold text-primary text-xs uppercase tracking-wider">{t("catalog.origin_province")}</h3>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={regionSearchText}
-                  onChange={(e) => setRegionSearchText(e.target.value)}
-                  placeholder="Rechercher ville, région..."
-                  className="w-full pl-7 pr-2.5 py-1.5 bg-surface-container-low border border-outline-variant rounded-md text-xs placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-secondary"
-                />
-                <span className="material-symbols-outlined absolute left-1.5 top-2 text-outline text-sm">
-                  search
-                </span>
-              </div>
-              <div className="space-y-1.5 text-xs max-h-48 overflow-y-auto pr-1">
-                {["Toutes", ...availableProvinces].map((prov) => (
-                  <label key={prov} className="flex items-center justify-between cursor-pointer group py-0.5">
-                    <span className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="province-filter"
-                        checked={selectedProvinceFilter === prov}
-                        onChange={() => setSelectedProvinceFilter(prov)}
-                        className="text-secondary focus:ring-secondary"
-                      />
-                      <span className="text-on-surface group-hover:text-secondary transition-colors">
-                        {prov === "Toutes" ? t("catalog.all_provinces") : prov}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Filter: Boutiques Partenaires (dynamique) */}
-            <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-card space-y-2.5">
-              <h3 className="font-bold text-primary text-xs uppercase tracking-wider">{t("catalog.certified_shop")}</h3>
-              <div className="space-y-1.5 text-xs">
-                {["Toutes", ...availableShops].map((shop) => (
-                  <label key={shop} className="flex items-center justify-between cursor-pointer group py-0.5">
-                    <span className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="shop-filter"
-                        checked={selectedShopFilter === shop}
-                        onChange={() => setSelectedShopFilter(shop)}
-                        className="text-secondary focus:ring-secondary"
-                      />
-                      <span className="text-on-surface group-hover:text-secondary transition-colors">
-                        {shop === "Toutes" ? t("catalog.all_shops") : shop}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
+        {/* Corps principal : Colonne de filtres (~260px) + Grille/Liste de produits */}
+        <div className="flex flex-col lg:flex-row gap-5 items-start">
+          {/* Colonne de filtres Desktop (~260px) */}
+          <aside className="hidden lg:block w-64 shrink-0 bg-white rounded-lg border border-[#E2E8F0] p-4 shadow-2xs sticky top-24">
+            <FilterPanelContent />
           </aside>
 
-          {/* ================= RIGHT MAIN CONTENT FEED (9 Columns) ================= */}
-          <section className="lg:col-span-9 space-y-6">
-            {/* Controls Bar */}
-            <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-card space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs sm:text-sm font-bold text-primary">
-                  <span className="text-secondary">{filteredProducts.length}</span> {t("catalog.products_found")}
-                </p>
+          {/* Tiroir mobile de filtres */}
+          {mobileFilterOpen && (
+            <div className="fixed inset-0 z-50 bg-[#0B1B3D]/60 backdrop-blur-sm lg:hidden flex justify-end">
+              <div className="w-full max-w-xs h-full bg-white p-5 flex flex-col shadow-2xl overflow-y-auto">
+                <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] mb-3 shrink-0">
+                  <h3 className="font-bold text-[#0B1B3D] text-sm font-display">
+                    {t("catalog.filters")} ({filteredProducts.length})
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setMobileFilterOpen(false)}
+                    className="p-1 rounded-full hover:bg-slate-100"
+                  >
+                    <span className="material-symbols-outlined text-slate-500">close</span>
+                  </button>
+                </div>
 
-                <div className="hidden sm:flex items-center gap-3">
-                  {/* Sort dropdown */}
-                  <div className="flex items-center gap-2 text-xs">
-                    <label htmlFor="desktop-sort" className="text-outline">{t("catalog.sort_by")} :</label>
-                    <select
-                      id="desktop-sort"
-                      value={sortOption}
-                      onChange={(e) => setSortOption(e.target.value)}
-                      className="bg-surface-container-low border border-outline-variant rounded-lg px-3 py-1.5 font-medium text-on-surface outline-none cursor-pointer"
-                    >
-                      <option value="pertinence">{t("catalog.sort_relevance")}</option>
-                      <option value="prix-asc">{t("catalog.sort_price_asc")}</option>
-                      <option value="prix-desc">{t("catalog.sort_price_desc")}</option>
-                      <option value="notes">{t("catalog.sort_rating")}</option>
-                    </select>
-                  </div>
+                <div className="flex-1 overflow-y-auto">
+                  <FilterPanelContent />
+                </div>
 
-                  {/* View Switcher */}
-                  <div className="flex items-center border border-outline-variant rounded-lg p-0.5 bg-surface-container-low">
-                    <button
-                      type="button"
-                      onClick={() => setViewMode("grid")}
-                      className={`p-1.5 rounded transition ${
-                        viewMode === "grid"
-                          ? "bg-surface-container-lowest text-primary shadow-sm"
-                          : "text-outline hover:text-on-surface"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-sm">grid_view</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setViewMode("list")}
-                      className={`p-1.5 rounded transition ${
-                        viewMode === "list"
-                          ? "bg-surface-container-lowest text-primary shadow-sm"
-                          : "text-outline hover:text-on-surface"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-sm">view_list</span>
-                    </button>
-                  </div>
+                <div className="pt-3 border-t border-[#E2E8F0] mt-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setMobileFilterOpen(false)}
+                    className="w-full py-2.5 bg-[#EA580C] text-white rounded-lg text-xs font-bold hover:bg-[#c2410c] transition"
+                  >
+                    Voir les {filteredProducts.length} produits
+                  </button>
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* Active Filter Removable Tags */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-surface-container text-xs">
-                <span className="text-[11px] text-outline font-semibold uppercase tracking-wider">{t("catalog.filters")} :</span>
+          {/* Zone de contenu principale (Pastilles actives + Grille) */}
+          <section className="flex-1 min-w-0 w-full space-y-4">
+            {/* Pastilles de filtres actifs */}
+            {hasActiveFilters && (
+              <div className="flex flex-wrap items-center gap-1.5 p-2.5 bg-white rounded-lg border border-[#E2E8F0] text-xs">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                  Filtres actifs :
+                </span>
+
                 {selectedSubCategory !== "Tous" && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-surface-container text-on-surface text-[11px] rounded-full border border-outline-variant">
-                    {selectedSubCategory}
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0B1B3D] border border-slate-200 text-xs font-medium">
+                    <span>{selectedSubCategory}</span>
                     <button
                       type="button"
                       onClick={() => setSelectedSubCategory("Tous")}
-                      className="text-outline hover:text-rose-600"
+                      className="text-slate-400 hover:text-rose-600 font-bold ml-0.5"
                     >
                       ×
                     </button>
                   </span>
                 )}
+
+                {priceMax < maxPriceInCatalog && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0B1B3D] border border-slate-200 text-xs font-medium">
+                    <span>Max {priceMax} $</span>
+                    <button
+                      type="button"
+                      onClick={() => setPriceMax(maxPriceInCatalog)}
+                      className="text-slate-400 hover:text-rose-600 font-bold ml-0.5"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+
                 {selectedProvinceFilter !== "Toutes" && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-surface-container text-on-surface text-[11px] rounded-full border border-outline-variant">
-                    {selectedProvinceFilter}
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0B1B3D] border border-slate-200 text-xs font-medium">
+                    <span>{selectedProvinceFilter}</span>
                     <button
                       type="button"
                       onClick={() => setSelectedProvinceFilter("Toutes")}
-                      className="text-outline hover:text-rose-600"
+                      className="text-slate-400 hover:text-rose-600 font-bold ml-0.5"
                     >
                       ×
                     </button>
                   </span>
                 )}
+
+                {regionSearchText.trim() !== "" && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0B1B3D] border border-slate-200 text-xs font-medium">
+                    <span>« {regionSearchText} »</span>
+                    <button
+                      type="button"
+                      onClick={() => setRegionSearchText("")}
+                      className="text-slate-400 hover:text-rose-600 font-bold ml-0.5"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+
                 {selectedShopFilter !== "Toutes" && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-surface-container text-on-surface text-[11px] rounded-full border border-outline-variant">
-                    {selectedShopFilter}
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0B1B3D] border border-slate-200 text-xs font-medium">
+                    <span>{selectedShopFilter}</span>
                     <button
                       type="button"
                       onClick={() => setSelectedShopFilter("Toutes")}
-                      className="text-outline hover:text-rose-600"
+                      className="text-slate-400 hover:text-rose-600 font-bold ml-0.5"
                     >
                       ×
                     </button>
                   </span>
                 )}
+
+                {minRatingFilter > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0B1B3D] border border-slate-200 text-xs font-medium">
+                    <span>{minRatingFilter}★ et +</span>
+                    <button
+                      type="button"
+                      onClick={() => setMinRatingFilter(0)}
+                      className="text-slate-400 hover:text-rose-600 font-bold ml-0.5"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+
+                {onlyVerifiedShops && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0B1B3D] border border-slate-200 text-xs font-medium">
+                    <span>Certifiés uniquement</span>
+                    <button
+                      type="button"
+                      onClick={() => setOnlyVerifiedShops(false)}
+                      className="text-slate-400 hover:text-rose-600 font-bold ml-0.5"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className="text-[11px] text-secondary hover:underline font-bold ml-1"
+                  className="text-xs font-bold text-[#EA580C] hover:underline ml-auto"
+                >
+                  Effacer tout
+                </button>
+              </div>
+            )}
+
+            {/* Rendu des produits ou État vide */}
+            {filteredProducts.length === 0 ? (
+              <div className="bg-white rounded-lg border border-[#E2E8F0] p-10 text-center shadow-2xs space-y-4">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                  <span className="material-symbols-outlined text-3xl">search_off</span>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-[#0B1B3D] font-display">
+                    {t("catalog.no_products")}
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    Aucun produit ne correspond à vos filtres actuels. Essayez d&apos;élargir vos critères de recherche.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="px-5 py-2.5 bg-[#EA580C] text-white rounded-lg text-xs font-bold hover:bg-[#c2410c] transition shadow-xs"
                 >
                   {t("catalog.reset")}
                 </button>
               </div>
-            </div>
-
-            {/* Products Grid */}
-            {filteredProducts.length === 0 ? (
-              <div className="bg-surface-container-lowest p-12 text-center rounded-xl border border-outline-variant">
-                <span className="material-symbols-outlined text-4xl text-outline mb-2">devices</span>
-                <p className="text-base font-bold text-primary">
-                  {t("catalog.no_products")}
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center mt-4">
-                  <button
-                    type="button"
-                    onClick={handleResetFilters}
-                    className="px-4 py-2 bg-secondary text-white rounded-lg text-xs font-bold hover:bg-secondary-dark transition"
-                  >
-                    {t("catalog.reset")}
-                  </button>
-                </div>
-              </div>
             ) : viewMode === "grid" ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {filteredProducts.map((product) => (
-                  <article
+                  <ProductCard
                     key={product.id}
-                    className="bg-surface-container-lowest border border-outline-variant rounded-lg p-3.5 flex flex-col justify-between custom-shadow hover:custom-shadow-hover hover:border-slate-300 transition-all duration-200 group"
-                  >
-                    <div>
-                      {/* Image container */}
-                      <div className="relative aspect-square w-full rounded-md overflow-hidden bg-surface-container-low mb-3">
-                        <Link href={`/produits/${product.id}`} className="block w-full h-full relative">
-                          <Image
-                            src={product.image}
-                            alt={product.title}
-                            fill
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </Link>
-                        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
-                          {product.badges.discount && (
-                            <span className="bg-tertiary text-white text-[11px] font-bold px-2 py-0.5 rounded shadow-sm">
-                              {product.badges.discount}
-                            </span>
-                          )}
-                          {product.badges.logisticsText && (
-                            <span className="bg-primary text-secondary-accent text-[11px] font-semibold px-2 py-0.5 rounded">
-                              {product.badges.logisticsText}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Store & Location */}
-                      <p className="text-xs text-outline mb-1 truncate">
-                        <span className="font-semibold text-secondary hover:underline cursor-pointer">
-                          {product.shopName}
-                        </span>{" "}
-                        • {product.shopCity}
-                      </p>
-
-                      {/* Title */}
-                      <Link href={`/produits/${product.id}`} className="block">
-                        <h3 className="font-bold text-sm text-primary line-clamp-2 mb-1 group-hover:text-secondary transition-colors font-display">
-                          {product.title}
-                        </h3>
-                      </Link>
-
-                      {/* Rating */}
-                      <div className="flex items-center gap-1 text-xs mb-2">
-                        <span className="material-symbols-outlined text-xs text-amber-500" style={{ fontVariationSettings: "'FILL' 1" }}>
-                          star
-                        </span>
-                        <span className="font-bold text-on-surface">{product.rating}</span>
-                        <span className="text-outline">({product.reviewCount} {t("shops.reviews_count")})</span>
-                      </div>
-                    </div>
-
-                    {/* Price & Buy Action */}
-                    <div className="pt-2 border-t border-outline-variant flex items-end justify-between">
-                      <PriceTag
-                        usdPrice={product.usdPrice}
-                        originalUsdPrice={product.originalUsdPrice}
-                        size="md"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleAddToCart(product)}
-                        className="p-2.5 rounded-lg bg-tertiary hover:bg-tertiary-hover text-white transition shadow flex items-center justify-center active:scale-95"
-                        title={t("product_detail.add_to_cart")}
-                      >
-                        <span className="material-symbols-outlined text-lg">shopping_cart</span>
-                      </button>
-                    </div>
-                  </article>
+                    product={toProductCard(product)}
+                    onAddToCart={() => handleAddToCart(product)}
+                  />
                 ))}
               </div>
             ) : (
-              /* List View */
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3 sm:gap-4">
                 {filteredProducts.map((product) => (
-                  <article
+                  <ProductCard
                     key={product.id}
-                    className="bg-surface-container-lowest border border-outline-variant rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row gap-4 items-center justify-between custom-shadow hover:custom-shadow-hover transition"
-                  >
-                    <div className="flex items-center gap-4 w-full sm:w-auto">
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-surface-container-low overflow-hidden shrink-0 relative">
-                        <Image
-                          src={product.image}
-                          alt={product.title}
-                          width={96}
-                          height={96}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-[11px] font-semibold text-secondary">{product.shopName} • {product.shopCity}</span>
-                        <h3 className="text-sm sm:text-base font-bold text-primary font-display line-clamp-1">{product.title}</h3>
-                        <div className="flex items-center gap-1 text-xs text-on-tertiary-container mt-0.5">
-                          <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                          <span className="font-bold">{product.rating}</span>
-                          <span className="text-outline">({product.reviewCount} {t("shops.reviews_count")})</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-0 border-outline-variant">
-                      <PriceTag usdPrice={product.usdPrice} originalUsdPrice={product.originalUsdPrice} size="sm" />
-                      <button
-                        type="button"
-                        onClick={() => handleAddToCart(product)}
-                        className="px-4 py-2 rounded-lg bg-tertiary hover:bg-tertiary-hover text-white text-xs font-bold transition flex items-center gap-1.5"
-                      >
-                        <span className="material-symbols-outlined text-base">shopping_cart</span>
-                        <span>{t("catalog.add")}</span>
-                      </button>
-                    </div>
-                  </article>
+                    product={toProductCard(product)}
+                    layout="list"
+                    onAddToCart={() => handleAddToCart(product)}
+                  />
                 ))}
               </div>
             )}
@@ -646,92 +811,24 @@ function ElectronicsContent() {
         </div>
       </main>
 
-      {/* Mobile Filter Drawer */}
-      {mobileFilterOpen && (
-        <div className="fixed inset-0 z-[100] lg:hidden">
-          <div className="fixed inset-0 bg-primary/60 backdrop-blur-sm" onClick={() => setMobileFilterOpen(false)} />
-          <div className="fixed bottom-0 inset-x-0 max-h-[85vh] bg-white rounded-t-2xl p-5 overflow-y-auto z-10 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
-              <span className="font-bold text-base text-primary">{t("catalog.filters")}</span>
-              <button type="button" onClick={() => setMobileFilterOpen(false)} className="p-1">
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            {/* Mobile Filter sections */}
-            <div className="space-y-4 text-xs">
-              <div>
-                <p className="font-bold mb-2">{t("catalog.subcategories")}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {subCategories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setSelectedSubCategory(cat)}
-                      className={`px-3 py-1.5 rounded-full font-semibold ${
-                        selectedSubCategory === cat ? "bg-secondary text-white" : "bg-surface-container"
-                      }`}
-                    >
-                      {cat === "Tous" ? t("catalog.all_subcategories") : cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="font-bold mb-2">{t("catalog.origin_province")}</p>
-                <div className="relative mb-2.5">
-                  <input
-                    type="text"
-                    value={regionSearchText}
-                    onChange={(e) => setRegionSearchText(e.target.value)}
-                    placeholder="Rechercher ville, région..."
-                    className="w-full pl-8 pr-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-xs placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-secondary"
-                  />
-                  <span className="material-symbols-outlined absolute left-2 top-2 text-outline text-base">
-                    search
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
-                  {["Toutes", ...availableProvinces].map((prov) => (
-                    <button
-                      key={prov}
-                      type="button"
-                      onClick={() => setSelectedProvinceFilter(prov)}
-                      className={`px-3 py-1.5 rounded-full font-semibold ${
-                        selectedProvinceFilter === prov ? "bg-secondary text-white" : "bg-surface-container"
-                      }`}
-                    >
-                      {prov === "Toutes" ? t("catalog.all_provinces") : prov}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => setMobileFilterOpen(false)}
-                  className="w-full py-3 bg-primary text-white rounded-lg font-bold text-sm"
-                >
-                  {t("catalog.filters")} ({filteredProducts.length})
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
       <Footer />
     </div>
   );
 }
 
-export default function ElectronicsPage() {
+export default function CatalogPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-surface" />}>
-      <ElectronicsContent />
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+          <div className="text-center space-y-3">
+            <div className="w-10 h-10 border-3 border-[#0284C7] border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-bold text-[#0B1B3D]">Chargement du catalogue...</p>
+          </div>
+        </div>
+      }
+    >
+      <CatalogContent />
     </Suspense>
   );
 }

@@ -5,12 +5,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { Badge } from "@/components/Badge";
 import { PriceTag } from "@/components/PriceTag";
 import { ProductCard } from "@/components/ProductCard";
 import { ELECTRONICS_PRODUCTS, ElectronicProduct } from "@/data/electronics";
 import { useCart } from "@/context/CartContext";
-import { getShopIdByName } from "@/data/shops";
+import { getShopIdByName, getShopById } from "@/data/shops";
+import { getCountryByCode } from "@/lib/activeCountries";
 import { getAllProducts, toProductCard } from "@/lib/marketData";
 import { useT } from "@/i18n";
 
@@ -24,7 +26,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   const { addToCart: addGlobalToCart } = useCart();
   const { t } = useT();
 
-  // Resolve product — null when ID truly doesn't exist (B-03)
+  // Résolution du produit — null si l'ID n'existe pas
   const productFound: ElectronicProduct | undefined = ELECTRONICS_PRODUCTS.find(
     (p) => p.id === params.id
   );
@@ -33,22 +35,26 @@ export default function ProductDetailPage({ params }: PageProps) {
     ELECTRONICS_PRODUCTS.find((p) => p.id === "station-energie-solaire-1000w") ||
     ELECTRONICS_PRODUCTS[0];
 
-
-  // Gallery state
+  // Galerie photo
   const images = product.images && product.images.length > 0 ? product.images : [product.image];
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  // Cart & Quantity state
+  // Quantité et Panier
   const [quantity, setQuantity] = useState(1);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
+  // Onglet actif
+  const [activeTab, setActiveTab] = useState<"specs" | "delivery" | "reviews">("specs");
 
+  // Vendeur et pays
+  const shopId = getShopIdByName(product.shopName);
+  const shopObj = getShopById(shopId);
+  const shopCountryCode = shopObj?.countryCode || "CD";
+  const flag = getCountryByCode(shopCountryCode)?.flag || "🇨🇩";
+  const isVerified = shopObj?.verified ?? true;
 
-  // Active info tab
-  const [activeTab, setActiveTab] = useState<"specs" | "features" | "delivery">("specs");
-
-  // Quantity handlers
+  // Gestion quantité
   const maxStock = product.stockCount || 15;
   const handleDecreaseQuantity = () => {
     setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
@@ -57,31 +63,31 @@ export default function ProductDetailPage({ params }: PageProps) {
     setQuantity((prev) => (prev < maxStock ? prev + 1 : prev));
   };
 
-  // Add to cart handler (always active — global catalogue)
+  // Ajout au panier
   const handleAddToCart = () => {
     addGlobalToCart(product, quantity);
     setToastMessage(`${quantity}x « ${product.title} » ${t("product_detail.toast_added")}`);
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Buy now handler (always active — global catalogue)
+  // Achat immédiat
   const handleBuyNow = () => {
     addGlobalToCart(product, quantity);
     setToastMessage(`${t("product_detail.toast_redirect")} (${quantity})...`);
     setTimeout(() => {
       window.location.href = "/panier";
-    }, 1200);
+    }, 1000);
   };
 
-  // Produits similaires : catalogue global, même catégorie
+  // Produits similaires dans la même catégorie
   const similarProducts = useMemo(() => {
     return getAllProducts()
       .filter((p) => p.id !== product.id && p.category === product.category)
-      .slice(0, 3)
+      .slice(0, 4)
       .map((p) => toProductCard(p));
   }, [product.id, product.category]);
 
-  // Fallbacks for specs, features, reviews
+  // Spécifications techniques
   const specifications = product.specifications || {
     "Marque / Distributeur": product.shopName,
     "Catégorie": product.category,
@@ -120,29 +126,42 @@ export default function ProductDetailPage({ params }: PageProps) {
     },
   ];
 
-  // B-03: afficher un état visuel clair si le produit est introuvable
+  const breadcrumbItems = useMemo(
+    () => [
+      { label: t("product_detail.breadcrumb_home") || "Accueil", href: "/", icon: "home" },
+      { label: t("catalog.title") || "Catalogue", href: "/produits" },
+      {
+        label: product.category,
+        href: `/produits?category=${encodeURIComponent(product.category)}`,
+      },
+      { label: product.title, href: undefined },
+    ],
+    [t, product.category, product.title]
+  );
+
+  // État produit introuvable
   if (!productFound) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
         <Header />
         <main className="flex-1 flex items-center justify-center px-4 py-16">
-          <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-8 sm:p-16 text-center max-w-md mx-auto shadow-card space-y-6">
-            <div className="w-20 h-20 bg-surface-container text-outline rounded-full flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-4xl">inventory_2</span>
+          <div className="bg-white rounded-lg border border-[#E2E8F0] p-8 sm:p-12 text-center max-w-md mx-auto shadow-2xs space-y-4">
+            <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-3xl">inventory_2</span>
             </div>
-            <div className="space-y-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-primary font-display">
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold text-[#0B1B3D] font-display">
                 {t("product_detail.not_found_title")}
               </h1>
-              <p className="text-xs sm:text-sm text-on-surface-variant max-w-xs mx-auto leading-relaxed">
+              <p className="text-xs text-slate-500 max-w-xs mx-auto">
                 {t("product_detail.not_found_desc")}
               </p>
             </div>
             <Link
               href="/produits"
-              className="inline-flex items-center gap-2 px-6 py-3.5 bg-tertiary hover:bg-tertiary-hover text-white rounded-lg font-bold text-xs sm:text-sm transition shadow-md"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#EA580C] hover:bg-[#c2410c] text-white rounded-lg font-bold text-xs transition shadow-xs"
             >
-              <span className="material-symbols-outlined text-lg">arrow_back</span>
+              <span className="material-symbols-outlined text-base">arrow_back</span>
               <span>{t("product_detail.not_found_cta")}</span>
             </Link>
           </div>
@@ -153,10 +172,10 @@ export default function ProductDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background selection:bg-secondary selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] selection:bg-[#EA580C] selection:text-white pb-24 lg:pb-8">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-[999] bg-primary text-white px-4 py-3 rounded-xl shadow-modal border border-outline-variant flex items-center gap-3 animate-in slide-in-from-bottom duration-200">
+        <div className="fixed bottom-20 sm:bottom-5 right-5 z-[999] bg-[#0B1B3D] text-white px-4 py-3 rounded-lg shadow-lg border border-slate-700 flex items-center gap-3 animate-in slide-in-from-bottom duration-200">
           <span className="material-symbols-outlined text-emerald-400">check_circle</span>
           <span className="text-xs sm:text-sm font-medium">{toastMessage}</span>
           <button
@@ -169,58 +188,29 @@ export default function ProductDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Header */}
       <Header />
 
-      {/* Breadcrumb Navigation Bar */}
-      <nav aria-label="Fil d'Ariane" className="bg-surface-container-lowest border-b border-outline-variant">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-10 py-3">
-          <ol className="flex items-center gap-2 text-xs text-outline overflow-x-auto whitespace-nowrap">
-            <li>
-              <Link href="/" className="hover:text-primary transition flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">home</span>
-                <span>Accueil</span>
-              </Link>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-xs">chevron_right</span>
-              <Link href="/produits" className="hover:text-primary transition">
-                Catégories
-              </Link>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-xs">chevron_right</span>
-              <Link href={`/produits?category=${encodeURIComponent(product.category)}`} className="hover:text-primary transition">
-                {product.category}
-              </Link>
-            </li>
-            <li className="flex items-center gap-2 text-on-surface font-semibold truncate max-w-[220px] sm:max-w-md">
-              <span className="material-symbols-outlined text-xs">chevron_right</span>
-              <span className="truncate">{product.title}</span>
-            </li>
-          </ol>
-        </div>
-      </nav>
+      {/* Main Container unifié max-w-[1280px] */}
+      <main className="w-full max-w-[1280px] mx-auto px-4 lg:px-6 py-4 sm:py-6 space-y-6 flex-1">
+        <Breadcrumb items={breadcrumbItems} />
 
-      {/* Main Content Container */}
-      <main className="w-full max-w-7xl mx-auto px-4 md:px-8 lg:px-10 py-6 sm:py-8 space-y-12 flex-1">
-        {/* ================= SECTION 1 : 2-COLUMN HERO (GALERIE + INFOS PRODUIT) ================= */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          {/* COLONNE GAUCHE : GALERIE IMAGE (Mobile haut / Desktop 6-7 cols) */}
-          <div className="lg:col-span-6 space-y-4">
-            {/* Image Principale avec Aspect Ratio verrouillé */}
-            <div className="relative aspect-square w-full bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden custom-shadow group">
+        {/* ─── STRUCTURE ALIBABA EN 3 ZONES SUR DESKTOP ────────────────────── */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* ZONE 1 (Gauche, 5 colonnes) : Galerie Photo */}
+          <div className="lg:col-span-5 space-y-3">
+            {/* Image principale carrée */}
+            <div className="relative aspect-square w-full bg-white rounded-lg border border-[#E2E8F0] overflow-hidden shadow-2xs group">
               <Image
                 src={images[selectedImageIndex]}
                 alt={product.title}
                 fill
                 priority
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1024px) 100vw, 500px"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
 
-              {/* Badges Stack (Haut Gauche) */}
-              <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-10 pointer-events-none">
+              {/* Badges en haut à gauche */}
+              <div className="absolute top-3 left-3 flex flex-col gap-1 z-10 pointer-events-none">
                 {product.badges.discount && (
                   <Badge variant="discount" text={product.badges.discount} />
                 )}
@@ -232,16 +222,16 @@ export default function ProductDetailPage({ params }: PageProps) {
                 )}
               </div>
 
-              {/* Bouton Favoris (Haut Droit) */}
+              {/* Bouton favoris */}
               <button
                 type="button"
                 onClick={() => setIsWishlisted(!isWishlisted)}
                 aria-label="Ajouter aux favoris"
-                className="absolute top-4 right-4 p-2.5 rounded-full bg-white/90 backdrop-blur text-outline hover:text-error transition shadow-md z-10"
+                className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur text-slate-400 hover:text-rose-500 transition shadow-xs z-10"
               >
                 <span
-                  className={`material-symbols-outlined text-xl transition-colors ${
-                    isWishlisted ? "text-error" : ""
+                  className={`material-symbols-outlined text-lg leading-none ${
+                    isWishlisted ? "text-rose-500" : ""
                   }`}
                   style={isWishlisted ? { fontVariationSettings: "'FILL' 1" } : {}}
                 >
@@ -249,405 +239,51 @@ export default function ProductDetailPage({ params }: PageProps) {
                 </span>
               </button>
 
-              {/* Badge zoom hint */}
-              <div className="absolute bottom-3 right-3 bg-primary/70 backdrop-blur text-white px-2.5 py-1 rounded-md text-[11px] font-medium flex items-center gap-1 pointer-events-none">
+              {/* Zoom hint */}
+              <div className="absolute bottom-2.5 right-2.5 bg-[#0B1B3D]/70 backdrop-blur text-white px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 pointer-events-none">
                 <span className="material-symbols-outlined text-xs">zoom_in</span>
-                <span>Survoler pour zoomer</span>
+                <span>Zoom</span>
               </div>
             </div>
 
             {/* Miniatures cliquables */}
             {images.length > 1 && (
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-4 gap-2">
                 {images.map((imgUrl, idx) => (
                   <button
                     key={imgUrl + idx}
                     type="button"
                     onClick={() => setSelectedImageIndex(idx)}
-                    className={`relative aspect-square rounded-xl overflow-hidden border-2 bg-surface-container-lowest transition-all ${
+                    className={`relative aspect-square rounded-md overflow-hidden border-2 bg-white transition-all ${
                       selectedImageIndex === idx
-                        ? "border-secondary ring-2 ring-secondary/20 shadow-md scale-95"
-                        : "border-outline-variant hover:border-slate-300 opacity-70 hover:opacity-100"
+                        ? "border-[#0284C7] shadow-xs"
+                        : "border-[#E2E8F0] opacity-70 hover:opacity-100"
                     }`}
                   >
                     <Image
                       src={imgUrl}
                       alt={`${product.title} - vue ${idx + 1}`}
                       fill
-                      sizes="120px"
+                      sizes="100px"
                       className="w-full h-full object-cover"
                     />
                   </button>
                 ))}
               </div>
             )}
-
-            {/* Garanties Rapides sous la galerie */}
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              <div className="bg-surface-container-low p-3 rounded-lg border border-outline-variant text-center space-y-1">
-                <span className="material-symbols-outlined text-secondary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  verified_user
-                </span>
-                <p className="text-[11px] font-bold text-primary">Garantie 2 ans</p>
-                <p className="text-[10px] text-outline">Pièces &amp; S.A.V</p>
-              </div>
-
-              <div className="bg-surface-container-low p-3 rounded-lg border border-outline-variant text-center space-y-1">
-                <span className="material-symbols-outlined text-secondary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  payments
-                </span>
-                <p className="text-[11px] font-bold text-primary">Mobile Money</p>
-                <p className="text-[10px] text-outline">M-Pesa, Airtel, Orange</p>
-              </div>
-
-              <div className="bg-surface-container-low p-3 rounded-lg border border-outline-variant text-center space-y-1">
-                <span className="material-symbols-outlined text-secondary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  local_shipping
-                </span>
-                <p className="text-[11px] font-bold text-primary">26 Provinces</p>
-                <p className="text-[10px] text-outline">Suivi en direct</p>
-              </div>
-            </div>
           </div>
 
-          {/* COLONNE DROITE : INFOS PRODUIT & ACHAT (Desktop 6 cols) */}
-          <div className="lg:col-span-6 space-y-6">
-            {/* Header info : Titre, Vendeur, Notes */}
-            <div className="space-y-3">
-              {/* Vendeur & Ville Badge */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Link
-                  href={`/boutiques/${getShopIdByName(product.shopName)}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-secondary hover:underline"
-                >
-                  <span className="material-symbols-outlined text-sm">storefront</span>
-                  <span>Boutique : {product.shopName} ({product.shopCity})</span>
-                </Link>
-
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-secondary-fixed text-on-secondary-container">
-                  <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    verified
-                  </span>
-                  Certifié Mwinda
-                </span>
-              </div>
-
-              {/* Titre Produit Principal */}
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-primary font-display leading-snug">
+          {/* ZONE 2 (Centre, 4 colonnes) : Bloc d'Achat & Informations Produit */}
+          <div className="lg:col-span-4 space-y-4">
+            {/* Titre & Évaluations */}
+            <div className="space-y-1.5">
+              <h1 className="text-lg sm:text-xl font-bold text-[#0B1B3D] font-display leading-snug">
                 {product.title}
               </h1>
 
-              {/* Étoiles & Lien vers avis clients */}
-              <div className="flex items-center gap-3 text-xs">
+              {/* Étoiles & avis */}
+              <div className="flex items-center gap-2 text-xs">
                 <div className="flex items-center text-amber-500">
-                  {[...Array(5)].map((_, i) => (
-                    <span
-                      key={i}
-                      className="material-symbols-outlined text-base"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      star
-                    </span>
-                  ))}
-                </div>
-                <span className="font-bold text-primary">{product.rating.toFixed(1)}</span>
-                <span className="text-outline">•</span>
-                <a href="#reviews-section" className="text-secondary font-semibold hover:underline">
-                  {product.reviewCount} avis clients vérifiés
-                </a>
-              </div>
-            </div>
-
-            {/* Bloc Prix Principal (USD + CDF) */}
-            <div className="bg-surface-container-low p-4 sm:p-5 rounded-xl border border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <span className="text-[11px] uppercase tracking-wider text-outline font-bold block mb-1">
-                  Prix officiel garanti
-                </span>
-                <PriceTag
-                  usdPrice={product.usdPrice}
-                  originalUsdPrice={product.originalUsdPrice}
-                  size="lg"
-                />
-              </div>
-
-              <div className="sm:text-right shrink-0">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                  <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                  <span>En stock ({maxStock} disponibles)</span>
-                </span>
-                <p className="text-[11px] text-on-surface-variant mt-1">
-                  Expédié depuis le hub {product.province}
-                </p>
-              </div>
-            </div>
-
-            {/* Sélecteur de Quantité & Boutons d'Action CTA */}
-            <div className="space-y-4 pt-1">
-              <div className="flex items-center gap-4">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">
-                  {t("product_detail.quantity")} :
-                </span>
-                <div className="flex items-center border border-outline-variant rounded-lg bg-surface-container-lowest">
-                  <button
-                    type="button"
-                    onClick={handleDecreaseQuantity}
-                    disabled={quantity <= 1}
-                    className="w-10 h-10 flex items-center justify-center text-on-surface hover:bg-surface-container disabled:opacity-30 transition font-bold"
-                    aria-label="Diminuer la quantité"
-                  >
-                    -
-                  </button>
-                  <span className="w-12 text-center font-bold text-sm text-primary tnum">
-                    {quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleIncreaseQuantity}
-                    disabled={quantity >= maxStock}
-                    className="w-10 h-10 flex items-center justify-center text-on-surface hover:bg-surface-container disabled:opacity-30 transition font-bold"
-                    aria-label="Augmenter la quantité"
-                  >
-                    +
-                  </button>
-                </div>
-                <span className="text-xs text-outline">
-                  Total : <strong className="text-primary">{product.usdPrice * quantity} $</strong>
-                </span>
-              </div>
-
-              {/* Bouton CTA Orange Large & Proéminent */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  className="w-full py-3.5 px-6 rounded-lg font-bold text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-95 group bg-tertiary hover:bg-tertiary-hover text-white"
-                  title={t("product_detail.add_to_cart")}
-                >
-                  <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">
-                    shopping_cart
-                  </span>
-                  <span>{t("product_detail.add_to_cart")}</span>
-                </button>
-
-                {/* Bouton Secondaire Acheter Maintenant */}
-                <button
-                  type="button"
-                  onClick={handleBuyNow}
-                  className="w-full py-3.5 px-6 rounded-lg font-bold text-sm sm:text-base shadow transition flex items-center justify-center gap-2 active:scale-95 bg-primary hover:bg-slate-800 text-white"
-                >
-                  <span className="material-symbols-outlined text-xl">flash_on</span>
-                  <span>{t("product_detail.buy_now")}</span>
-                </button>
-
-                {/* Mention discrète livraison disponible */}
-                <div className="flex items-center gap-2 pt-1 text-xs text-on-surface-variant">
-                  <span className="material-symbols-outlined text-secondary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    local_shipping
-                  </span>
-                  <span className="font-medium">{t("product_detail.delivery_available_sub")}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bloc Information Livraison */}
-            <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-secondary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    local_shipping
-                  </span>
-                  <h4 className="text-xs font-bold text-primary uppercase tracking-wider">
-                    {t("product_detail.delivery_tag")}
-                  </h4>
-                </div>
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  {t("product_detail.delivery_available_badge")}
-                </span>
-              </div>
-              <p className="text-xs text-on-surface-variant leading-relaxed">
-                {t("product_detail.delivery_card_desc")}
-              </p>
-            </div>
-
-            {/* Carte Info Vendeur & Confiance */}
-            <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-base shrink-0">
-                  {product.shopName.slice(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-primary font-display">{product.shopName}</span>
-                    <span className="text-[10px] font-bold bg-secondary-fixed text-on-secondary-container px-1.5 py-0.5 rounded">
-                      Vendeur Vérifié
-                    </span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant">{product.shopCity} • {product.shopRating || "4.9"}/5 satisfaction</p>
-                </div>
-              </div>
-              <Link
-                href={`/boutiques/${getShopIdByName(product.shopName)}`}
-                className="px-3.5 py-1.5 rounded-lg border border-secondary text-secondary hover:bg-secondary/10 font-bold text-xs transition whitespace-nowrap"
-              >
-                Voir boutique
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* ================= SECTION 2 : SPÉCIFICATIONS TECHNIQUES & DESCRIPTION ================= */}
-        <section className="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden custom-shadow">
-          {/* Navigation des Onglets */}
-          <div className="flex items-center border-b border-outline-variant bg-surface-container-low px-4 sm:px-6">
-            <button
-              type="button"
-              onClick={() => setActiveTab("specs")}
-              className={`py-3.5 px-4 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 ${
-                activeTab === "specs"
-                  ? "border-secondary text-secondary"
-                  : "border-transparent text-outline hover:text-on-surface"
-              }`}
-            >
-              <span className="material-symbols-outlined text-base">tune</span>
-              <span>{t("product_detail.tab_specs")}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("features")}
-              className={`py-3.5 px-4 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 ${
-                activeTab === "features"
-                  ? "border-secondary text-secondary"
-                  : "border-transparent text-outline hover:text-on-surface"
-              }`}
-            >
-              <span className="material-symbols-outlined text-base">check_circle</span>
-              <span>{t("product_detail.tab_features")}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("delivery")}
-              className={`py-3.5 px-4 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 ${
-                activeTab === "delivery"
-                  ? "border-secondary text-secondary"
-                  : "border-transparent text-outline hover:text-on-surface"
-              }`}
-            >
-              <span className="material-symbols-outlined text-base">local_shipping</span>
-              <span>{t("product_detail.tab_delivery")}</span>
-            </button>
-          </div>
-
-          <div className="p-6 sm:p-8">
-            {/* Onglet 1 : Spécifications techniques */}
-            {activeTab === "specs" && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-primary font-display mb-2">
-                    Fiche technique détaillée
-                  </h3>
-                  {product.description && (
-                    <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed mb-6">
-                      {product.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Tableau à double colonnes zébrées */}
-                <div className="border border-outline-variant rounded-xl overflow-hidden">
-                  <table className="w-full text-xs sm:text-sm text-left">
-                    <tbody>
-                      {Object.entries(specifications).map(([key, value], idx) => (
-                        <tr
-                          key={key}
-                          className={idx % 2 === 0 ? "bg-white" : "bg-surface-container-low"}
-                        >
-                          <td className="py-3 px-4 font-semibold text-primary w-1/3 border-r border-outline-variant/60">
-                            {key}
-                          </td>
-                          <td className="py-3 px-4 text-on-surface font-medium">
-                            {value}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Onglet 2 : Caractéristiques & Avantages */}
-            {activeTab === "features" && (
-              <div className="space-y-6">
-                <h3 className="text-base sm:text-lg font-bold text-primary font-display">
-                  Pourquoi choisir ce produit ?
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {features.map((feat, i) => (
-                    <div
-                      key={i}
-                      className="p-4 rounded-xl bg-surface-container-low border border-outline-variant flex items-start gap-3"
-                    >
-                      <span className="material-symbols-outlined text-secondary text-xl shrink-0 mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        task_alt
-                      </span>
-                      <p className="text-xs sm:text-sm text-on-surface leading-snug font-medium">
-                        {feat}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Onglet 3 : Livraison */}
-            {activeTab === "delivery" && (
-              <div className="space-y-6">
-                <div className="p-6 rounded-xl bg-surface-container-low border border-outline-variant flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-secondary text-white flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      local_shipping
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-primary font-display">
-                      {t("product_detail.delivery_available")}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                      {t("product_detail.delivery_tab_desc")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ================= SECTION 3 : AVIS & RETOURS D'EXPÉRIENCE CLIENTS ================= */}
-        <section id="reviews-section" className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6 sm:p-8 custom-shadow space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-outline-variant pb-6">
-            <div>
-              <span className="text-xs uppercase tracking-wider text-secondary font-bold">
-                Retours d&apos;expérience authentifiés
-              </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-primary font-display mt-0.5">
-                Avis &amp; Évaluations Clients
-              </h2>
-              <p className="text-xs text-on-surface-variant mt-1">
-                Avis rédigés par des acheteurs ayant reçu et testé ce produit en RDC.
-              </p>
-            </div>
-
-            {/* Note globale & Répartition */}
-            <div className="flex items-center gap-4 bg-surface-container-low p-4 rounded-xl border border-outline-variant">
-              <div className="text-center">
-                <span className="text-3xl sm:text-4xl font-black text-primary font-display block leading-none">
-                  {product.rating.toFixed(1)}
-                </span>
-                <div className="flex items-center text-amber-500 justify-center mt-1">
                   {[...Array(5)].map((_, i) => (
                     <span
                       key={i}
@@ -658,65 +294,375 @@ export default function ProductDetailPage({ params }: PageProps) {
                     </span>
                   ))}
                 </div>
-                <span className="text-[11px] text-outline mt-0.5 block">{product.reviewCount} évaluations</span>
+                <span className="font-bold text-[#0B1B3D]">{product.rating.toFixed(1)}</span>
+                <span className="text-slate-400">•</span>
+                <a
+                  href="#reviews-section"
+                  onClick={() => setActiveTab("reviews")}
+                  className="text-[#0284C7] font-semibold hover:underline"
+                >
+                  {product.reviewCount} avis vérifiés
+                </a>
               </div>
+            </div>
 
-              <div className="h-10 w-px bg-outline-variant" />
+            {/* Bloc Prix mis en valeur sur fond légèrement teinté */}
+            <div className="bg-slate-50 border border-[#E2E8F0] p-4 rounded-lg space-y-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                Prix garanti
+              </span>
+              <PriceTag
+                usdPrice={product.usdPrice}
+                originalUsdPrice={product.originalUsdPrice}
+                size="lg"
+              />
+              <div className="flex items-center gap-2 pt-1 border-t border-[#E2E8F0] text-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-bold text-emerald-700">
+                  En stock ({maxStock} disponibles)
+                </span>
+                <span className="text-slate-400 text-[11px] ml-auto">Hub {product.province}</span>
+              </div>
+            </div>
 
-              <div className="text-xs space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-on-surface font-semibold w-6">5 ★</span>
-                  <div className="w-24 sm:w-32 h-2 bg-surface-container-high rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-500 rounded-full" style={{ width: "92%" }} />
-                  </div>
-                  <span className="text-[10px] text-outline">92%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-on-surface font-semibold w-6">4 ★</span>
-                  <div className="w-24 sm:w-32 h-2 bg-surface-container-high rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-500 rounded-full" style={{ width: "6%" }} />
-                  </div>
-                  <span className="text-[10px] text-outline">6%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-on-surface font-semibold w-6">3 ★</span>
-                  <div className="w-24 sm:w-32 h-2 bg-surface-container-high rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-500 rounded-full" style={{ width: "2%" }} />
-                  </div>
-                  <span className="text-[10px] text-outline">2%</span>
-                </div>
+            {/* Ligne vendeur discrète */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-white p-2.5 rounded-lg border border-[#E2E8F0]">
+              <span className="select-none text-sm">{flag}</span>
+              <Link
+                href={`/boutiques/${shopId}`}
+                className="font-bold text-[#0B1B3D] hover:text-[#0284C7] transition-colors truncate"
+              >
+                {product.shopName}
+              </Link>
+              {isVerified && (
+                <span
+                  className="material-symbols-outlined text-xs text-[#0284C7]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                  title="Vendeur certifié"
+                >
+                  verified
+                </span>
+              )}
+              <span className="text-slate-400 ml-auto shrink-0">{product.shopCity}</span>
+            </div>
+
+            {/* Sélecteur de quantité */}
+            <div className="flex items-center gap-3 pt-1">
+              <span className="text-xs font-bold text-[#0B1B3D]">
+                {t("product_detail.quantity")} :
+              </span>
+              <div className="flex items-center border border-[#E2E8F0] rounded-lg bg-white shadow-2xs">
+                <button
+                  type="button"
+                  onClick={handleDecreaseQuantity}
+                  disabled={quantity <= 1}
+                  className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 transition font-bold"
+                >
+                  -
+                </button>
+                <span className="w-10 text-center font-bold text-xs text-[#0B1B3D] tnum">
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleIncreaseQuantity}
+                  disabled={quantity >= maxStock}
+                  className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 transition font-bold"
+                >
+                  +
+                </button>
+              </div>
+              <span className="text-xs text-slate-500">
+                Total : <strong className="text-[#0B1B3D]">{product.usdPrice * quantity} $</strong>
+              </span>
+            </div>
+
+            {/* Boutons d'Action : Ajouter (orange) & Acheter maintenant (marine) */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="w-full py-3 px-4 rounded-lg bg-[#EA580C] hover:bg-[#c2410c] text-white font-bold text-xs sm:text-sm shadow-xs transition flex items-center justify-center gap-2 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-base">add_shopping_cart</span>
+                <span>{t("product_detail.add_to_cart")}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                className="w-full py-3 px-4 rounded-lg bg-[#0B1B3D] hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-xs transition flex items-center justify-center gap-2 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-base">flash_on</span>
+                <span>{t("product_detail.buy_now")}</span>
+              </button>
+
+              {/* Mention discrète livraison disponible */}
+              <div className="flex items-center gap-1.5 pt-1 text-xs text-slate-500">
+                <span className="material-symbols-outlined text-sm text-[#0284C7]">
+                  local_shipping
+                </span>
+                <span>{t("product_detail.delivery_available_sub")}</span>
               </div>
             </div>
           </div>
 
-          {/* Liste des Avis Clients */}
-          <div className="space-y-5 divide-y divide-outline-variant/60">
-            {reviews.map((rev) => (
-              <article key={rev.id} className="pt-5 first:pt-0 space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
-                      {rev.author.split(" ").map((n) => n[0]).join("")}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs sm:text-sm font-bold text-primary">{rev.author}</span>
-                        {rev.verifiedPurchase && (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                              check
-                            </span>
-                            Achat Vérifié RDC
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-outline">{rev.city}</span>
-                    </div>
-                  </div>
+          {/* ZONE 3 (Droite, 3 colonnes) : Carte Vendeur & Protections */}
+          <aside className="lg:col-span-3 space-y-4">
+            {/* Carte Vendeur */}
+            <div className="bg-white rounded-lg border border-[#E2E8F0] p-4 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                  Boutique certifiée
+                </span>
+                <span className="text-xs">{flag}</span>
+              </div>
 
-                  <div className="flex items-center gap-2 text-right">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-slate-100 text-[#0B1B3D] border border-[#E2E8F0] flex items-center justify-center font-bold text-xs shrink-0">
+                  {product.shopName.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold text-xs text-[#0B1B3D] truncate font-display">
+                      {product.shopName}
+                    </span>
+                    {isVerified && (
+                      <span
+                        className="material-symbols-outlined text-xs text-[#0284C7] shrink-0"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        verified
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 truncate">{product.shopCity}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="text-slate-500">Note vendeur :</span>
+                <span className="font-bold text-[#0B1B3D] flex items-center gap-0.5">
+                  <span
+                    className="material-symbols-outlined text-xs text-amber-500"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    star
+                  </span>
+                  <span>{product.shopRating || "4.9"}/5</span>
+                </span>
+              </div>
+
+              <Link
+                href={`/boutiques/${shopId}`}
+                className="w-full py-2 px-3 rounded-md bg-slate-50 hover:bg-slate-100 border border-[#E2E8F0] text-[#0B1B3D] font-bold text-xs flex items-center justify-center gap-1.5 transition block text-center"
+              >
+                <span>Voir la boutique</span>
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              </Link>
+            </div>
+
+            {/* Carte Protections Mwinda Market */}
+            <div className="bg-white rounded-lg border border-[#E2E8F0] p-4 shadow-2xs space-y-3">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block pb-1 border-b border-[#E2E8F0]">
+                Garanties Mwinda Market
+              </span>
+
+              <div className="space-y-2.5 text-xs text-slate-600">
+                <div className="flex items-start gap-2">
+                  <span
+                    className="material-symbols-outlined text-sm text-[#0284C7] shrink-0 mt-0.5"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    shield
+                  </span>
+                  <div>
+                    <strong className="font-bold text-[#0B1B3D] block text-[11px]">
+                      Séquestre Mwinda Pay
+                    </strong>
+                    <span className="text-[11px] text-slate-500 leading-tight block">
+                      Paiement sécurisé et débloqué uniquement à la réception.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span
+                    className="material-symbols-outlined text-sm text-[#EA580C] shrink-0 mt-0.5"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    local_shipping
+                  </span>
+                  <div>
+                    <strong className="font-bold text-[#0B1B3D] block text-[11px]">
+                      Livraison &amp; Suivi
+                    </strong>
+                    <span className="text-[11px] text-slate-500 leading-tight block">
+                      Acheminement garanti avec suivi en direct par référence.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span
+                    className="material-symbols-outlined text-sm text-emerald-600 shrink-0 mt-0.5"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    payments
+                  </span>
+                  <div>
+                    <strong className="font-bold text-[#0B1B3D] block text-[11px]">
+                      Mobile Money Direct
+                    </strong>
+                    <span className="text-[11px] text-slate-500 leading-tight block">
+                      M-Pesa, Orange Money, Airtel Money en devises locales.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        {/* ─── BARRE D'ONGLETS STICKY (Caractéristiques, Livraison, Avis) ───── */}
+        <div className="space-y-4">
+          <div className="sticky top-16 md:top-[72px] z-20 bg-white/95 backdrop-blur-md rounded-lg border border-[#E2E8F0] shadow-2xs px-4 flex items-center gap-1 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("specs")}
+              className={`py-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 ${
+                activeTab === "specs"
+                  ? "border-[#EA580C] text-[#EA580C]"
+                  : "border-transparent text-slate-500 hover:text-[#0B1B3D]"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">tune</span>
+              <span>{t("product_detail.tab_specs")}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("delivery")}
+              className={`py-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 ${
+                activeTab === "delivery"
+                  ? "border-[#EA580C] text-[#EA580C]"
+                  : "border-transparent text-slate-500 hover:text-[#0B1B3D]"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">local_shipping</span>
+              <span>{t("product_detail.tab_delivery")}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("reviews")}
+              className={`py-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-1.5 ${
+                activeTab === "reviews"
+                  ? "border-[#EA580C] text-[#EA580C]"
+                  : "border-transparent text-slate-500 hover:text-[#0B1B3D]"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">star</span>
+              <span>Avis ({product.reviewCount})</span>
+            </button>
+          </div>
+
+          {/* Contenu des onglets */}
+          <div className="bg-white rounded-lg border border-[#E2E8F0] p-5 sm:p-6 shadow-2xs">
+            {/* Onglet Spécifications */}
+            {activeTab === "specs" && (
+              <div className="space-y-5">
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-[#0B1B3D] font-display mb-1.5">
+                    Fiche technique détaillée
+                  </h3>
+                  {product.description && (
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+                      {product.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="border border-[#E2E8F0] rounded-md overflow-hidden">
+                  <table className="w-full text-xs text-left">
+                    <tbody>
+                      {Object.entries(specifications).map(([key, value], idx) => (
+                        <tr
+                          key={key}
+                          className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}
+                        >
+                          <td className="py-2.5 px-3.5 font-semibold text-[#0B1B3D] w-1/3 border-r border-[#E2E8F0]">
+                            {key}
+                          </td>
+                          <td className="py-2.5 px-3.5 text-slate-700">{value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Caractéristiques additionnelles */}
+                <div className="pt-2">
+                  <h4 className="text-xs font-bold text-[#0B1B3D] uppercase tracking-wider mb-2.5">
+                    Points forts du produit
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {features.map((feat, i) => (
+                      <div
+                        key={i}
+                        className="p-3 rounded-md bg-slate-50 border border-[#E2E8F0] flex items-start gap-2.5"
+                      >
+                        <span
+                          className="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          check_circle
+                        </span>
+                        <p className="text-xs text-slate-700 font-medium leading-snug">{feat}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Onglet Livraison */}
+            {activeTab === "delivery" && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-md bg-slate-50 border border-[#E2E8F0] flex items-start gap-3">
+                  <div className="w-10 h-10 rounded bg-[#0284C7] text-white flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-xl">local_shipping</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-[#0B1B3D] font-display">
+                      {t("product_detail.delivery_available")}
+                    </h3>
+                    <p className="text-xs text-slate-600 leading-relaxed mt-0.5">
+                      {t("product_detail.delivery_tab_desc")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Onglet Avis */}
+            {activeTab === "reviews" && (
+              <div id="reviews-section" className="space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#0B1B3D] font-display">
+                      Avis clients vérifiés ({product.reviewCount})
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Évaluations certifiées par les acheteurs après livraison.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl font-black text-[#0B1B3D] font-display">
+                      {product.rating.toFixed(1)}/5
+                    </span>
                     <div className="flex items-center text-amber-500">
-                      {[...Array(rev.rating)].map((_, i) => (
+                      {[...Array(5)].map((_, i) => (
                         <span
                           key={i}
                           className="material-symbols-outlined text-sm"
@@ -726,56 +672,98 @@ export default function ProductDetailPage({ params }: PageProps) {
                         </span>
                       ))}
                     </div>
-                    <span className="text-[11px] text-outline">{rev.date}</span>
                   </div>
                 </div>
 
-                <p className="text-xs sm:text-sm text-on-surface leading-relaxed pl-12">
-                  {rev.comment}
-                </p>
-              </article>
-            ))}
+                <div className="space-y-3">
+                  {reviews.map((rev) => (
+                    <div
+                      key={rev.id}
+                      className="p-3.5 rounded-lg border border-[#E2E8F0] bg-slate-50 space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-[#0B1B3D]">{rev.author}</span>
+                          <span className="text-[11px] text-slate-400">• {rev.city}</span>
+                          {rev.verifiedPurchase && (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                              Achat vérifié
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400">{rev.date}</span>
+                      </div>
+                      <div className="flex items-center text-amber-500">
+                        {[...Array(rev.rating)].map((_, i) => (
+                          <span
+                            key={i}
+                            className="material-symbols-outlined text-xs"
+                            style={{ fontVariationSettings: "'FILL' 1" }}
+                          >
+                            star
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-slate-700 leading-relaxed">{rev.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </section>
+        </div>
 
-        {/* ================= SECTION 4 : PRODUITS SIMILAIRES & ACCESSOIRES COMPATIBLES ================= */}
-        <section className="space-y-6">
-          <div className="flex items-end justify-between">
-            <div>
-              <span className="text-xs uppercase tracking-wider text-secondary font-bold">
-                {t("home.products_tag")}
-              </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-primary font-display">
-                {t("product_detail.similar_products")}
+        {/* ─── SECTION PRODUITS SIMILAIRES ─────────────────────────────────── */}
+        {similarProducts.length > 0 && (
+          <section className="space-y-3 pt-4 border-t border-[#E2E8F0]">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-[#0B1B3D] font-display">
+                Produits similaires dans {product.category}
               </h2>
+              <Link
+                href={`/produits?category=${encodeURIComponent(product.category)}`}
+                className="text-xs font-semibold text-[#0284C7] hover:underline flex items-center gap-1"
+              >
+                <span>Voir plus</span>
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              </Link>
             </div>
-            <Link
-              href={`/produits?category=${encodeURIComponent(product.category)}`}
-              className="text-xs sm:text-sm font-semibold text-secondary hover:underline flex items-center gap-1"
-            >
-              <span>{t("product_detail.view_all_category")}</span>
-              <span className="material-symbols-outlined text-sm">chevron_right</span>
-            </Link>
-          </div>
-
-          {/* Grille 3 colonnes réutilisant ProductCard */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {similarProducts.map((simProd) => (
-              <ProductCard
-                key={simProd.id}
-                product={simProd}
-                onAddToCart={(p) => {
-                  addGlobalToCart(p, 1);
-                  setToastMessage(`"${p.title}" a été ajouté à votre panier`);
-                  setTimeout(() => setToastMessage(null), 3000);
-                }}
-              />
-            ))}
-          </div>
-        </section>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {similarProducts.map((simProd) => (
+                <ProductCard key={simProd.id} product={simProd} />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
-      {/* Footer */}
+      {/* ─── BARRE D'ACHAT FIXE MOBILE (sticky en bas de l'écran) ─────────── */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E2E8F0] shadow-lg px-4 py-2.5 flex items-center justify-between gap-3 lg:hidden">
+        <div>
+          <span className="text-[10px] text-slate-400 block font-medium leading-none mb-0.5">
+            Prix total ({quantity})
+          </span>
+          <PriceTag usdPrice={product.usdPrice * quantity} size="sm" />
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="px-4 py-2.5 rounded-lg bg-[#EA580C] hover:bg-[#c2410c] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs active:scale-95"
+          >
+            <span className="material-symbols-outlined text-base">add_shopping_cart</span>
+            <span>Ajouter</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            className="px-3 py-2.5 rounded-lg bg-[#0B1B3D] text-white font-bold text-xs flex items-center justify-center active:scale-95"
+          >
+            <span className="material-symbols-outlined text-base">flash_on</span>
+          </button>
+        </div>
+      </div>
+
       <Footer />
     </div>
   );
