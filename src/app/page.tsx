@@ -221,7 +221,9 @@ export default function HomePage() {
                 </div>
 
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-black leading-tight text-white font-display">
-                  {t("home.hero_title")}
+                  {maxRealDiscount > 0
+                    ? `${t("home.hero_title_prefix") || "Grande Vente"} — ${t("home.hero_up_to") || "Jusqu'à"} -${maxRealDiscount}%`
+                    : t("home.hero_title")}
                 </h1>
 
                 <p className="text-xs sm:text-sm text-slate-200 max-w-lg leading-relaxed line-clamp-3 sm:line-clamp-none">

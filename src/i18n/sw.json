@@ -26,7 +26,8 @@
     "all_categories": "Kategoria zote",
     "catalog": "Katalogi",
     "register": "Jiandikishe",
-    "login_register": "Ingia | Jiandikishe"
+    "login_register": "Ingia | Jiandikishe",
+    "hours": "Jtatu - Jmosi: 08:00 - 18:30 (GMT+1)"
   },
   "footer": {
     "about_text": "Jukwaa la biashara ya kielektroniki la Afrika linalounganisha masoko ya bara zima kwa uwazi, ufuatiliaji na vifaa vya uhakika.",
@@ -80,12 +81,12 @@
   },
   "home": {
     "hero_tag": "Mauzo Makuu ya Panafrika",
-    "hero_title": "Mauzo Makuu - Hadi 50% ya punguzo kwenye makundi yote",
+    "hero_title": "Mauzo Makuu — Ofa bora za orodha",
     "hero_subtitle": "Agiza kutoka kwa wafanyabiashara bora na ufikishiwe popote kwa ufuatiliaji wa moja kwa moja.",
     "hero_cta_buy": "Nunua sasa",
     "hero_cta_shops": "Gundua maduka yaliyothibitishwa",
     "hero_offer_special": "Ofa Maalum",
-    "hero_offer_discount": "-50% PUNGUZO",
+    "hero_offer_discount": "-31% PUNGUZO",
     "hero_offer_pack": "Kifurushi cha Nishati na Usafiri",
     "trust_payments_title": "Malipo Salama ya Ndani",
     "trust_payments_desc": "M-Pesa, Airtel Money, Orange Money, Visa",
@@ -119,7 +120,7 @@
     "how_subtitle": "Uzoefu rahisi wa ununuzi uliotengenezwa kwa ajili ya nchi yako.",
     "step1_tag": "Hatua 1",
     "step1_title": "Chagua bidhaa",
-    "step1_desc": "Vinjari maelfu ya bidhaa na maduka yanayoaminika yaliyothibitishwa.",
+    "step1_desc": "Vinjari uteuzi wetu wa bidhaa na maduka yanayoaminika yaliyothibitishwa.",
     "step2_tag": "Hatua 2",
     "step2_title": "Weka kwenye rukwama",
     "step2_desc": "Chagua machaguo na uhakikishe upatikanaji katika mkoa wako.",
@@ -134,7 +135,7 @@
     "step5_desc": "Utoaji wa haraka na salama nyumbani au katika kituo cha kuchukulia.",
     "seller_tag": "Fursa ya Kibiashara",
     "seller_title": "Je, wewe ni mfanyabiashara au mwagizaji?",
-    "seller_desc": "Kua biashara yako na uwafikie mamilioni ya wateja kwenye Mwinda Market.",
+    "seller_desc": "Kuza biashara yako na ongeza mauzo yako kwenye Mwinda Market.",
     "seller_btn": "Fungua duka langu lililoidhinishwa",
     "toast_added": "imeongezwa kwenye rukwama yako",
     "welcome_title": "Karibu Mwinda Market",
@@ -150,7 +151,9 @@
     "certified_panel_title": "Maduka Yaliyothibitishwa ya Mwinda",
     "promo_panel_title": "Ofa Bora",
     "view_all": "Tazama yote",
-    "cat_solar": "Nishati ya Jua na Vigeuzi"
+    "cat_solar": "Nishati ya Jua na Vigeuzi",
+    "hero_title_prefix": "Mauzo Makuu",
+    "hero_up_to": "Hadi"
   },
   "catalog": {
     "breadcrumb_home": "Nyumbani",
@@ -359,7 +362,8 @@
     "delivery_available_desc": "Usafirishaji salama na ufuatiliaji wa agizo",
     "delivery_available_val": "Inapatikana",
     "order_confirmed_delivery": "Uwasilishaji unapatikana kwa ufuatiliaji wa moja kwa moja.",
-    "panafrican_catalog": "Katalogi ya Panafrika"
+    "panafrican_catalog": "Katalogi ya Panafrika",
+    "demo_order_notice": "Agizo la majaribio: hakuna malipo yaliyofanyika"
   },
   "tracking": {
     "breadcrumb_home": "Mwanzo",
@@ -445,7 +449,7 @@
   "become_seller": {
     "badge_network": "Mtandao Rasmi wa Wauzaji • Nchi Nzima",
     "hero_title": "Kuza biashara yako na Mwinda Market",
-    "hero_subtitle": "Fikia maelfu ya wateja nchini kote",
+    "hero_subtitle": "Panua wateja wako na uuze nchini kote",
     "hero_body": "Ongeza mauzo yako kwa usafirishaji uliounganishwa, malipo ya Mobile Money yenye uhakika wa 100% na mwonekano wa duka lako kote barani Afrika.",
     "cta_become_seller": "Kuwa muuzaji",
     "cta_discover_benefits": "Gundua faida",
@@ -459,11 +463,11 @@
     "benefits_title": "Kwa nini uuze kwenye Mwinda Market?",
     "benefits_desc": "Miundombinu kamili ya biashara ya mtandaoni iliyoundwa kuondoa vikwazo vyote vya biashara.",
     "benefit1_title": "Watazamaji wengi",
-    "benefit1_desc": "Fikia papo hapo wanunuzi zaidi ya 250,000 bila vizuizi vya kijiografia au eneo.",
+    "benefit1_desc": "Fikia wateja bora bila vizuizi vya kijiografia au eneo.",
     "benefit1_link": "Ufikiaji wa Afrika nzima",
     "benefit2_title": "Malipo salama",
     "benefit2_desc": "Malipo ya uhakika kupitia Mobile Money na akaunti za benki kwa ulinzi wa Mwinda Pay bila hatari ya kutolipwa.",
-    "benefit2_link": "Malipo ndani ya saa 24",
+    "benefit2_link": "Malipo ya moja kwa moja",
     "benefit3_title": "Usafirishaji uliodhibitiwa",
     "benefit3_desc": "Kuweka mizigo kwa urahisi kwenye vituo vya Mwinda au kuchukuliwa dukani kwako. Mwinda Express inakamilisha uwasilishaji.",
     "benefit3_link": "Huduma ya maeneo mengi",
@@ -476,14 +480,14 @@
     "step1_badge": "Haraka • Dakika 2",
     "step1_title": "Usajili ndani ya dakika 2",
     "step1_desc": "Jaza fomu ya mtandaoni ukiwa na maelezo ya biashara yako na pakia nyaraka za utambulisho.",
-    "step2_badge": "Ndani ya saa 24",
+    "step2_badge": "Ndani ya masaa 48",
     "step2_title": "Uthibitishaji & Kuzinduliwa",
-    "step2_desc": "Timu yetu inakagua wasifu wako chini ya saa 24 na mshauri anamsaidia kusanidi orodha ya bidhaa zako.",
+    "step2_desc": "Timu yetu inathibitisha wasifu wako ndani ya masaa 48 na mshauri anakusaidia kupakia orodha ya bidhaa.",
     "step3_badge": "Mapato ya Moja kwa Moja",
     "step3_title": "Uza na upokee malipo",
     "step3_desc": "Pokea maagizo ya kwanza, kabidhi vifurushi kwenye vituo vya Mwinda na upokee pesa zako moja kwa moja.",
     "success_title": "Ombi limepokelewa kwa mafanikio!",
-    "success_desc": "Faili yako ya usajili imetumwa kwa timu yetu. Mshauri wa Mwinda Market atawasiliana nawe ndani ya saa 24 kukamilisha akaunti yako.",
+    "success_desc": "Ombi lako la muuzaji limetumwa. Mshauri wa Mwinda Market atawasiliana nawe ndani ya masaa 48 kukamilisha akaunti yako ya Seller Central.",
     "btn_dashboard": "Fungua Dashibodi ya Muuzaji",
     "btn_view_shops": "Tazama maduka",
     "btn_new_request": "Ombi jipya",
@@ -514,7 +518,7 @@
     "terms_link": "masharti ya mauzo",
     "terms_text_after": "ya Mwinda Market na kuidhinisha usindikaji wa taarifa zangu kwa ajili ya kufungua akaunti ya Seller Central.",
     "btn_submit": "Kuwa muuzaji aliyeidhinishwa",
-    "trust_footer": "Data yako inalindwa. Hakuna gharama zilizofichwa. Usaidizi maalum ndani ya saa 24.",
+    "trust_footer": "Taarifa zako zinalindwa. Hakuna ada zilizofichwa. Uhakiki wa ombi ndani ya masaa 48.",
     "certified_vendors_stat": "Wauzaji walioidhinishwa",
     "provinces_covered_stat": "Maeneo yanayohudumiwa",
     "validation_delay_stat": "Muda wa kukagua",
@@ -537,12 +541,15 @@
     "stat_zero_fees": "Gharama za kufungua",
     "stat_guaranteed_payouts": "Malipo salama",
     "stat_whatsapp_support": "Msaada wa kiufundi",
-    "pillar_payout_title": "Malipo ndani ya saa 24",
-    "pillar_payout_desc": "Pokea mapato yako ya mauzo moja kwa moja kwenye akaunti yako ya M-Pesa, Airtel Money, Orange Money au akaunti ya benki bila shida.",
+    "pillar_payout_title": "Malipo salama",
+    "pillar_payout_desc": "Pokea mapato yako ya mauzo moja kwa moja kupitia Mobile Money au benki bila usumbufu.",
     "pillar_logistics_title": "Mtandao wa usafirishaji uliounganishwa",
     "pillar_logistics_desc": "Nufaika na mtandao wetu wa vituo na wasafirishaji washirika kufikisha vifurushi vyako kwa uaminifu na kufuatiliwa.",
     "pillar_support_title": "Msaada wa eneo uliojitolea",
-    "pillar_support_desc": "Timu yetu ya kiufundi iko tayari kwenye WhatsApp kukusaidia kuweka katalogi yako mtandaoni na kuongeza mauzo."
+    "pillar_support_desc": "Timu yetu ya kiufundi iko tayari kwenye WhatsApp kukusaidia kuweka katalogi yako mtandaoni na kuongeza mauzo.",
+    "demo_request_notice": "Ombi la majaribio: hakuna taarifa iliyohifadhiwa",
+    "stat_real_shops": "Maduka washirika",
+    "stat_real_countries": "Nchi zilizounganishwa"
   },
   "vendor_dashboard": {
     "seller_central": "SELLER CENTRAL",
@@ -696,7 +703,7 @@
     "faq_q3": "Ninawezaje kufuatilia agizo langu?",
     "faq_a3": "Nenda kwenye ukurasa wa Kufuatilia Agizo na ingiza nambari yako (mfano MW-1250). Utaona hali ya sasa na eneo la kishuriti cha kifurushi chako.",
     "faq_q4": "Ninawezaje kuwa muuzaji?",
-    "faq_a4": "Bonyeza 'Kuwa Muuzaji', jaza fomu ya usajili na taarifa za duka lako na subiri uthibitisho wa timu yetu (ndani ya masaa 48).",
+    "faq_a4": "Bofya 'Kuwa Muuzaji', jaza fomu ya usajili na maelezo ya duka lako na usubiri uthibitisho kutoka kwa timu yetu (ndani ya masaa 48).",
     "faq_q5": "Nifanye nini ikiwa kifurushi changu hakifiki?",
     "faq_a5": "Ikiwa kifurushi chako kinazidi muda uliotangazwa, wasiliana nasi kupitia WhatsApp au simu. Fedha za Mwinda Pay zinabaki zimezuiwa hadi suluhisho — unalindwa.",
     "contact_title": "Wasiliana nasi moja kwa moja",
@@ -745,5 +752,8 @@
   },
   "vendor": {
     "optional": "(hiari)"
+  },
+  "demo": {
+    "banner_notice": "Toleo la majaribio: maagizo, malipo na usajili wa wauzaji bado hayajaanza"
   }
 }

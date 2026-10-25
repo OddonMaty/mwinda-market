@@ -17,7 +17,11 @@ import {
   getAllShopNames,
   toProductCard,
 } from "@/lib/marketData";
-import { matchProductToCategory } from "@/config/categories";
+import {
+  matchProductToCategory,
+  getCategoryBySlug,
+  getCategoryForProduct,
+} from "@/config/categories";
 
 const CATEGORY_SLUG_MAP: Record<string, string> = {
   electronique: "Électronique",
@@ -40,16 +44,43 @@ const CATEGORY_SLUG_MAP: Record<string, string> = {
   electromenager: "Électroménager",
 };
 
+/**
+ * Convertit un paramètre de catégorie (nom de catégorie ou slug) vers le slug officiel.
+ */
+export function convertCategoryNameToSlug(param: string | null): string | null {
+  if (!param) return null;
+  const trimmed = param.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower === "all" || lower === "tous" || lower === "toutes") return null;
+
+  // 1. Est-ce déjà un slug officiel ?
+  const bySlug = getCategoryBySlug(lower);
+  if (bySlug) return bySlug.slug;
+
+  // 2. Est-ce un nom de catégorie produit ?
+  const forProd = getCategoryForProduct(trimmed);
+  if (forProd) return forProd.slug;
+
+  return lower;
+}
+
 function resolveCategoryParam(param: string | null, availableCategories: string[]): string {
   if (!param) return "Tous";
-  const normalized = param.trim().toLowerCase();
-  if (CATEGORY_SLUG_MAP[normalized]) {
-    return CATEGORY_SLUG_MAP[normalized];
+  const slug = convertCategoryNameToSlug(param);
+  if (!slug) return "Tous";
+
+  const catDef = getCategoryBySlug(slug);
+  if (catDef) {
+    return catDef.defaultLabel;
   }
+  if (CATEGORY_SLUG_MAP[slug]) {
+    return CATEGORY_SLUG_MAP[slug];
+  }
+
   const match = availableCategories.find(
     (c) =>
-      c.toLowerCase() === normalized ||
-      c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized
+      c.toLowerCase() === param.toLowerCase().trim() ||
+      c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === param.toLowerCase().trim()
   );
   if (match) return match;
   return param;
@@ -81,6 +112,12 @@ function CatalogContent() {
     const cat = searchParams.get("category");
     if (cat) {
       setSelectedSubCategory(resolveCategoryParam(cat, catalogCategories));
+      const convertedSlug = convertCategoryNameToSlug(cat);
+      if (convertedSlug && cat !== convertedSlug && typeof window !== "undefined") {
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set("category", convertedSlug);
+        window.history.replaceState({}, "", nextUrl.toString());
+      }
     }
   }, [searchParams, catalogCategories]);
 

@@ -26,7 +26,8 @@
     "all_categories": "Todas as categorias",
     "catalog": "Catálogo",
     "register": "Registar",
-    "login_register": "Entrar | Registar"
+    "login_register": "Entrar | Registar",
+    "hours": "Seg - Sáb: 08h00 - 18h30 (GMT+1)"
   },
   "footer": {
     "about_text": "Plataforma de comércio eletrónico pan-africana conectando os mercados de África com transparência, rastreabilidade e rapidez logística.",
@@ -80,12 +81,12 @@
   },
   "home": {
     "hero_tag": "Grande Venda Pan-Africana",
-    "hero_title": "Grande Venda - Até 50% de desconto em todas as categorias",
+    "hero_title": "Grande Venda — As melhores ofertas do catálogo",
     "hero_subtitle": "Encomende dos melhores comerciantes e receba em todo o país com rastreamento em direto.",
     "hero_cta_buy": "Comprar agora",
     "hero_cta_shops": "Descobrir lojas verificadas",
     "hero_offer_special": "Oferta Especial",
-    "hero_offer_discount": "-50% DESCONTO",
+    "hero_offer_discount": "-31% DESCONTO",
     "hero_offer_pack": "Pacote Energia & Mobilidade",
     "trust_payments_title": "Pagamentos Locais Seguros",
     "trust_payments_desc": "M-Pesa, Airtel Money, Orange Money, Visa",
@@ -119,7 +120,7 @@
     "how_subtitle": "Uma experiência de compras fluida pensada para o seu país.",
     "step1_tag": "Passo 1",
     "step1_title": "Escolher um produto",
-    "step1_desc": "Navegue entre milhares de artigos e lojas verificadas de confiança.",
+    "step1_desc": "Navegue pela nossa seleção de artigos e lojas verificadas de confiança.",
     "step2_tag": "Passo 2",
     "step2_title": "Adicionar ao carrinho",
     "step2_desc": "Selecione as opções e verifique a disponibilidade na sua província.",
@@ -134,7 +135,7 @@
     "step5_desc": "Entrega rápida e segura ao domicílio ou em ponto de recolha certificado.",
     "seller_tag": "Oportunidade Comercial",
     "seller_title": "É comerciante ou importador?",
-    "seller_desc": "Expanda o seu negócio e alcance milhões de clientes no Mwinda Market.",
+    "seller_desc": "Expanda o seu negócio e aumente as suas vendas no Mwinda Market.",
     "seller_btn": "Criar a minha loja certificada",
     "toast_added": "foi adicionado ao seu carrinho",
     "welcome_title": "Bem-vindo ao Mwinda Market",
@@ -150,7 +151,9 @@
     "certified_panel_title": "Lojas Certificadas Mwinda",
     "promo_panel_title": "Melhores Promoções",
     "view_all": "Ver tudo",
-    "cat_solar": "Energia Solar & Inversores"
+    "cat_solar": "Energia Solar & Inversores",
+    "hero_title_prefix": "Grande Venda",
+    "hero_up_to": "Até"
   },
   "catalog": {
     "breadcrumb_home": "Início",
@@ -359,7 +362,8 @@
     "delivery_available_desc": "Envio seguro e entrega cuidadosa com rastreamento de encomendas",
     "delivery_available_val": "Disponível",
     "order_confirmed_delivery": "Entrega disponível com rastreamento ao vivo.",
-    "panafrican_catalog": "Catálogo Panafricano"
+    "panafrican_catalog": "Catálogo Panafricano",
+    "demo_order_notice": "Pedido de demonstração: nenhum pagamento foi efetuado"
   },
   "tracking": {
     "breadcrumb_home": "Início",
@@ -445,7 +449,7 @@
   "become_seller": {
     "badge_network": "Rede Oficial de Vendedores • Cobertura Nacional",
     "hero_title": "Expanda o seu negócio com o Mwinda Market",
-    "hero_subtitle": "Alcance milhares de clientes em todo o país",
+    "hero_subtitle": "Expanda a sua clientela e venda em todo o país",
     "hero_body": "Potencie as suas vendas com logística interligada, pagamentos 100% garantidos via Mobile Money e visibilidade pan-africana para a sua loja.",
     "cta_become_seller": "Tornar-se vendedor",
     "cta_discover_benefits": "Descobrir vantagens",
@@ -459,11 +463,11 @@
     "benefits_title": "Porquê vender no Mwinda Market?",
     "benefits_desc": "Uma infraestrutura de comércio eletrónico completa pensada para eliminar as barreiras do comércio.",
     "benefit1_title": "Grande audiência",
-    "benefit1_desc": "Aceda instantaneamente a mais de 250 000 compradores qualificados sem restrições geográficas.",
+    "benefit1_desc": "Aceda a um público qualificado de compradores sem barreiras geográficas ou limites de localização.",
     "benefit1_link": "Alcance pan-africano",
     "benefit2_title": "Pagamentos seguros",
     "benefit2_desc": "Liquidações garantidas via Mobile Money e contas bancárias com proteção Mwinda Pay sem risco de incumprimento.",
-    "benefit2_link": "Transferências em 24h",
+    "benefit2_link": "Transferências diretas",
     "benefit3_title": "Logística gerida para si",
     "benefit3_desc": "Depósito simples nos Hubs Mwinda ou recolha na sua loja. A frota Mwinda Express assegura a última milha.",
     "benefit3_link": "Cobertura multi-regiões",
@@ -476,14 +480,14 @@
     "step1_badge": "Rápido • 2 min",
     "step1_title": "Registo em 2 minutos",
     "step1_desc": "Preencha o formulário online com os dados do seu negócio e carregue os documentos de identificação.",
-    "step2_badge": "Em 24h",
+    "step2_badge": "Em 48h",
     "step2_title": "Validação e Publicação",
-    "step2_desc": "A nossa equipa valida o seu perfil em menos de 24h e um gestor dedicado ajuda na configuração da loja.",
+    "step2_desc": "A nossa equipa valida o seu perfil em 48h e um gestor dedicado ajuda na configuração da loja.",
     "step3_badge": "Receitas Diretas",
     "step3_title": "Venda e receba pagamentos",
     "step3_desc": "Receba pedidos, entregue os pacotes aos hubs Mwinda e receba os fundos diretamente no seu Mobile Money.",
     "success_title": "Candidatura recebida com sucesso!",
-    "success_desc": "O seu processo de registo foi enviado. Um consultor do Mwinda Market entrará em contacto nas próximas 24h para concluir a sua conta Seller Central.",
+    "success_desc": "O seu pedido de registo foi enviado. Um consultor do Mwinda Market entrará em contacto em 48h para concluir a sua conta Seller Central.",
     "btn_dashboard": "Aceder ao Painel de Vendedor",
     "btn_view_shops": "Ver lojas",
     "btn_new_request": "Novo pedido",
@@ -514,7 +518,7 @@
     "terms_link": "termos e condições de venda",
     "terms_text_after": "do Mwinda Market e autorizo o tratamento dos meus dados para criação da conta Seller Central.",
     "btn_submit": "Tornar-se vendedor certificado",
-    "trust_footer": "Os seus dados estão protegidos. Sem taxas de adesão ocultas. Apoio dedicado em 24h.",
+    "trust_footer": "Os seus dados estão protegidos. Sem taxas de adesão ocultas. Validação do processo em 48h.",
     "certified_vendors_stat": "Vendedores certificados ativos",
     "provinces_covered_stat": "Regiões atendidas",
     "validation_delay_stat": "Prazo de validação",
@@ -537,12 +541,15 @@
     "stat_zero_fees": "Taxas de abertura",
     "stat_guaranteed_payouts": "Pagamentos seguros",
     "stat_whatsapp_support": "Assistência técnica",
-    "pillar_payout_title": "Transferências em 24h",
-    "pillar_payout_desc": "Receba automaticamente as suas receitas de vendas na sua conta M-Pesa, Airtel Money, Orange Money ou bancária sem complicações.",
+    "pillar_payout_title": "Transferências seguras",
+    "pillar_payout_desc": "Receba os seus rendimentos de vendas diretamente via Mobile Money ou transferência bancária sem complicações.",
     "pillar_logistics_title": "Rede logística integrada",
     "pillar_logistics_desc": "Aproveite a nossa rede de hubs e transportadoras parceiras para enviar as suas encomendas com rastreio fiável.",
     "pillar_support_title": "Acompanhamento local dedicado",
-    "pillar_support_desc": "A nossa equipa técnica local está ao seu dispor no WhatsApp para ajudar a digitalizar o seu catálogo e otimizar as suas vendas."
+    "pillar_support_desc": "A nossa equipa técnica local está ao seu dispor no WhatsApp para ajudar a digitalizar o seu catálogo e otimizar as suas vendas.",
+    "demo_request_notice": "Pedido de demonstração: nenhum dado foi gravado",
+    "stat_real_shops": "Lojas parceiras",
+    "stat_real_countries": "Países conectados"
   },
   "vendor_dashboard": {
     "seller_central": "SELLER CENTRAL",
@@ -745,5 +752,8 @@
   },
   "vendor": {
     "optional": "(opcional)"
+  },
+  "demo": {
+    "banner_notice": "Versão de demonstração: pedidos, pagamentos e registos de vendedores ainda não estão ativos"
   }
 }

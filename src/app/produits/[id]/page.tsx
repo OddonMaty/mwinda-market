@@ -328,9 +328,6 @@ export default function ProductDetailPage({ params }: PageProps) {
 
             {/* Bloc Prix mis en valeur sur fond légèrement teinté */}
             <div className="bg-slate-50 border border-[#E2E8F0] p-4 rounded-lg space-y-2">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
-                Prix garanti
-              </span>
               <PriceTag
                 usdPrice={product.usdPrice}
                 originalUsdPrice={product.originalUsdPrice}
@@ -741,7 +738,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                 Produits similaires dans {product.category}
               </h2>
               <Link
-                href={`/produits?category=${encodeURIComponent(product.category)}`}
+                href={`/produits?category=${getCategoryForProduct(product.category).slug}`}
                 className="text-xs font-semibold text-[#0284C7] hover:underline flex items-center gap-1"
               >
                 <span>Voir plus</span>

@@ -26,7 +26,8 @@
     "all_categories": "All categories",
     "catalog": "Catalog",
     "register": "Register",
-    "login_register": "Sign in | Register"
+    "login_register": "Sign in | Register",
+    "hours": "Mon - Sat: 08:00 - 18:30 (GMT+1)"
   },
   "footer": {
     "about_text": "Pan-African e-commerce platform connecting African markets with transparency, traceability and reliable logistics.",
@@ -80,12 +81,12 @@
   },
   "home": {
     "hero_tag": "Grand Pan-African Sale",
-    "hero_title": "Grand Sale - Up to 50% off all categories",
+    "hero_title": "Mega Sale — Top offers from the catalog",
     "hero_subtitle": "Order from the finest merchants and get delivered everywhere with live tracking.",
     "hero_cta_buy": "Shop now",
     "hero_cta_shops": "Discover verified stores",
     "hero_offer_special": "Special Offer",
-    "hero_offer_discount": "-50% OFF",
+    "hero_offer_discount": "-31% OFF",
     "hero_offer_pack": "Energy & Mobility Pack",
     "trust_payments_title": "Secure Local Payments",
     "trust_payments_desc": "M-Pesa, Airtel Money, Orange Money, Visa",
@@ -119,7 +120,7 @@
     "how_subtitle": "A seamless shopping experience crafted for your country.",
     "step1_tag": "Step 1",
     "step1_title": "Choose a product",
-    "step1_desc": "Browse thousands of verified products and trusted stores.",
+    "step1_desc": "Browse our selection of verified products and trusted stores.",
     "step2_tag": "Step 2",
     "step2_title": "Add to cart",
     "step2_desc": "Select options and verify delivery availability in your region.",
@@ -134,7 +135,7 @@
     "step5_desc": "Prompt and safe delivery at your doorstep or certified pickup point.",
     "seller_tag": "Merchant Opportunity",
     "seller_title": "Are you a merchant or importer?",
-    "seller_desc": "Scale your business and connect with millions of customers on Mwinda Market.",
+    "seller_desc": "Scale your business and expand your sales on Mwinda Market.",
     "seller_btn": "Create my certified store",
     "toast_added": "has been added to your cart",
     "welcome_title": "Welcome to Mwinda Market",
@@ -150,7 +151,9 @@
     "certified_panel_title": "Mwinda Certified Shops",
     "promo_panel_title": "Best Deals",
     "view_all": "View all",
-    "cat_solar": "Solar Power & Inverters"
+    "cat_solar": "Solar Power & Inverters",
+    "hero_title_prefix": "Mega Sale",
+    "hero_up_to": "Up to"
   },
   "catalog": {
     "breadcrumb_home": "Home",
@@ -359,7 +362,8 @@
     "delivery_available_desc": "Secure shipment and careful handling with order tracking",
     "delivery_available_val": "Available",
     "order_confirmed_delivery": "Delivery available with live tracking.",
-    "panafrican_catalog": "Pan-African Catalog"
+    "panafrican_catalog": "Pan-African Catalog",
+    "demo_order_notice": "Demo order: no actual payment was processed"
   },
   "tracking": {
     "breadcrumb_home": "Home",
@@ -445,7 +449,7 @@
   "become_seller": {
     "badge_network": "Official Seller Network • Nationwide Coverage",
     "hero_title": "Grow your business with Mwinda Market",
-    "hero_subtitle": "Reach thousands of customers nationwide",
+    "hero_subtitle": "Expand your customer base and sell nationwide",
     "hero_body": "Boost your sales with interconnected logistics, 100% guaranteed Mobile Money payments, and pan-African visibility for your store.",
     "cta_become_seller": "Become a seller",
     "cta_discover_benefits": "Discover benefits",
@@ -459,11 +463,11 @@
     "benefits_title": "Why sell on Mwinda Market?",
     "benefits_desc": "A turnkey e-commerce infrastructure built to remove all commercial barriers.",
     "benefit1_title": "Large audience",
-    "benefit1_desc": "Instantly access over 250,000 qualified buyers without regional barriers.",
+    "benefit1_desc": "Access a qualified audience of buyers without geographical barriers or location limits.",
     "benefit1_link": "Pan-African reach",
     "benefit2_title": "Secure payments",
     "benefit2_desc": "Guaranteed disbursements via Mobile Money and bank accounts with Mwinda Pay protection.",
-    "benefit2_link": "24h payouts",
+    "benefit2_link": "Direct payouts",
     "benefit3_title": "Managed logistics",
     "benefit3_desc": "Easy drop-off at Mwinda Hubs or pick-up at your store. Mwinda Express delivers the final mile.",
     "benefit3_link": "Multi-region coverage",
@@ -476,14 +480,14 @@
     "step1_badge": "Quick • 2 min",
     "step1_title": "2-minute registration",
     "step1_desc": "Fill out the online form with your store info and upload verification documents.",
-    "step2_badge": "Within 24h",
+    "step2_badge": "Within 48h",
     "step2_title": "Validation & Go-live",
-    "step2_desc": "Our team reviews your profile within 24h and an advisor helps you set up your store catalog.",
+    "step2_desc": "Our team reviews your profile within 48h and an advisor helps you set up your store catalog.",
     "step3_badge": "Direct Revenue",
     "step3_title": "Sell and receive payouts",
     "step3_desc": "Receive customer orders, hand parcels to Mwinda hubs, and get paid straight to Mobile Money.",
     "success_title": "Application received successfully!",
-    "success_desc": "Your seller file has been submitted. A Mwinda Market specialist will contact you within 24h to finalize your Seller Central account.",
+    "success_desc": "Your seller application has been submitted. A Mwinda Market advisor will contact you within 48h to finalize your Seller Central account.",
     "btn_dashboard": "Open Seller Dashboard",
     "btn_view_shops": "Browse stores",
     "btn_new_request": "New application",
@@ -514,7 +518,7 @@
     "terms_link": "terms and conditions",
     "terms_text_after": "of Mwinda Market and authorize processing of my details to create my Seller Central account.",
     "btn_submit": "Become a certified seller",
-    "trust_footer": "Your data is protected. No hidden setup fees. Dedicated 24h onboarding support.",
+    "trust_footer": "Your data is protected. No hidden setup fees. Application review within 48h.",
     "certified_vendors_stat": "Active certified sellers",
     "provinces_covered_stat": "Regions covered",
     "validation_delay_stat": "Review turnaround time",
@@ -537,12 +541,15 @@
     "stat_zero_fees": "Setup fees",
     "stat_guaranteed_payouts": "Secure payouts",
     "stat_whatsapp_support": "Technical assistance",
-    "pillar_payout_title": "Payouts within 24h",
-    "pillar_payout_desc": "Automatically receive your sales revenue straight to your M-Pesa, Airtel Money, Orange Money or bank account hassle-free.",
+    "pillar_payout_title": "Secure payouts",
+    "pillar_payout_desc": "Receive your sales earnings directly via Mobile Money or bank transfer hassle-free.",
     "pillar_logistics_title": "Integrated logistics network",
     "pillar_logistics_desc": "Benefit from our network of relay hubs and courier partners to have your parcels delivered reliably and tracked.",
     "pillar_support_title": "Dedicated local support",
-    "pillar_support_desc": "Our local tech team is available on WhatsApp to assist you in digitizing your catalog and boosting your sales."
+    "pillar_support_desc": "Our local tech team is available on WhatsApp to assist you in digitizing your catalog and boosting your sales.",
+    "demo_request_notice": "Demo request: no data was stored",
+    "stat_real_shops": "Partner stores",
+    "stat_real_countries": "Connected countries"
   },
   "vendor_dashboard": {
     "seller_central": "SELLER CENTRAL",
@@ -745,5 +752,8 @@
   },
   "vendor": {
     "optional": "(optional)"
+  },
+  "demo": {
+    "banner_notice": "Demo version: orders, payments and seller registrations are not active yet"
   }
 }

@@ -10,6 +10,8 @@ import { PriceTag } from "@/components/PriceTag";
 import { useCart } from "@/context/CartContext";
 import { useMarket } from "@/context/MarketContext";
 import { useT } from "@/i18n";
+import { DEMO_MODE } from "@/config/demo";
+import { CONTACT_CONFIG, getTelLink } from "@/config/contact";
 
 export default function CartPage() {
   const { t } = useT();
@@ -86,6 +88,13 @@ export default function CartPage() {
                 </span>.
               </p>
             </div>
+
+            {DEMO_MODE && (
+              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-semibold flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-base text-amber-700">info</span>
+                <span>{t("cart.demo_order_notice") || "Commande de démonstration : aucun paiement n'a été effectué"}</span>
+              </div>
+            )}
 
             {/* Escrow assurance recap in confirmation */}
             <div className="p-4 bg-surface-container-low rounded-xl border border-outline-variant text-xs text-left space-y-2">
@@ -492,7 +501,12 @@ export default function CartPage() {
                   <span className="material-symbols-outlined text-secondary text-xl shrink-0">support_agent</span>
                   <div>
                     <p className="font-bold text-primary">{t("cart.need_help")}</p>
-                    <p className="text-[11px]">{t("cart.hotline_prefix")} <strong>+243 81 000 9999</strong></p>
+                    <p className="text-[11px]">
+                      {t("cart.hotline_prefix")}{" "}
+                      <a href={getTelLink(CONTACT_CONFIG.phone)} className="font-bold text-primary hover:underline">
+                        {CONTACT_CONFIG.phone}
+                      </a>
+                    </p>
                   </div>
                 </div>
               </div>

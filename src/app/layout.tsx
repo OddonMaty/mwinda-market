@@ -3,6 +3,7 @@ import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { MarketProvider } from "@/context/MarketContext";
 import { FloatingBar } from "@/components/FloatingBar";
+import { DemoBanner } from "@/components/DemoBanner";
 
 export const viewport: Viewport = {
   themeColor: "#0B1B3D",
@@ -61,6 +62,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <MarketProvider>
+          <DemoBanner />
           <CartProvider>
             {children}
             <FloatingBar />

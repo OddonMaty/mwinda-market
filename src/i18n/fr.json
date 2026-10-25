@@ -26,7 +26,8 @@
     "all_categories": "Toutes les catégories",
     "catalog": "Catalogue",
     "register": "Inscription",
-    "login_register": "Connexion | Inscription"
+    "login_register": "Connexion | Inscription",
+    "hours": "Lun - Sam : 08h00 - 18h30 (GMT+1)"
   },
   "footer": {
     "about_text": "Plateforme de commerce électronique panafricaine connectant les marchés d'Afrique avec transparence, traçabilité et rapidité logistique.",
@@ -80,12 +81,12 @@
   },
   "home": {
     "hero_tag": "Grande Vente Panafricaine",
-    "hero_title": "Grande Vente - Jusqu'à 50% sur toutes les catégories",
+    "hero_title": "Grande Vente — Les meilleures offres du catalogue",
     "hero_subtitle": "Commandez auprès des meilleurs commerçants et faites-vous livrer partout avec suivi en direct.",
     "hero_cta_buy": "Acheter maintenant",
     "hero_cta_shops": "Découvrir les boutiques vérifiées",
     "hero_offer_special": "Offre Spéciale",
-    "hero_offer_discount": "-50% RABAIS",
+    "hero_offer_discount": "-31% RABAIS",
     "hero_offer_pack": "Pack Énergie & Mobilité",
     "trust_payments_title": "Paiements Locaux Sécurisés",
     "trust_payments_desc": "M-Pesa, Airtel Money, Orange Money, Visa",
@@ -119,7 +120,7 @@
     "how_subtitle": "Une expérience d'achat fluide pensée pour votre pays.",
     "step1_tag": "Étape 1",
     "step1_title": "Choisir un produit",
-    "step1_desc": "Explorez parmi des milliers d'articles et boutiques de confiance vérifiées.",
+    "step1_desc": "Explorez notre sélection de produits et boutiques de confiance vérifiées.",
     "step2_tag": "Étape 2",
     "step2_title": "Ajouter au panier",
     "step2_desc": "Sélectionnez les options et vérifiez la disponibilité dans votre région.",
@@ -134,7 +135,7 @@
     "step5_desc": "Livraison rapide et sécurisée à domicile ou en point relais certifié.",
     "seller_tag": "Opportunité Marchande",
     "seller_title": "Vous êtes commerçant ou importateur ?",
-    "seller_desc": "Développez votre activité et touchez des millions de clients sur Mwinda Market.",
+    "seller_desc": "Développez votre activité et vos ventes sur Mwinda Market.",
     "seller_btn": "Créer ma boutique certifiée",
     "toast_added": "a été ajouté à votre panier",
     "welcome_title": "Bienvenue sur Mwinda Market",
@@ -150,7 +151,9 @@
     "certified_panel_title": "Boutiques certifiées Mwinda",
     "promo_panel_title": "Meilleures promotions",
     "view_all": "Tout voir",
-    "cat_solar": "Énergie Solaire & Onduleurs"
+    "cat_solar": "Énergie Solaire & Onduleurs",
+    "hero_title_prefix": "Grande Vente",
+    "hero_up_to": "Jusqu'à"
   },
   "catalog": {
     "breadcrumb_home": "Accueil",
@@ -359,7 +362,8 @@
     "delivery_available_desc": "Expédition sécurisée et remise soignée avec suivi de commande",
     "delivery_available_val": "Disponible",
     "order_confirmed_delivery": "Livraison disponible avec suivi en direct.",
-    "panafrican_catalog": "Catalogue panafricain"
+    "panafrican_catalog": "Catalogue panafricain",
+    "demo_order_notice": "Commande de démonstration : aucun paiement n'a été effectué"
   },
   "tracking": {
     "breadcrumb_home": "Accueil",
@@ -445,7 +449,7 @@
   "become_seller": {
     "badge_network": "Réseau Vendeur Officiel • Couverture Nationale",
     "hero_title": "Développez votre commerce avec Mwinda Market",
-    "hero_subtitle": "Touchez des milliers de clients dans tout le pays",
+    "hero_subtitle": "Développez votre clientèle et vendez dans tout le pays",
     "hero_body": "Propulsez vos ventes grâce à une logistique interconnectée, des paiements 100% garantis via Mobile Money et une visibilité panafricaine pour votre boutique.",
     "cta_become_seller": "Devenir vendeur",
     "cta_discover_benefits": "Découvrir les avantages",
@@ -459,11 +463,11 @@
     "benefits_title": "Pourquoi vendre sur Mwinda Market ?",
     "benefits_desc": "Une infrastructure e-commerce clé en main pensée spécifiquement pour lever toutes les barrières du commerce.",
     "benefit1_title": "Large audience",
-    "benefit1_desc": "Accédez instantanément à plus de 250 000 acheteurs qualifiés sans frontière géographique ni barrière de localisation.",
+    "benefit1_desc": "Accédez à une audience qualifiée d'acheteurs sans frontière géographique ni barrière de localisation.",
     "benefit1_link": "Portée panafricaine",
     "benefit2_title": "Paiements sécurisés",
     "benefit2_desc": "Reversements garantis via Mobile Money et comptes bancaires avec protection Mwinda Pay sans risque d'impayé.",
-    "benefit2_link": "Versements en 24h",
+    "benefit2_link": "Versements directs",
     "benefit3_title": "Livraison gérée pour vous",
     "benefit3_desc": "Dépôt facile en Hubs Mwinda ou enlèvement à votre boutique. Notre flotte Mwinda Express assure le dernier kilomètre.",
     "benefit3_link": "Couverture multi-régions",
@@ -476,14 +480,14 @@
     "step1_badge": "Rapide • 2 min",
     "step1_title": "Inscription en 2 minutes",
     "step1_desc": "Remplissez le formulaire en ligne avec les coordonnées de votre commerce et téléchargez vos justificatifs.",
-    "step2_badge": "Sous 24h",
+    "step2_badge": "Sous 48h",
     "step2_title": "Validation & Mise en ligne",
-    "step2_desc": "Notre équipe valide votre profil en moins de 24h et un conseiller dédié vous assiste pour importer votre catalogue.",
+    "step2_desc": "Notre équipe valide votre profil sous 48h et un conseiller dédié vous assiste pour importer votre catalogue.",
     "step3_badge": "Revenus Directs",
     "step3_title": "Vendez et recevez vos paiements",
     "step3_desc": "Recevez vos premières commandes, confiez l'expédition aux hubs Mwinda et encaissez vos fonds directement.",
     "success_title": "Demande reçue avec succès !",
-    "success_desc": "Votre dossier d'inscription vendeur a été transmis à notre équipe. Un conseiller Mwinda Market vous contactera dans les prochaines 24h pour finaliser votre compte Seller Central.",
+    "success_desc": "Votre dossier d'inscription vendeur a été transmis à notre équipe. Un conseiller Mwinda Market vous contactera sous 48h pour finaliser votre compte Seller Central.",
     "btn_dashboard": "Accéder au Tableau de bord",
     "btn_view_shops": "Voir les boutiques",
     "btn_new_request": "Nouvelle demande",
@@ -514,7 +518,7 @@
     "terms_link": "conditions de vente",
     "terms_text_after": "de Mwinda Market et autorise le traitement de mes coordonnées pour l'ouverture de mon compte Seller Central.",
     "btn_submit": "Devenir vendeur certifié",
-    "trust_footer": "Vos données sont protégées. Aucun frais d'adhésion caché. Assistance dédiée sous 24h.",
+    "trust_footer": "Vos données sont protégées. Aucun frais d'adhésion caché. Validation du dossier sous 48h.",
     "certified_vendors_stat": "Vendeurs certifiés actifs",
     "provinces_covered_stat": "Régions couvertes",
     "validation_delay_stat": "Délai validation dossier",
@@ -537,12 +541,15 @@
     "stat_zero_fees": "Frais d'ouverture",
     "stat_guaranteed_payouts": "Paiements sécurisés",
     "stat_whatsapp_support": "Assistance technique",
-    "pillar_payout_title": "Versements garantis sous 24h",
-    "pillar_payout_desc": "Recevez automatiquement vos revenus de vente directement sur votre compte M-Pesa, Airtel Money, Orange Money ou compte bancaire sans tracas.",
+    "pillar_payout_title": "Versements sécurisés",
+    "pillar_payout_desc": "Recevez directement vos revenus de vente par Mobile Money ou virement bancaire sans tracas.",
     "pillar_logistics_title": "Réseau logistique intégré",
     "pillar_logistics_desc": "Profitez de notre réseau de hubs relais et transporteurs partenaires pour faire livrer vos colis de manière fiable et tracée.",
     "pillar_support_title": "Accompagnement local dédié",
-    "pillar_support_desc": "Notre équipe technique locale est à votre disposition par WhatsApp pour vous aider à numériser votre catalogue et optimiser vos ventes."
+    "pillar_support_desc": "Notre équipe technique locale est à votre disposition par WhatsApp pour vous aider à numériser votre catalogue et optimiser vos ventes.",
+    "demo_request_notice": "Demande de démonstration : aucune donnée n'a été enregistrée",
+    "stat_real_shops": "Boutiques partenaires",
+    "stat_real_countries": "Pays connectés"
   },
   "vendor_dashboard": {
     "seller_central": "SELLER CENTRAL",
@@ -745,5 +752,8 @@
   },
   "vendor": {
     "optional": "(optionnel)"
+  },
+  "demo": {
+    "banner_notice": "Version de démonstration : les commandes, paiements et inscriptions ne sont pas encore actifs"
   }
 }

@@ -9,6 +9,10 @@ import { DRC_PROVINCES } from "@/data/provinces";
 import { AFRICAN_COUNTRIES } from "@/data/countries";
 import { getPayoutConfigForCountry } from "@/data/vendor";
 import { useT } from "@/i18n";
+import { DEMO_MODE } from "@/config/demo";
+import { SELLER_VALIDATION_DELAY } from "@/config/contact";
+import { SHOPS_DATA } from "@/data/shops";
+import { getActiveCountries } from "@/lib/activeCountries";
 
 export default function DevenirVendeurPage() {
   const { t } = useT();
@@ -103,19 +107,19 @@ export default function DevenirVendeurPage() {
                   </a>
                 </div>
 
-                {/* Micro engagements réels */}
+                {/* Chiffres réels et engagements vérifiables */}
                 <div className="grid grid-cols-3 gap-3 pt-6 border-t border-outline-variant/60 w-full max-w-lg">
                   <div className="flex flex-col">
-                    <span className="text-base font-bold text-primary">100%</span>
-                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_free_registration") || "Inscription gratuite"}</span>
+                    <span className="text-base font-bold text-primary">0 $</span>
+                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_zero_fees") || "Frais d'ouverture"}</span>
                   </div>
                   <div className="flex flex-col border-x border-outline-variant/50 px-3">
-                    <span className="text-base font-bold text-secondary">24h</span>
-                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_payout_delay") || "Reversement Mobile Money"}</span>
+                    <span className="text-base font-bold text-secondary">{SELLER_VALIDATION_DELAY}</span>
+                    <span className="text-xs text-on-surface-variant">{t("become_seller.validation_delay_stat") || "Délai de validation"}</span>
                   </div>
                   <div className="flex flex-col pl-2">
-                    <span className="text-base font-bold text-primary">7j/7</span>
-                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_dedicated_support") || "Support WhatsApp dédié"}</span>
+                    <span className="text-base font-bold text-primary">{SHOPS_DATA.length}</span>
+                    <span className="text-xs text-on-surface-variant">{t("become_seller.stat_real_shops") || "Boutiques partenaires"}</span>
                   </div>
                 </div>
               </div>
@@ -352,6 +356,12 @@ export default function DevenirVendeurPage() {
                 <h2 className="text-2xl font-bold text-primary mb-2 font-display">
                   {t("become_seller.success_title")}
                 </h2>
+                {DEMO_MODE && (
+                  <div className="max-w-md mx-auto mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-semibold flex items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-base text-amber-700">info</span>
+                    <span>{t("become_seller.demo_request_notice") || "Demande de démonstration : aucune donnée n'a été enregistrée"}</span>
+                  </div>
+                )}
                 <p className="text-base text-on-surface-variant mb-6 leading-relaxed max-w-lg mx-auto">
                   {t("become_seller.success_desc")}
                 </p>
@@ -772,13 +782,15 @@ export default function DevenirVendeurPage() {
                     </button>
                   </div>
 
-                  {/* Trust notice */}
-                  <div className="flex items-center justify-center gap-2 text-center text-xs text-on-surface-variant">
-                    <span className="material-symbols-outlined text-secondary text-base">shield</span>
-                    <span>
-                      {t("become_seller.trust_footer")}
-                    </span>
-                  </div>
+                  {/* Trust notice — masqué en mode démonstration */}
+                  {!DEMO_MODE && (
+                    <div className="flex items-center justify-center gap-2 text-center text-xs text-on-surface-variant">
+                      <span className="material-symbols-outlined text-secondary text-base">shield</span>
+                      <span>
+                        {t("become_seller.trust_footer")}
+                      </span>
+                    </div>
+                  )}
                 </form>
               </div>
             )}
@@ -788,23 +800,23 @@ export default function DevenirVendeurPage() {
         {/* ─── RÉASSURANCE & ENGAGEMENTS VENDEURS ──────────────────── */}
         <section className="py-14 bg-surface-container-low/60 border-t border-outline-variant">
           <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-10">
-            {/* Engagements bar */}
+            {/* Engagements bar calculés sur les données réelles */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12 text-center">
               <div className="flex flex-col">
                 <span className="text-3xl font-black text-primary font-display">0 $</span>
                 <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.stat_zero_fees") || "Frais d'ouverture"}</span>
               </div>
               <div className="flex flex-col border-outline-variant/40 md:border-x px-4">
-                <span className="text-3xl font-black text-secondary font-display">48h</span>
+                <span className="text-3xl font-black text-secondary font-display">{SELLER_VALIDATION_DELAY}</span>
                 <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.validation_delay_stat") || "Délai de validation"}</span>
               </div>
               <div className="flex flex-col border-outline-variant/40 md:border-r px-4">
-                <span className="text-3xl font-black text-[#EA580C] font-display">100%</span>
-                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.stat_guaranteed_payouts") || "Paiements sécurisés"}</span>
+                <span className="text-3xl font-black text-[#EA580C] font-display">{SHOPS_DATA.length}</span>
+                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.stat_real_shops") || "Boutiques partenaires"}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-3xl font-black text-primary font-display">7j/7</span>
-                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.stat_whatsapp_support") || "Assistance technique"}</span>
+                <span className="text-3xl font-black text-primary font-display">{getActiveCountries().length}</span>
+                <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.stat_real_countries") || "Pays actifs"}</span>
               </div>
             </div>
 
@@ -815,10 +827,10 @@ export default function DevenirVendeurPage() {
                   <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
                 </div>
                 <h3 className="text-base font-bold text-primary mb-2">
-                  {t("become_seller.pillar_payout_title") || "Versements garantis sous 24h"}
+                  {t("become_seller.pillar_payout_title") || "Versements sécurisés"}
                 </h3>
                 <p className="text-sm text-on-surface-variant leading-relaxed">
-                  {t("become_seller.pillar_payout_desc") || "Recevez automatiquement vos revenus de vente directement sur votre compte M-Pesa, Airtel Money, Orange Money ou compte bancaire sans tracas."}
+                  {t("become_seller.pillar_payout_desc") || "Recevez directement vos revenus de vente par Mobile Money ou virement bancaire sans tracas."}
                 </p>
               </div>
 
