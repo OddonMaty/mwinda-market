@@ -47,7 +47,7 @@ const CATEGORY_SLUG_MAP: Record<string, string> = {
 /**
  * Convertit un paramètre de catégorie (nom de catégorie ou slug) vers le slug officiel.
  */
-export function convertCategoryNameToSlug(param: string | null): string | null {
+function convertCategoryNameToSlug(param: string | null): string | null {
   if (!param) return null;
   const trimmed = param.trim();
   const lower = trimmed.toLowerCase();
