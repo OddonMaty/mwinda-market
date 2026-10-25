@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { AFRICAN_COUNTRIES } from "@/data/countries";
 import { DRC_PROVINCES } from "@/data/provinces";
+import { AFRICAN_COUNTRIES } from "@/data/countries";
 import { getPayoutConfigForCountry } from "@/data/vendor";
 import { useT } from "@/i18n";
 
@@ -471,11 +471,16 @@ export default function DevenirVendeurPage() {
                         htmlFor="location"
                         className="block text-sm font-semibold text-primary mb-1.5"
                       >
-                        {t("become_seller.label_location")} <span className="text-error">*</span>
+                        {selectedCountry.code.toUpperCase() === "CD"
+                          ? t("become_seller.label_location")
+                          : selectedCountry.regions && selectedCountry.regions.length > 0
+                          ? t("become_seller.label_location")
+                          : (t("become_seller.label_free_city") || "Ville / Région")}{" "}
+                        <span className="text-error">*</span>
                       </label>
                       <div className="relative">
                         {selectedCountry.code.toUpperCase() === "CD" ? (
-                          /* RDC : 26 provinces */
+                          /* RDC : liste des 26 provinces */
                           <>
                             <select
                               id="location"
@@ -502,7 +507,7 @@ export default function DevenirVendeurPage() {
                             </span>
                           </>
                         ) : selectedCountry.regions && selectedCountry.regions.length > 0 ? (
-                          /* Pays avec régions prévues */
+                          /* Pays avec régions/départements définis (ex: CG, RW, BI, CM, KE, CI, AO) */
                           <>
                             <select
                               id="location"
@@ -538,7 +543,7 @@ export default function DevenirVendeurPage() {
                               required
                               value={formState.location}
                               onChange={handleChange}
-                              placeholder={t("become_seller.placeholder_free_city")}
+                              placeholder={t("become_seller.placeholder_free_city") || "Ex: Ville d'implantation"}
                               className="w-full h-11 px-3.5 pl-10 rounded-lg border border-outline-variant bg-white text-on-surface text-sm focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition"
                             />
                             <span className="material-symbols-outlined absolute left-3 top-3 text-outline text-lg pointer-events-none">
@@ -790,7 +795,7 @@ export default function DevenirVendeurPage() {
                 <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.stat_zero_fees") || "Frais d'ouverture"}</span>
               </div>
               <div className="flex flex-col border-outline-variant/40 md:border-x px-4">
-                <span className="text-3xl font-black text-secondary font-display">24h</span>
+                <span className="text-3xl font-black text-secondary font-display">48h</span>
                 <span className="text-sm text-on-surface-variant mt-1">{t("become_seller.validation_delay_stat") || "Délai de validation"}</span>
               </div>
               <div className="flex flex-col border-outline-variant/40 md:border-r px-4">

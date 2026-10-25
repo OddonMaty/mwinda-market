@@ -115,6 +115,7 @@ export default function HomePage() {
         tag: s.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
         location: `${s.city}, ${s.province}`,
         rating: s.rating.toFixed(1),
+        reviewCount: s.reviewCount,
         productsCount:
           realCount > 0
             ? `${realCount} ${realCount > 1 ? t("shops.articles_count") : t("shops.article_count_singular")}`
@@ -647,6 +648,9 @@ export default function HomePage() {
                           star
                         </span>
                         {shop.rating}
+                        <span className="text-[11px] text-slate-400 font-normal ml-1">
+                          ({shop.reviewCount})
+                        </span>
                       </span>
                       {shop.productsCount && (
                         <>

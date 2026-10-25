@@ -54,7 +54,16 @@ export const AFRICAN_COUNTRIES: Country[] = [
     regions: [
       { id: "bzv", name: "Brazzaville", hub: "Hub Central Brazzaville", delay: "24h" },
       { id: "pnr", name: "Pointe-Noire", hub: "Hub Portuaire Pointe-Noire", delay: "48h" },
-      { id: "dol", name: "Dolisie", hub: "Relais Dolisie", delay: "3 - 4 jours" },
+      { id: "nia", name: "Niari (Dolisie)", hub: "Relais Dolisie", delay: "3 - 4 jours" },
+      { id: "bou", name: "Bouenza (Madingou)", hub: "Relais Madingou", delay: "3 - 5 jours" },
+      { id: "cuv", name: "Cuvette (Owando)", hub: "Relais Nord Owando", delay: "4 - 6 jours" },
+      { id: "cvo", name: "Cuvette-Ouest (Ewo)", hub: "Relais Ewo", delay: "5 - 7 jours" },
+      { id: "kou", name: "Kouilou (Loango)", hub: "Relais Littoral Loango", delay: "48h" },
+      { id: "lek", name: "Lékoumou (Sibiti)", hub: "Relais Sibiti", delay: "4 - 5 jours" },
+      { id: "lik", name: "Likouala (Impfondo)", hub: "Relais Fluvial Impfondo", delay: "7 - 10 jours" },
+      { id: "plt", name: "Plateaux (Djambala)", hub: "Relais Djambala", delay: "3 - 5 jours" },
+      { id: "pol", name: "Pool (Kinkala)", hub: "Relais Kinkala", delay: "24h - 48h" },
+      { id: "sgh", name: "Sangha (Ouesso)", hub: "Relais Forestier Ouesso", delay: "5 - 7 jours" },
     ],
   },
   {

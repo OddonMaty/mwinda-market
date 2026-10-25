@@ -872,10 +872,13 @@ export default function VendorDashboardPage() {
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="font-bold text-sm text-on-surface">
-                                ${ord.amountUsd.toFixed(2)}{" "}
-                                <span className="text-[10px] font-normal text-on-surface-variant">
-                                  USD
+                                {ord.amountCdf.toLocaleString("fr-FR")}{" "}
+                                <span className="text-[10px] font-bold text-secondary font-mono">
+                                  {VENDOR_PROFILE.settlementCurrency.symbol}
                                 </span>
+                              </div>
+                              <div className="text-[10px] text-on-surface-variant">
+                                ≈${ord.amountUsd.toFixed(2)} USD
                               </div>
                             </td>
                             <td className="py-3.5 px-4 text-right">
@@ -1110,7 +1113,11 @@ export default function VendorDashboardPage() {
                             <span className="font-semibold text-secondary">{ord.statusLabel}</span>
                           </td>
                           <td className="py-3.5 px-4 text-on-surface-variant">{ord.date}</td>
-                          <td className="py-3.5 px-4 font-bold">${ord.amountUsd.toFixed(2)}</td>
+                          <td className="py-3.5 px-4 font-bold">
+                            {ord.amountCdf.toLocaleString("fr-FR")}{" "}
+                            <span className="text-xs font-bold text-secondary font-mono">{VENDOR_PROFILE.settlementCurrency.symbol}</span>
+                            <div className="text-[10px] font-normal text-on-surface-variant">≈${ord.amountUsd.toFixed(2)} USD</div>
+                          </td>
                           <td className="py-3.5 px-4 text-right">
                             <button
                               type="button"
@@ -1143,7 +1150,11 @@ export default function VendorDashboardPage() {
                   </div>
                   <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant">
                     <div className="text-xs text-on-surface-variant">Panier moyen</div>
-                    <div className="text-xl font-bold text-primary mt-1">$80.25 USD</div>
+                    <div className="text-xl font-bold text-primary mt-1">
+                      {(80.25 * 2800).toLocaleString("fr-FR")}{" "}
+                      <span className="text-sm font-bold text-secondary font-mono">{VENDOR_PROFILE.settlementCurrency.symbol}</span>
+                    </div>
+                    <div className="text-[11px] text-on-surface-variant">≈$80.25 USD</div>
                   </div>
                   <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant">
                     <div className="text-xs text-on-surface-variant">Taux de réachat</div>
@@ -1236,7 +1247,11 @@ export default function VendorDashboardPage() {
               <div className="flex justify-between p-3 rounded-xl bg-surface-container-low">
                 <div>
                   <div className="font-semibold text-on-surface">{t("vendor_dashboard.order_total")} :</div>
-                  <div className="text-base font-bold text-primary">${selectedOrder.amountUsd.toFixed(2)} USD</div>
+                  <div className="text-base font-bold text-primary">
+                    {selectedOrder.amountCdf.toLocaleString("fr-FR")}{" "}
+                    <span className="text-sm font-bold text-secondary font-mono">{VENDOR_PROFILE.settlementCurrency.symbol}</span>
+                  </div>
+                  <div className="text-[10px] text-on-surface-variant">≈${selectedOrder.amountUsd.toFixed(2)} USD</div>
                   <div className="text-[10px] text-emerald-700">{selectedOrder.paymentMethod}</div>
                 </div>
                 <div className="text-right">
