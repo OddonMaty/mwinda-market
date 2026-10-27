@@ -12,4 +12,5 @@
  * Lorsque DEMO_MODE passe à false, tous les bandeaux et mentions de démo disparaissent
  * automatiquement sans autre modification.
  */
-export const DEMO_MODE = true;
+export const DEMO_MODE = false;
+

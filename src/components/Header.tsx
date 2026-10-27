@@ -246,10 +246,22 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
             {/* Login | Register | Profile — desktop */}
             {user ? (
               <div className="hidden lg:flex items-center gap-2">
-                <span className="text-xs font-bold text-primary flex items-center gap-1.5 bg-surface-container px-3 py-1.5 rounded-full border border-outline-variant">
+                <Link
+                  href="/mon-compte"
+                  className="text-xs font-bold text-primary flex items-center gap-1.5 bg-surface-container px-3 py-1.5 rounded-full border border-outline-variant hover:border-secondary hover:bg-secondary/5 transition"
+                >
                   <span className="material-symbols-outlined text-base text-secondary">account_circle</span>
                   <span className="max-w-[120px] truncate">{user.fullName || user.phone || user.email}</span>
-                </span>
+                </Link>
+                {user.role === "vendor" && (
+                  <Link
+                    href="/vendeur/dashboard"
+                    className="p-1.5 text-secondary hover:bg-secondary/10 transition rounded-lg"
+                    title="Espace Vendeur"
+                  >
+                    <span className="material-symbols-outlined text-lg">storefront</span>
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => signOut()}
@@ -464,7 +476,6 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                   { href: "/produits", label: t("header.catalog"), icon: "category" },
                   { href: "/devenir-vendeur", label: t("header.become_seller"), icon: "badge" },
                   { href: "/suivi", label: t("header.order_tracking"), icon: "track_changes" },
-                  { href: "/vendeur/dashboard", label: t("header.utility_sell"), icon: "dashboard" },
                   { href: "/assistance", label: t("header.utility_hotline_prefix"), icon: "support_agent" },
                 ].map((link) => (
                   <Link
@@ -481,6 +492,26 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                     <span>{link.label}</span>
                   </Link>
                 ))}
+                {user && (
+                  <Link
+                    href="/mon-compte"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition text-on-surface hover:bg-surface-container font-medium"
+                  >
+                    <span className="material-symbols-outlined text-lg">account_circle</span>
+                    <span>Mon Compte</span>
+                  </Link>
+                )}
+                {user?.role === "vendor" && (
+                  <Link
+                    href="/vendeur/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition text-secondary hover:bg-secondary/5 font-medium"
+                  >
+                    <span className="material-symbols-outlined text-lg">dashboard</span>
+                    <span>Espace Vendeur</span>
+                  </Link>
+                )}
               </nav>
             </div>
 

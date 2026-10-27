@@ -10,12 +10,14 @@ import { DEMO_MODE } from "@/config/demo";
 interface CheckoutGateProps {
   subtotalUsd: number;
   itemCount: number;
+  items?: Array<{ id: string; title: string; image: string; usdPrice: number; quantity: number }>;
   onOrderSuccess: (orderNumber: string) => void;
 }
 
 export function CheckoutGate({
   subtotalUsd,
   itemCount,
+  items = [],
   onOrderSuccess,
 }: CheckoutGateProps) {
   const { user, isAuthenticated } = useAuth();
@@ -23,8 +25,8 @@ export function CheckoutGate({
   const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "airtel" | "orange" | "card">("mpesa");
   const [phoneNumber, setPhoneNumber] = useState(user?.phone?.replace(/^\+243/, "") || "81");
   const [customerName, setCustomerName] = useState(user?.fullName || "");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("Kinshasa");
+  const [address, setAddress] = useState(user?.address || "");
+  const [city, setCity] = useState(user?.city || "Kinshasa");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -61,7 +63,7 @@ export function CheckoutGate({
   }
 
   // SI CONNECTÉ : Formulaire de commande sécurisé
-  const handleCheckout = (e: React.FormEvent) => {
+  const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
 
@@ -79,11 +81,79 @@ export function CheckoutGate({
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+
+    const generatedRef = `MW-${Math.floor(100000 + Math.random() * 900000)}`;
+    const fullPhone = phoneNumber.startsWith("+") ? phoneNumber : `+243${phoneNumber.trim().replace(/^0+/, "")}`;
+
+    try {
+      // 1. Sauvegarde locale immédiate pour affichage instantané dans Mon Compte
+      const localOrder = {
+        id: generatedRef,
+        reference: generatedRef,
+        date: new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }),
+        created_at: new Date().toISOString(),
+        status: "in_prep",
+        amount_usd: subtotalUsd,
+        currency: "USD",
+        items_count: itemCount,
+        delivery_address: address,
+        delivery_city: city,
+        payment_method: paymentMethod,
+        items: items.map((it) => ({
+          title: it.title,
+          quantity: it.quantity,
+          unit_usd_price: it.usdPrice,
+          image: it.image,
+        })),
+      };
+
+      const existingOrdersJson = localStorage.getItem("mwinda_local_orders");
+      const existingOrders = existingOrdersJson ? JSON.parse(existingOrdersJson) : [];
+      localStorage.setItem("mwinda_local_orders", JSON.stringify([localOrder, ...existingOrders]));
+
+      // 2. Enregistrement dans Supabase
+      const { getSupabaseClient } = await import("@/lib/supabase/client");
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        const { data: orderData, error: orderErr } = await supabase
+          .from("orders")
+          .insert({
+            reference: generatedRef,
+            amount_usd: subtotalUsd,
+            customer_name: customerName.trim(),
+            customer_phone: fullPhone,
+            customer_email: user?.email || null,
+            delivery_address: address.trim(),
+            delivery_city: city,
+            country_code: "CD",
+            payment_method: paymentMethod,
+            payment_status: "escrow_secured",
+            status: "in_prep",
+            notes: `Commande passée via Mwinda Market Checkout (${paymentMethod})`,
+          })
+          .select("id")
+          .single();
+
+        if (orderErr) {
+          console.warn("Supabase order insert warning:", orderErr.message);
+        } else if (orderData?.id && items.length > 0) {
+          // Insérer les items de la commande
+          const orderItemsPayload = items.map((it) => ({
+            order_id: orderData.id,
+            title: it.title,
+            quantity: it.quantity,
+            unit_usd_price: it.usdPrice,
+            image: it.image,
+          }));
+          await supabase.from("order_items").insert(orderItemsPayload);
+        }
+      }
+    } catch (err) {
+      console.warn("Erreur insertion commande:", err);
+    } finally {
       setIsSubmitting(false);
-      const generatedOrderNumber = `MW-${Math.floor(100000 + Math.random() * 900000)}`;
-      onOrderSuccess(generatedOrderNumber);
-    }, 1500);
+      onOrderSuccess(generatedRef);
+    }
   };
 
   const paymentOptions: Array<{ id: "mpesa" | "airtel" | "orange" | "card"; label: string; icon: string; sub: string }> = [

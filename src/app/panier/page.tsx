@@ -117,6 +117,7 @@ export default function CartPage() {
               <CheckoutGate
                 subtotalUsd={subtotalUsd}
                 itemCount={totalCount}
+                items={items}
                 onOrderSuccess={handleOrderSuccess}
               />
             </div>
