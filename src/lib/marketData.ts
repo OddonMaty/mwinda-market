@@ -6,6 +6,7 @@
 
 import { SHOPS_DATA, Shop } from "@/data/shops";
 import { ELECTRONICS_PRODUCTS, ElectronicProduct } from "@/data/electronics";
+export { useCatalog } from "@/context/CatalogContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { MarketProvider } from "@/context/MarketContext";
+import { CatalogProvider } from "@/context/CatalogContext";
 import { FloatingBar } from "@/components/FloatingBar";
 import { DemoBanner } from "@/components/DemoBanner";
 
@@ -62,11 +63,13 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <MarketProvider>
-          <DemoBanner />
-          <CartProvider>
-            {children}
-            <FloatingBar />
-          </CartProvider>
+          <CatalogProvider>
+            <DemoBanner />
+            <CartProvider>
+              {children}
+              <FloatingBar />
+            </CartProvider>
+          </CatalogProvider>
         </MarketProvider>
       </body>
     </html>

@@ -11,6 +11,7 @@ import { ElectronicProduct } from "@/data/electronics";
 import { useMarket } from "@/context/MarketContext";
 import { useCart } from "@/context/CartContext";
 import { useT } from "@/i18n";
+import { useCatalog } from "@/context/CatalogContext";
 import {
   getAllProducts,
   getAllProductProvinces,

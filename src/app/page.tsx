@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { ProductCard, Product } from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
 import { useT } from "@/i18n";
+import { useCatalog } from "@/context/CatalogContext";
 import { getAllProducts, getAllShops, toProductCard } from "@/lib/marketData";
 import { getActiveCategories, countProductsInCategory } from "@/config/categories";
 import { getMaxRealDiscount } from "@/lib/discounts";
@@ -34,8 +35,7 @@ export default function HomePage() {
     { key: "local", label: t("home.filter_local") },
   ];
 
-  // Tous les produits réels du catalogue
-  const allProducts = useMemo(() => getAllProducts(), []);
+  const { products: allProducts } = useCatalog();
   const totalCatalogCount = allProducts.length;
 
   // Catégories actives (uniquement celles ayant au moins 1 produit réel)
