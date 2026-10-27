@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CountrySelector } from "./CountrySelector";
 import { useCart } from "@/context/CartContext";
 import { useMarket, SupportedLanguage, SUPPORTED_LANGUAGES } from "@/context/MarketContext";
+import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/i18n";
 import { CONTACT_CONFIG } from "@/config/contact";
 import { getActiveCategories } from "@/config/categories";
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const { totalCount } = useCart();
   const displayCartCount = totalCount !== undefined ? totalCount : (cartCount ?? 0);
   const { language, setLanguage, availableLanguages } = useMarket();
+  const { user, signOut } = useAuth();
   const { t } = useT();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -241,14 +243,31 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
             {/* Separator */}
             <div className="h-6 w-px bg-outline-variant mx-1 hidden lg:block" />
 
-            {/* Login | Register — desktop: text link, not dark button */}
-            <Link
-              href="/connexion"
-              className="hidden lg:flex items-center gap-1.5 text-sm font-semibold text-on-surface hover:text-secondary transition whitespace-nowrap"
-            >
-              <span className="material-symbols-outlined text-[20px] text-secondary">person</span>
-              <span>{t("header.login_register")}</span>
-            </Link>
+            {/* Login | Register | Profile — desktop */}
+            {user ? (
+              <div className="hidden lg:flex items-center gap-2">
+                <span className="text-xs font-bold text-primary flex items-center gap-1.5 bg-surface-container px-3 py-1.5 rounded-full border border-outline-variant">
+                  <span className="material-symbols-outlined text-base text-secondary">account_circle</span>
+                  <span className="max-w-[120px] truncate">{user.fullName || user.phone || user.email}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="p-1.5 text-outline hover:text-error transition rounded-lg hover:bg-surface-container"
+                  title="Déconnexion"
+                >
+                  <span className="material-symbols-outlined text-lg">logout</span>
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/connexion"
+                className="hidden lg:flex items-center gap-1.5 text-sm font-semibold text-on-surface hover:text-secondary transition whitespace-nowrap"
+              >
+                <span className="material-symbols-outlined text-[20px] text-secondary">person</span>
+                <span>{t("header.login_register")}</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -467,13 +486,33 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
 
             {/* Drawer footer */}
             <div className="px-5 py-4 border-t border-outline-variant shrink-0 space-y-3">
-              <Link
-                href="/connexion"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-2.5 bg-primary text-white rounded-lg font-semibold text-center block text-sm shadow"
-              >
-                {t("header.login_register")}
-              </Link>
+              {user ? (
+                <div className="space-y-2">
+                  <div className="p-3 bg-surface-container rounded-xl flex items-center justify-between border border-outline-variant">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary">account_circle</span>
+                      <span className="text-xs font-bold text-primary truncate max-w-[150px]">
+                        {user.fullName || user.phone || user.email}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { signOut(); setMobileMenuOpen(false); }}
+                      className="text-xs text-error font-semibold hover:underline"
+                    >
+                      Déconnexion
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  href="/connexion"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-2.5 bg-primary text-white rounded-lg font-semibold text-center block text-sm shadow"
+                >
+                  {t("header.login_register")}
+                </Link>
+              )}
               <div className="text-[11px] text-center text-on-surface-variant font-medium flex items-center justify-center gap-1">
                 <span className="material-symbols-outlined text-xs text-secondary">call</span>
                 {t("header.utility_hotline_prefix")} {hotline}
