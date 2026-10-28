@@ -9,7 +9,7 @@ import { ProductCard, Product } from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
 import { useT } from "@/i18n";
 import { useCatalog } from "@/context/CatalogContext";
-import { getAllShops, toProductCard } from "@/lib/marketData";
+import { toProductCard } from "@/lib/marketData";
 import { getActiveCategories, countProductsInCategory } from "@/config/categories";
 import { getMaxRealDiscount } from "@/lib/discounts";
 
@@ -35,7 +35,7 @@ export default function HomePage() {
     { key: "local", label: t("home.filter_local") },
   ];
 
-  const { products: allProducts } = useCatalog();
+  const { products: allProducts, shops: catalogShops } = useCatalog();
   const totalCatalogCount = allProducts.length;
 
   // Catégories actives (uniquement celles ayant au moins 1 produit réel)
@@ -93,9 +93,8 @@ export default function HomePage() {
   // Boutiques populaires : ne montre QUE des boutiques ayant au moins 1 produit réel
   const popularShops = useMemo(() => {
     const prominentShopIds = ["solaris-rdc", "kazi-tech", "brazza-wax-couture", "abidjan-elegance-deco"];
-    const allShops = getAllShops();
     const selected = prominentShopIds
-      .map((id) => allShops.find((s) => s.id === id))
+      .map((id) => catalogShops.find((s) => s.id === id))
       .filter((s): s is NonNullable<typeof s> => Boolean(s && s.productCount > 0));
 
     // Fallback avec d'autres boutiques ayant au moins 1 produit si nécessaire
@@ -104,7 +103,7 @@ export default function HomePage() {
         ? selected.slice(0, 4)
         : [
             ...selected,
-            ...allShops.filter((s) => s.productCount > 0 && !selected.some((sel) => sel.id === s.id)),
+            ...catalogShops.filter((s) => s.productCount > 0 && !selected.some((sel) => sel.id === s.id)),
           ].slice(0, 4);
 
     return pool.map((s, i) => {
@@ -124,7 +123,7 @@ export default function HomePage() {
         colorBg: SHOP_COLORS[i % SHOP_COLORS.length],
       };
     });
-  }, [t]);
+  }, [t, catalogShops]);
 
   const handleAddToCart = (product: Product) => {
     addToCart(product);

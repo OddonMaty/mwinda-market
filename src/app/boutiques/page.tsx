@@ -9,11 +9,12 @@ import { ShopCard } from "@/components/ShopCard";
 import { Shop } from "@/data/shops";
 import { useMarket } from "@/context/MarketContext";
 import { useT } from "@/i18n";
-import { getAllShops } from "@/lib/marketData";
+import { useCatalog } from "@/context/CatalogContext";
 
 export default function ShopsDirectoryPage() {
   const { country } = useMarket();
   const { t } = useT();
+  const { shops: allShops } = useCatalog();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [regionSearchText, setRegionSearchText] = useState("");
@@ -36,9 +37,6 @@ export default function ShopsDirectoryPage() {
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
-
-  // Toutes les boutiques (catalogue panafricain sans filtre pays)
-  const allShops = useMemo(() => getAllShops(), []);
 
   // Catégories dynamiques globales
   const categories = useMemo(() => {

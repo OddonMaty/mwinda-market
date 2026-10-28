@@ -28,6 +28,11 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env*
+!.env.example
+
+# cursor / IDE local
+.cursor/
 
 # vercel
 .vercel
@@ -41,4 +46,3 @@ next-env.d.ts
 /public/sw.js.map
 /public/workbox-*.js
 /public/workbox-*.js.map
-.env*

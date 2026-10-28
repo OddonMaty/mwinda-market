@@ -878,54 +878,58 @@ export default function AccountPage() {
         // ignore
       }
 
-      // 2. Commandes Supabase
+      // 2. Commandes via API serveur (contourne RLS deny-by-default)
       try {
-        const supabase = getSupabaseClient();
-        if (supabase && user) {
-          const userPhone = user.phone || "";
-          const userEmail = user.email || "";
+        if (user) {
+          const params = new URLSearchParams();
+          if (user.email) params.set("email", user.email);
+          if (user.phone) params.set("phone", user.phone);
 
-          let query = supabase.from("orders").select("*, order_items(*)");
-          if (userEmail && userPhone) {
-            query = query.or(`customer_email.eq.${userEmail},customer_phone.eq.${userPhone}`);
-          } else if (userEmail) {
-            query = query.eq("customer_email", userEmail);
-          } else if (userPhone) {
-            query = query.eq("customer_phone", userPhone);
-          }
-
-          const { data, error } = await query.order("created_at", { ascending: false });
-          if (!error && data && data.length > 0) {
-            const mappedSupabase: ClientOrder[] = data.map((o: any) => ({
-              id: o.id,
-              reference: o.reference,
-              date: o.created_at ? new Date(o.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "Récemment",
-              status: (o.status as any) || "in_prep",
-              amount_usd: o.amount_usd || 0,
-              currency: "USD",
-              items_count: o.order_items?.length || 1,
-              items: o.order_items?.map((it: any) => ({
-                title: it.title,
-                quantity: it.quantity,
-                unit_usd_price: it.unit_usd_price,
-                image: it.image,
-              })),
-            }));
-
-            // Fusionner en évitant les doublons de référence
-            const mergedMap = new Map<string, ClientOrder>();
-            mappedSupabase.forEach((o) => mergedMap.set(o.reference, o));
-            localList.forEach((o) => {
-              if (!mergedMap.has(o.reference)) {
-                mergedMap.set(o.reference, o);
-              }
+          if (params.toString()) {
+            const res = await fetch(`/api/orders?${params.toString()}`, {
+              credentials: "same-origin",
             });
-            setOrders(Array.from(mergedMap.values()));
-            return;
+            if (res.ok) {
+              const payload = await res.json();
+              const data = Array.isArray(payload.orders) ? payload.orders : [];
+              if (data.length > 0) {
+                const mappedSupabase: ClientOrder[] = data.map((o: any) => ({
+                  id: o.id,
+                  reference: o.reference,
+                  date: o.created_at
+                    ? new Date(o.created_at).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "Récemment",
+                  status: (o.status as any) || "in_prep",
+                  amount_usd: o.amount_usd || 0,
+                  currency: "USD",
+                  items_count: o.order_items?.length || 1,
+                  items: o.order_items?.map((it: any) => ({
+                    title: it.title,
+                    quantity: it.quantity,
+                    unit_usd_price: it.unit_usd_price,
+                    image: it.image,
+                  })),
+                }));
+
+                const mergedMap = new Map<string, ClientOrder>();
+                mappedSupabase.forEach((o) => mergedMap.set(o.reference, o));
+                localList.forEach((o) => {
+                  if (!mergedMap.has(o.reference)) {
+                    mergedMap.set(o.reference, o);
+                  }
+                });
+                setOrders(Array.from(mergedMap.values()));
+                return;
+              }
+            }
           }
         }
       } catch {
-        // ignore
+        // ignore — fallback localStorage
       }
 
       setOrders(localList);

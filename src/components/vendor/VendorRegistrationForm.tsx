@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { VENDOR_PLANS } from "@/data/vendorPlans";
-import { getSupabaseClient } from "@/lib/supabase/client";
 
 interface VendorRegistrationFormProps {
   selectedPlanId: string;
@@ -74,28 +73,38 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
     setIsSubmitting(true);
 
     try {
-      const supabase = getSupabaseClient();
-      if (supabase) {
-        const { error } = await supabase.from("seller_applications").insert({
+      const res = await fetch("/api/seller-applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
           full_name: user?.fullName || "Vendeur Mwinda",
           shop_name: shopName.trim(),
           category,
           location: city,
-          phone: phone.trim() ? `+243${phone.trim().replace(/^0+/, "")}` : (user?.phone || ""),
-          email: email.trim() || (user?.email || "vendeur@mwinda.market"),
+          phone: phone.trim()
+            ? `+243${phone.trim().replace(/^0+/, "")}`
+            : user?.phone || "",
+          email: email.trim() || user?.email || "vendeur@mwinda.market",
           notes: `Offre choisie: ${selectedPlan.name} (${selectedPlan.priceUsd}$/mois, ${selectedPlan.commissionRate}% commission). Description: ${description}`,
-          status: "pending",
-        });
+          country_code: "CD",
+        }),
+      });
 
-        if (error) {
-          console.warn("Supabase application insert warning:", error.message);
-        }
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        setErrorMsg(
+          payload?.error ||
+            "Impossible d'enregistrer la candidature. Réessayez plus tard."
+        );
+        return;
       }
 
       setSubmitted(true);
     } catch {
-      // In offline or demo fallback, still succeed
-      setSubmitted(true);
+      setErrorMsg(
+        "Réseau indisponible. Vérifiez votre connexion et réessayez."
+      );
     } finally {
       setIsSubmitting(false);
     }

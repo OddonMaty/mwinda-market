@@ -1,18 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/supabase";
-
-// Client serveur avec Service Role (accès total, contourne les RLS)
-// Cette route s'exécute UNIQUEMENT côté serveur, jamais dans le navigateur.
-function getServiceClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; // fallback pour les tests
-
-  if (!url || !serviceKey) return null;
-  return createClient<Database>(url, serviceKey);
-}
+import { getServiceSupabaseClient } from "@/lib/supabase/server";
 
 export interface OrderPayload {
   reference: string;
@@ -35,11 +22,15 @@ export interface OrderPayload {
   }>;
 }
 
+function requireSession(req: NextRequest): boolean {
+  return Boolean(req.cookies.get("mwinda_session")?.value);
+}
+
+/** POST — créer une commande (service role, hors RLS client). */
 export async function POST(req: NextRequest) {
   try {
     const body: OrderPayload = await req.json();
 
-    // Validation minimale
     if (
       !body.reference ||
       !body.customer_name ||
@@ -53,16 +44,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supabase = getServiceClient();
+    const supabase = getServiceSupabaseClient();
     if (!supabase) {
-      // Si pas de Supabase configuré, retourner succès pour le mode démo
       return NextResponse.json(
-        { success: true, demo: true, orderId: null },
+        {
+          success: true,
+          demo: true,
+          orderId: null,
+          warning:
+            "SUPABASE_SERVICE_ROLE_KEY absente : commande non persistée en base.",
+        },
         { status: 200 }
       );
     }
 
-    // 1. Insérer la commande
     const { data: orderData, error: orderErr } = await supabase
       .from("orders")
       .insert({
@@ -75,7 +70,7 @@ export async function POST(req: NextRequest) {
         delivery_city: body.delivery_city || "Kinshasa",
         country_code: body.country_code || "CD",
         payment_method: body.payment_method || "mpesa",
-        payment_status: body.payment_status || "escrow_secured",
+        payment_status: body.payment_status || "pending",
         status: body.status || "in_prep",
         notes: body.notes || null,
       })
@@ -84,15 +79,11 @@ export async function POST(req: NextRequest) {
 
     if (orderErr) {
       console.error("[API/orders] Order insert error:", orderErr.message);
-      return NextResponse.json(
-        { error: orderErr.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: orderErr.message }, { status: 500 });
     }
 
     const orderId = orderData?.id;
 
-    // 2. Insérer les articles si l'ordre a bien été créé
     if (orderId && body.items && body.items.length > 0) {
       const itemsPayload = body.items.map((it) => ({
         order_id: orderId,
@@ -107,7 +98,6 @@ export async function POST(req: NextRequest) {
         .insert(itemsPayload);
 
       if (itemsErr) {
-        // Non-fatal : la commande est créée, on log seulement
         console.warn("[API/orders] Items insert warning:", itemsErr.message);
       }
     }
@@ -118,6 +108,62 @@ export async function POST(req: NextRequest) {
     );
   } catch (err) {
     console.error("[API/orders] Unexpected error:", err);
+    return NextResponse.json(
+      { error: "Erreur serveur inattendue." },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET — lister les commandes d'un client (email et/ou téléphone).
+ * Exige le cookie de session Mwinda (utilisateur connecté).
+ */
+export async function GET(req: NextRequest) {
+  try {
+    if (!requireSession(req)) {
+      return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const email = (searchParams.get("email") || "").trim();
+    const phone = (searchParams.get("phone") || "").trim();
+
+    if (!email && !phone) {
+      return NextResponse.json(
+        { error: "email ou phone requis." },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getServiceSupabaseClient();
+    if (!supabase) {
+      return NextResponse.json({ orders: [], demo: true }, { status: 200 });
+    }
+
+    let query = supabase
+      .from("orders")
+      .select("*, order_items(*)")
+      .order("created_at", { ascending: false });
+
+    if (email && phone) {
+      query = query.or(`customer_email.eq.${email},customer_phone.eq.${phone}`);
+    } else if (email) {
+      query = query.eq("customer_email", email);
+    } else {
+      query = query.eq("customer_phone", phone);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("[API/orders] GET error:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ orders: data || [] }, { status: 200 });
+  } catch (err) {
+    console.error("[API/orders] GET unexpected:", err);
     return NextResponse.json(
       { error: "Erreur serveur inattendue." },
       { status: 500 }

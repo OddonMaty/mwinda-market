@@ -56,6 +56,10 @@ cd mwinda-market
 # Installer les dépendances
 npm install
 
+# Variables d'environnement (voir .env.example)
+# - NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY
+# - SUPABASE_SERVICE_ROLE_KEY (serveur uniquement, requis pour /api/orders et candidatures)
+
 # Lancer le serveur de développement
 npm run dev
 ```

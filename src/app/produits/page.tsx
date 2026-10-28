@@ -11,12 +11,8 @@ import { ElectronicProduct } from "@/data/electronics";
 import { useMarket } from "@/context/MarketContext";
 import { useCart } from "@/context/CartContext";
 import { useT } from "@/i18n";
-import {
-  getAllProducts,
-  getAllProductProvinces,
-  getAllShopNames,
-  toProductCard,
-} from "@/lib/marketData";
+import { toProductCard } from "@/lib/marketData";
+import { useCatalog } from "@/context/CatalogContext";
 import {
   matchProductToCategory,
   getCategoryBySlug,
@@ -91,11 +87,18 @@ function CatalogContent() {
   const { addToCart } = useCart();
   const { t } = useT();
   const searchParams = useSearchParams();
+  const {
+    products: allProducts,
+    getAllProductProvinces,
+    getAllShopNames,
+  } = useCatalog();
 
-  // Données globales sans filtre pays (catalogue panafricain)
-  const allProducts = useMemo(() => getAllProducts(), []);
-  const availableProvinces = useMemo(() => getAllProductProvinces(), []);
-  const availableShops = useMemo(() => getAllShopNames(), []);
+  // Données globales sans filtre pays (catalogue panafricain — live via CatalogContext)
+  const availableProvinces = useMemo(
+    () => getAllProductProvinces(),
+    [getAllProductProvinces]
+  );
+  const availableShops = useMemo(() => getAllShopNames(), [getAllShopNames]);
   const catalogCategories = useMemo(
     () => Array.from(new Set(allProducts.map((p) => p.category))),
     [allProducts]

@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/i18n";
 import { CONTACT_CONFIG } from "@/config/contact";
 import { getActiveCategories } from "@/config/categories";
-import { getAllProducts } from "@/lib/marketData";
+import { useCatalog } from "@/context/CatalogContext";
 
 interface HeaderProps {
   cartCount?: number;
@@ -22,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const { language, setLanguage, availableLanguages } = useMarket();
   const { user, signOut } = useAuth();
   const { t } = useT();
+  const { products: catalogProducts } = useCatalog();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -30,8 +31,11 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const catBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Catégories actives (exclut celles ayant 0 produit)
-  const activeCategories = React.useMemo(() => getActiveCategories(getAllProducts()), []);
+  // Catégories actives (exclut celles ayant 0 produit) — source CatalogContext (live ou mock)
+  const activeCategories = React.useMemo(
+    () => getActiveCategories(catalogProducts),
+    [catalogProducts]
+  );
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

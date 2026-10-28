@@ -125,7 +125,7 @@ export function CheckoutGate({
           delivery_city: city,
           country_code: "CD",
           payment_method: paymentMethod,
-          payment_status: "escrow_secured",
+          payment_status: "pending",
           status: "in_prep",
           notes: `Commande passée via Mwinda Market Checkout (${paymentMethod})`,
           items: items.map((it) => ({

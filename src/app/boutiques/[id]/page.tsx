@@ -7,9 +7,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { ProductCard, Product } from "@/components/ProductCard";
-import { SHOPS_DATA, getShopById, Shop } from "@/data/shops";
+import { Shop } from "@/data/shops";
 import { getCountryByCode } from "@/lib/activeCountries";
-import { getShopCountryCode, getProductsByShop, toProductCard } from "@/lib/marketData";
+import { getShopCountryCode, toProductCard } from "@/lib/marketData";
+import { useCatalog } from "@/context/CatalogContext";
 import { useT } from "@/i18n";
 
 interface PageProps {
@@ -20,11 +21,12 @@ interface PageProps {
 
 export default function ShopDetailPage({ params }: PageProps) {
   const shopId = params?.id || "kin-fashion";
+  const { shops, getShopById, getProductsByShop } = useCatalog();
   const shopFound: Shop | undefined = getShopById(shopId);
-  const shop: Shop = shopFound || SHOPS_DATA[0];
+  const shop: Shop = shopFound || shops[0];
 
   const { t, language } = useT();
-  const shopCountryCode = getShopCountryCode(shop);
+  const shopCountryCode = shop ? getShopCountryCode(shop) : "CD";
   const shopCountry = getCountryByCode(shopCountryCode);
   const shopCountryName =
     shopCountry?.name?.[language as "fr" | "en"] || shopCountry?.name?.fr || shopCountryCode;
@@ -36,10 +38,11 @@ export default function ShopDetailPage({ params }: PageProps) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [contactFeedback, setContactFeedback] = useState<string | null>(null);
 
-  // Déterminer la liste des produits réels de la boutique (aucune donnée fictive)
+  // Déterminer la liste des produits réels de la boutique (catalogue live/mock)
   const baseProducts: Product[] = useMemo(() => {
+    if (!shop) return [];
     return getProductsByShop(shop.id).map(toProductCard);
-  }, [shop.id]);
+  }, [shop, getProductsByShop]);
 
   // Filtrer et trier les produits
   const displayedProducts = useMemo(() => {

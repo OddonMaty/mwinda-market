@@ -9,11 +9,12 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { Badge } from "@/components/Badge";
 import { PriceTag } from "@/components/PriceTag";
 import { ProductCard } from "@/components/ProductCard";
-import { ELECTRONICS_PRODUCTS, ElectronicProduct } from "@/data/electronics";
+import { ElectronicProduct } from "@/data/electronics";
 import { useCart } from "@/context/CartContext";
-import { getShopIdByName, getShopById } from "@/data/shops";
+import { getShopIdByName } from "@/data/shops";
 import { getCountryByCode } from "@/lib/activeCountries";
-import { getAllProducts, toProductCard } from "@/lib/marketData";
+import { toProductCard } from "@/lib/marketData";
+import { useCatalog } from "@/context/CatalogContext";
 import { getCategoryForProduct } from "@/config/categories";
 import { getDiscountBadgeText } from "@/lib/discounts";
 import { useT } from "@/i18n";
@@ -27,15 +28,17 @@ interface PageProps {
 export default function ProductDetailPage({ params }: PageProps) {
   const { addToCart: addGlobalToCart } = useCart();
   const { t } = useT();
+  const {
+    products: catalogProducts,
+    getProductById,
+    getShopById,
+  } = useCatalog();
 
-  // Résolution du produit — null si l'ID n'existe pas
-  const productFound: ElectronicProduct | undefined = ELECTRONICS_PRODUCTS.find(
-    (p) => p.id === params.id
-  );
+  // Résolution du produit — fallback sur le premier produit du catalogue live/mock
   const product: ElectronicProduct =
-    productFound ||
-    ELECTRONICS_PRODUCTS.find((p) => p.id === "station-energie-solaire-1000w") ||
-    ELECTRONICS_PRODUCTS[0];
+    getProductById(params.id) ||
+    getProductById("station-energie-solaire-1000w") ||
+    catalogProducts[0]!;
 
   // Galerie photo
   const images = product.images && product.images.length > 0 ? product.images : [product.image];
@@ -50,7 +53,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [activeTab, setActiveTab] = useState<"specs" | "delivery" | "reviews">("specs");
 
   // Vendeur et pays
-  const shopId = getShopIdByName(product.shopName);
+  const shopId = product.shopId || getShopIdByName(product.shopName);
   const shopObj = getShopById(shopId);
   const shopCountryCode = shopObj?.countryCode || "CD";
   const flag = getCountryByCode(shopCountryCode)?.flag || "🇨🇩";
@@ -83,10 +86,13 @@ export default function ProductDetailPage({ params }: PageProps) {
 
   // Produits similaires dans la même catégorie / boutique / populaires (max 4, dédupliqués)
   const resolvedShopId = product.shopId || getShopIdByName(product.shopName);
-  const categoryConfig = useMemo(() => getCategoryForProduct(product.category), [product.category]);
+  const categoryConfig = useMemo(
+    () => getCategoryForProduct(product.category),
+    [product.category]
+  );
 
   const similarProducts = useMemo(() => {
-    const all = getAllProducts();
+    const all = catalogProducts;
     const sameCat = all.filter((p) => p.id !== product.id && p.category === product.category);
     const sameShop = all.filter(
       (p) =>
@@ -103,7 +109,7 @@ export default function ProductDetailPage({ params }: PageProps) {
 
     const combined = [...sameCat, ...sameShop, ...others].slice(0, 4);
     return combined.map((p) => toProductCard(p));
-  }, [product.id, product.category, resolvedShopId]);
+  }, [product, catalogProducts, resolvedShopId]);
 
   // Spécifications techniques
   const specifications = product.specifications || {
