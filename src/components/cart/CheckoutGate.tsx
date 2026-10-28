@@ -275,17 +275,19 @@ export function CheckoutGate({
             </div>
           </div>
           <p className="text-[11px] text-outline">
-            Une invite de paiement (Push USSD) sera envoyée sur votre téléphone pour autoriser le débit sécurisé.
+            Ce numéro servira à confirmer le paiement Mobile Money une fois le prestataire branché.
           </p>
         </div>
       )}
 
-      {DEMO_MODE && (
-        <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-semibold flex items-center gap-2">
-          <span className="material-symbols-outlined text-base text-amber-700">info</span>
-          <span>Mode démo actif : aucune somme réelle ne sera prélevée.</span>
-        </div>
-      )}
+      <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-semibold flex items-start gap-2">
+        <span className="material-symbols-outlined text-base text-amber-700 shrink-0">info</span>
+        <span>
+          {DEMO_MODE
+            ? "Mode démo actif : aucune somme réelle ne sera prélevée."
+            : "Le prélèvement Mobile Money n'est pas encore connecté. Votre commande sera enregistrée avec le statut « paiement en attente »."}
+        </span>
+      </div>
 
       <Button
         type="submit"
@@ -294,7 +296,7 @@ export function CheckoutGate({
         isLoading={isSubmitting}
       >
         <span className="material-symbols-outlined mr-2">lock</span>
-        Confirmer et Payer ${subtotalUsd.toFixed(2)}
+        Confirmer la commande ${subtotalUsd.toFixed(2)}
       </Button>
     </form>
   );

@@ -409,12 +409,10 @@ function OrdersTab({
 // ─── Settings Tab ─────────────────────────────────────────────────────────
 function SettingsTab({
   profile,
-  currentPin,
   onUpdatePin,
   onShowToast,
 }: {
   profile: typeof VENDOR_PROFILE;
-  currentPin: string;
   onUpdatePin: (pin: string) => void;
   onShowToast: (msg: string) => void;
 }) {
@@ -769,7 +767,6 @@ export default function VendorDashboardPage() {
             {activeTab === "settings" && (
               <SettingsTab
                 profile={VENDOR_PROFILE}
-                currentPin={pin}
                 onUpdatePin={handleUpdatePin}
                 onShowToast={showToast}
               />

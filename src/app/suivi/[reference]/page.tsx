@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/Header";
@@ -16,28 +16,163 @@ interface PageProps {
   };
 }
 
+interface TrackedOrderItem {
+  title: string;
+  quantity: number;
+  unit_usd_price: number;
+  image?: string | null;
+}
+
+interface TrackedOrder {
+  id: string;
+  reference: string;
+  status: string;
+  payment_status?: string | null;
+  payment_method?: string | null;
+  amount_usd: number;
+  customer_name?: string;
+  delivery_city?: string | null;
+  delivery_address?: string;
+  created_at?: string | null;
+  order_items?: TrackedOrderItem[];
+}
+
+function NotFoundTracking({
+  reference,
+  title,
+  description,
+  cta,
+}: {
+  reference: string;
+  title: string;
+  description: string;
+  cta: string;
+}) {
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <div className="print:hidden">
+        <Header />
+      </div>
+      <main className="flex-1 flex items-center justify-center px-4 py-16">
+        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-8 sm:p-16 text-center max-w-md mx-auto shadow-card space-y-6">
+          <div className="w-20 h-20 bg-surface-container text-outline rounded-full flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-4xl">search_off</span>
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-primary font-display">{title}</h1>
+            <p className="text-xs sm:text-sm text-on-surface-variant max-w-xs mx-auto leading-relaxed">
+              {description}
+            </p>
+            <p className="font-mono text-xs text-outline bg-surface-container px-3 py-1.5 rounded-lg inline-block mt-1">
+              &ldquo;{reference}&rdquo;
+            </p>
+          </div>
+          <Link
+            href="/suivi"
+            className="inline-flex items-center gap-2 px-6 py-3.5 bg-tertiary hover:bg-tertiary-hover text-white rounded-lg font-bold text-xs sm:text-sm transition shadow-md"
+          >
+            <span className="material-symbols-outlined text-lg">arrow_back</span>
+            <span>{cta}</span>
+          </Link>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 export default function OrderTrackingPage({ params }: PageProps) {
   const { t } = useT();
-  const reference = (params?.reference || "MW-1250").toUpperCase();
+  const reference = (params?.reference || "").toUpperCase();
   const [downloadNotice, setDownloadNotice] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [order, setOrder] = useState<TrackedOrder | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
-  // Dynamic simulation depending on reference
-  const isDelivered = reference.includes("309") || reference.includes("LIVRE");
-  const isTransit = reference.includes("849") || reference.includes("TRANSIT");
+  const isValidRef =
+    /^MW-\d{4,}/i.test(reference) ||
+    /^MWD-\d{4}-\d{3,}$/i.test(reference) ||
+    reference.includes("MW-") ||
+    reference.includes("MWD");
+
+  useEffect(() => {
+    if (!isValidRef) {
+      setIsLoading(false);
+      setNotFound(true);
+      return;
+    }
+
+    let cancelled = false;
+    async function loadOrder() {
+      setIsLoading(true);
+      try {
+        const res = await fetch(
+          `/api/orders/track?reference=${encodeURIComponent(reference)}`
+        );
+        if (cancelled) return;
+        if (res.status === 404) {
+          setNotFound(true);
+          setOrder(null);
+          return;
+        }
+        if (!res.ok) {
+          setNotFound(true);
+          setOrder(null);
+          return;
+        }
+        const payload = (await res.json()) as { found?: boolean; order?: TrackedOrder };
+        if (payload.found && payload.order) {
+          setOrder(payload.order);
+          setNotFound(false);
+        } else {
+          setNotFound(true);
+          setOrder(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setNotFound(true);
+          setOrder(null);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadOrder();
+    return () => {
+      cancelled = true;
+    };
+  }, [reference, isValidRef]);
+
+  const status = (order?.status || "in_prep").toLowerCase();
+  const isDelivered = status === "delivered";
+  const isTransit = status === "in_delivery" || status === "shipped" || status === "transit";
+  const isPrep = !isDelivered && !isTransit;
 
   const statusLabel = isDelivered
     ? t("tracking.status_delivered")
     : isTransit
     ? t("tracking.status_transit")
+    : isPrep
+    ? t("tracking.status_in_delivery")
     : t("tracking.status_in_delivery");
 
   const statusVariant = isDelivered ? "verified" : isTransit ? "interprovincial" : "express";
 
-  // Référence valide : format MW-XXXX ou historique MWD-YYYY-NNN
-  const isValidRef = /^MW-\d{4,}/i.test(reference) ||
-    /^MWD-\d{4}-\d{3,}$/i.test(reference) ||
-    reference.includes("MW-") ||
-    reference.includes("MWD");
+  const orderedOnLabel = useMemo(() => {
+    if (!order?.created_at) return t("tracking.ordered_today");
+    return new Date(order.created_at).toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }, [order?.created_at, t]);
+
+  const amountLabel = useMemo(() => {
+    const usd = order?.amount_usd ?? 0;
+    const cdf = Math.round(usd * 2800).toLocaleString("fr-FR");
+    return `${usd.toFixed(2)} $ USD (~ ${cdf} CDF)`;
+  }, [order?.amount_usd]);
 
   const handlePrint = () => {
     setDownloadNotice(true);
@@ -47,40 +182,33 @@ export default function OrderTrackingPage({ params }: PageProps) {
     }, 400);
   };
 
-  // B-03: état visuel si la référence est introuvable
-  if (!isValidRef) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <div className="print:hidden">
-          <Header />
-        </div>
+        <Header />
         <main className="flex-1 flex items-center justify-center px-4 py-16">
-          <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-8 sm:p-16 text-center max-w-md mx-auto shadow-card space-y-6">
-            <div className="w-20 h-20 bg-surface-container text-outline rounded-full flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-4xl">search_off</span>
-            </div>
-            <div className="space-y-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-primary font-display">
-                {t("tracking.not_found_title")}
-              </h1>
-              <p className="text-xs sm:text-sm text-on-surface-variant max-w-xs mx-auto leading-relaxed">
-                {t("tracking.not_found_desc")}
-              </p>
-              <p className="font-mono text-xs text-outline bg-surface-container px-3 py-1.5 rounded-lg inline-block mt-1">
-                &ldquo;{reference}&rdquo;
-              </p>
-            </div>
-            <Link
-              href="/suivi"
-              className="inline-flex items-center gap-2 px-6 py-3.5 bg-tertiary hover:bg-tertiary-hover text-white rounded-lg font-bold text-xs sm:text-sm transition shadow-md"
-            >
-              <span className="material-symbols-outlined text-lg">arrow_back</span>
-              <span>{t("tracking.not_found_cta")}</span>
-            </Link>
+          <div className="text-center space-y-3">
+            <span className="material-symbols-outlined text-4xl text-secondary animate-spin">
+              progress_activity
+            </span>
+            <p className="text-sm text-on-surface-variant font-medium">
+              Chargement du suivi #{reference}…
+            </p>
           </div>
         </main>
         <Footer />
       </div>
+    );
+  }
+
+  if (notFound || !order) {
+    return (
+      <NotFoundTracking
+        reference={reference}
+        title={t("tracking.not_found_title")}
+        description={t("tracking.not_found_desc")}
+        cta={t("tracking.not_found_cta")}
+      />
     );
   }
 
@@ -145,17 +273,21 @@ export default function OrderTrackingPage({ params }: PageProps) {
               <div className="text-xs sm:text-sm text-on-surface-variant flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1">
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-base text-secondary">calendar_today</span>
-                  <span>{t("tracking.ordered_on")} <strong className="text-primary">{t("tracking.ordered_today")}</strong></span>
+                  <span>{t("tracking.ordered_on")} <strong className="text-primary">{orderedOnLabel}</strong></span>
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-base text-tertiary">payments</span>
-                  <span>{t("tracking.total_amount_label")} <strong className="text-primary">819 $ USD</strong> (~ 2 293 200 CDF)</span>
+                  <span>{t("tracking.total_amount_label")} <strong className="text-primary">{amountLabel}</strong></span>
                 </span>
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-surface-container text-secondary px-2.5 py-0.5 rounded-full">
                   <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>
                     verified_user
                   </span>
-                  <span>{t("tracking.secured_mwinda_pay")}</span>
+                  <span>
+                    {order.payment_status === "paid" || order.payment_status === "escrow_secured"
+                      ? t("tracking.secured_mwinda_pay")
+                      : "Paiement en attente"}
+                  </span>
                 </span>
               </div>
             </div>

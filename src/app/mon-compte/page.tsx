@@ -46,6 +46,38 @@ export interface ClientOrder {
   }>;
 }
 
+interface ApiOrderItem {
+  title: string;
+  quantity: number;
+  unit_usd_price: number;
+  image?: string | null;
+}
+
+interface ApiOrder {
+  id: string;
+  reference: string;
+  created_at?: string | null;
+  status?: string;
+  amount_usd?: number;
+  order_items?: ApiOrderItem[];
+}
+
+function mapClientOrderStatus(
+  status: string | undefined
+): ClientOrder["status"] {
+  const allowed: ClientOrder["status"][] = [
+    "pending",
+    "in_prep",
+    "in_delivery",
+    "delivered",
+    "cancelled",
+  ];
+  if (status && allowed.includes(status as ClientOrder["status"])) {
+    return status as ClientOrder["status"];
+  }
+  return "in_prep";
+}
+
 // ─── Status Badge ─────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<
   string,
@@ -770,15 +802,18 @@ function SecurityTab() {
     setIsSaving(true);
     try {
       const supabase = getSupabaseClient();
-      const auth = (supabase as any)?.auth;
-      if (auth) {
-        await auth.updateUser({ password: newPwd });
+      if (supabase) {
+        const { error } = await supabase.auth.updateUser({ password: newPwd });
+        if (error) {
+          setErrorMsg(error.message);
+          return;
+        }
       }
       setStatusMsg("Votre mot de passe a été modifié avec succès.");
       setNewPwd("");
       setConfirmPwd("");
     } catch {
-      setStatusMsg("Votre mot de passe a été mis à jour.");
+      setErrorMsg("Impossible de modifier le mot de passe pour le moment.");
     } finally {
       setIsSaving(false);
     }
@@ -890,10 +925,10 @@ export default function AccountPage() {
               credentials: "same-origin",
             });
             if (res.ok) {
-              const payload = await res.json();
+              const payload = (await res.json()) as { orders?: ApiOrder[] };
               const data = Array.isArray(payload.orders) ? payload.orders : [];
               if (data.length > 0) {
-                const mappedSupabase: ClientOrder[] = data.map((o: any) => ({
+                const mappedSupabase: ClientOrder[] = data.map((o) => ({
                   id: o.id,
                   reference: o.reference,
                   date: o.created_at
@@ -903,11 +938,11 @@ export default function AccountPage() {
                         year: "numeric",
                       })
                     : "Récemment",
-                  status: (o.status as any) || "in_prep",
+                  status: mapClientOrderStatus(o.status),
                   amount_usd: o.amount_usd || 0,
                   currency: "USD",
                   items_count: o.order_items?.length || 1,
-                  items: o.order_items?.map((it: any) => ({
+                  items: o.order_items?.map((it) => ({
                     title: it.title,
                     quantity: it.quantity,
                     unit_usd_price: it.unit_usd_price,

@@ -197,18 +197,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithPhone = async (phone: string, fullName?: string) => {
     setIsLoading(true);
-    const profile: UserProfile = {
-      id: "usr-ph-" + Math.floor(100000 + Math.random() * 900000),
-      phone,
-      fullName: fullName || "Client " + phone.slice(-4),
-      role: "customer",
-      emailConfirmed: false,
-    };
-    setUser(profile);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile));
-    setSessionCookie();
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const { error } = await supabase.auth.signInWithOtp({
+          phone,
+          options: {
+            data: fullName ? { full_name: fullName } : undefined,
+          },
+        });
+        if (error) {
+          setIsLoading(false);
+          return {
+            success: false,
+            error:
+              error.message.toLowerCase().includes("phone")
+                ? "La connexion par SMS n'est pas encore activée sur ce projet. Utilisez l'email pour le moment."
+                : error.message,
+          };
+        }
+        setIsLoading(false);
+        return {
+          success: false,
+          error:
+            "Un code SMS vous a été envoyé. La validation OTP sera disponible dès l'activation complète du canal téléphone.",
+        };
+      } catch {
+        // fall through to clear message
+      }
+    }
     setIsLoading(false);
-    return { success: true };
+    return {
+      success: false,
+      error:
+        "La connexion par téléphone arrive bientôt. Connectez-vous avec votre email pour continuer.",
+    };
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
