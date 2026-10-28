@@ -86,7 +86,7 @@ export function CheckoutGate({
     const fullPhone = phoneNumber.startsWith("+") ? phoneNumber : `+243${phoneNumber.trim().replace(/^0+/, "")}`;
 
     try {
-      // 1. Sauvegarde locale immédiate pour affichage instantané dans Mon Compte
+      // 1. Sauvegarde locale immédiate pour affichage instantané dans Mon Compte (hors-ligne / PWA)
       const localOrder = {
         id: generatedRef,
         reference: generatedRef,
@@ -111,45 +111,33 @@ export function CheckoutGate({
       const existingOrders = existingOrdersJson ? JSON.parse(existingOrdersJson) : [];
       localStorage.setItem("mwinda_local_orders", JSON.stringify([localOrder, ...existingOrders]));
 
-      // 2. Enregistrement dans Supabase
-      const { getSupabaseClient } = await import("@/lib/supabase/client");
-      const supabase = getSupabaseClient();
-      if (supabase) {
-        const { data: orderData, error: orderErr } = await supabase
-          .from("orders")
-          .insert({
-            reference: generatedRef,
-            amount_usd: subtotalUsd,
-            customer_name: customerName.trim(),
-            customer_phone: fullPhone,
-            customer_email: user?.email || null,
-            delivery_address: address.trim(),
-            delivery_city: city,
-            country_code: "CD",
-            payment_method: paymentMethod,
-            payment_status: "escrow_secured",
-            status: "in_prep",
-            notes: `Commande passée via Mwinda Market Checkout (${paymentMethod})`,
-          })
-          .select("id")
-          .single();
-
-        if (orderErr) {
-          console.warn("Supabase order insert warning:", orderErr.message);
-        } else if (orderData?.id && items.length > 0) {
-          // Insérer les items de la commande
-          const orderItemsPayload = items.map((it) => ({
-            order_id: orderData.id,
+      // 2. Enregistrement sécurisé via l'API Route serveur (contourne les règles RLS strictes)
+      await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reference: generatedRef,
+          amount_usd: subtotalUsd,
+          customer_name: customerName.trim(),
+          customer_phone: fullPhone,
+          customer_email: user?.email || null,
+          delivery_address: address.trim(),
+          delivery_city: city,
+          country_code: "CD",
+          payment_method: paymentMethod,
+          payment_status: "escrow_secured",
+          status: "in_prep",
+          notes: `Commande passée via Mwinda Market Checkout (${paymentMethod})`,
+          items: items.map((it) => ({
             title: it.title,
             quantity: it.quantity,
             unit_usd_price: it.usdPrice,
             image: it.image,
-          }));
-          await supabase.from("order_items").insert(orderItemsPayload);
-        }
-      }
+          })),
+        }),
+      }).catch((err) => console.warn("API /api/orders non disponible (mode démo):", err));
     } catch (err) {
-      console.warn("Erreur insertion commande:", err);
+      console.warn("Erreur commande:", err);
     } finally {
       setIsSubmitting(false);
       onOrderSuccess(generatedRef);
