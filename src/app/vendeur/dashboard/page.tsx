@@ -123,117 +123,75 @@ function DashboardOverview({
   timeRange: string;
   onTimeRange: (v: "7J" | "30J" | "3M" | "1AN") => void;
 }) {
-  const stats = [
-    {
-      label: "Ventes Totales",
-      value: `$${VENDOR_STATS.totalSalesUsd.toLocaleString()}`,
-      sub: `${VENDOR_STATS.salesGrowthPercent >= 0 ? "+" : ""}${VENDOR_STATS.salesGrowthPercent}% ce mois`,
-      icon: "payments",
-      positive: VENDOR_STATS.salesGrowthPercent >= 0,
-    },
-    {
-      label: "Commandes",
-      value: VENDOR_STATS.ordersCount.toString(),
-      sub: `${VENDOR_STATS.ordersGrowthPercent >= 0 ? "+" : ""}${VENDOR_STATS.ordersGrowthPercent}% ce mois`,
-      icon: "shopping_bag",
-      positive: VENDOR_STATS.ordersGrowthPercent >= 0,
-    },
-    {
-      label: "Produits en ligne",
-      value: VENDOR_STATS.productsCount.toString(),
-      sub: `${VENDOR_STATS.lowStockCount} en stock bas`,
-      icon: "inventory_2",
-      positive: VENDOR_STATS.lowStockCount < 3,
-    },
-    {
-      label: "Clients",
-      value: VENDOR_STATS.customerCount.toString(),
-      sub: `+${VENDOR_STATS.newCustomersThisMonth} ce mois`,
-      icon: "people",
-      positive: true,
-    },
-  ];
-
   return (
     <div className="space-y-6">
-      {/* Time range */}
-      <div className="flex items-center gap-2">
-        {(["7J", "30J", "3M", "1AN"] as const).map((r) => (
-          <button
-            key={r}
-            onClick={() => onTimeRange(r)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-              timeRange === r ? "bg-primary text-white" : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
-            }`}
-          >
-            {r}
-          </button>
-        ))}
+      {/* En-tête et sélecteur de période */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base font-bold text-primary font-display">Vue d&apos;ensemble de votre activité</h2>
+          <p className="text-xs text-on-surface-variant">Statistiques calculées à partir de vos commandes réelles</p>
+        </div>
+        <div className="flex items-center gap-1.5 self-start sm:self-auto">
+          {(["7J", "30J", "3M", "1AN"] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => onTimeRange(r)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                timeRange === r ? "bg-primary text-white" : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — indicateurs réels initialisés */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-surface border border-outline-variant rounded-2xl p-4 space-y-2">
+        {[
+          { label: "Ventes Totales", value: "$0.00", sub: "Aucune vente sur la période", icon: "payments", color: "text-emerald-600" },
+          { label: "Commandes reçues", value: "0", sub: "En attente de clients", icon: "shopping_bag", color: "text-blue-600" },
+          { label: "Produits au catalogue", value: "0", sub: "Ajoutez vos articles", icon: "inventory_2", color: "text-amber-600" },
+          { label: "Clients uniques", value: "0", sub: "Nouveau compte vendeur", icon: "people", color: "text-purple-600" },
+        ].map((kpi) => (
+          <div key={kpi.label} className="bg-surface border border-outline-variant rounded-2xl p-4 space-y-2 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="material-symbols-outlined text-2xl text-secondary">{s.icon}</span>
-              <span className={`text-xs font-semibold ${s.positive ? "text-green-600" : "text-red-500"}`}>
-                {s.sub}
-              </span>
+              <span className={`material-symbols-outlined text-2xl ${kpi.color}`}>{kpi.icon}</span>
+              <span className="text-[10px] text-outline font-semibold uppercase tracking-wider">Actif</span>
             </div>
-            <p className="text-2xl font-bold text-on-surface">{s.value}</p>
-            <p className="text-xs text-on-surface-variant">{s.label}</p>
+            <p className="text-2xl font-black text-on-surface font-display">{kpi.value}</p>
+            <div>
+              <p className="text-xs font-bold text-primary">{kpi.label}</p>
+              <p className="text-[11px] text-on-surface-variant">{kpi.sub}</p>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Stock Alerts + Recent Orders */}
+      {/* État de démarrage pour nouvelle boutique */}
       <div className="grid lg:grid-cols-2 gap-5">
-        {/* Stock alerts */}
-        <div className="bg-surface border border-outline-variant rounded-2xl p-5">
-          <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-amber-500">warning</span>
-            Alertes Stock
-          </h3>
-          {VENDOR_STOCK_ALERTS.length === 0 ? (
-            <EmptyState icon="inventory" title="Aucune alerte" description="Tous vos produits sont bien approvisionnés." />
-          ) : (
-            <div className="space-y-2">
-              {VENDOR_STOCK_ALERTS.slice(0, 4).map((alert) => (
-                <div key={alert.id} className="flex items-center gap-3 p-2 rounded-lg bg-surface-container">
-                  <span className="material-symbols-outlined text-lg text-amber-500">
-                    {alert.icon || "warning"}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold truncate">{alert.title}</p>
-                    <p className="text-xs text-on-surface-variant">{alert.subtitle}</p>
-                  </div>
-                  <button className="text-xs text-secondary font-semibold hover:underline shrink-0">
-                    {alert.actionLabel || "Réappro."}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="bg-surface border border-outline-variant rounded-2xl p-6 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-amber-500">inventory_2</span>
+            <h3 className="font-bold text-sm text-primary">Articles de votre boutique</h3>
+          </div>
+          <EmptyState
+            icon="post_add"
+            title="Aucun produit en ligne pour l'instant"
+            description="Votre catalogue est prêt à accueillir vos premiers articles dès la validation de votre forfait."
+          />
         </div>
 
-        {/* Recent orders */}
-        <div className="bg-surface border border-outline-variant rounded-2xl p-5">
-          <h3 className="font-bold text-sm mb-3">Commandes récentes</h3>
-          <div className="space-y-2">
-            {VENDOR_RECENT_ORDERS.slice(0, 4).map((order) => (
-              <div key={order.id} className="flex items-center gap-3 p-2 rounded-lg bg-surface-container">
-                <div className="w-8 h-8 rounded-lg bg-secondary-fixed/20 flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-sm text-secondary">{order.icon}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold truncate">{order.reference}</p>
-                  <p className="text-xs text-on-surface-variant truncate">{order.customerName}</p>
-                </div>
-                <StatusBadge status={order.status} />
-              </div>
-            ))}
+        <div className="bg-surface border border-outline-variant rounded-2xl p-6 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-secondary">local_shipping</span>
+            <h3 className="font-bold text-sm text-primary">Commandes récentes</h3>
           </div>
+          <EmptyState
+            icon="receipt_long"
+            title="Aucune commande enregistrée"
+            description="Dès qu'un client passera commande via Mwinda Market, les détails apparaîtront ici en direct."
+          />
         </div>
       </div>
     </div>
@@ -581,17 +539,41 @@ export default function VendorDashboardPage() {
   const [productSearch, setProductSearch] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Charger le PIN personnalisé si présent
+  const [vendorReg, setVendorReg] = useState<{
+    shopName?: string;
+    category?: string;
+    city?: string;
+    phone?: string;
+    planName?: string;
+  } | null>(null);
+
+  // Charger le PIN personnalisé et les données d'inscription boutique
   useEffect(() => {
     try {
       const storedPin = localStorage.getItem("mwinda_vendor_pin");
       if (storedPin) {
         setPin(storedPin);
       }
+      const storedReg = localStorage.getItem("mwinda_vendor_registration");
+      if (storedReg) {
+        setVendorReg(JSON.parse(storedReg));
+      }
     } catch {
       // ignore
     }
   }, []);
+
+  // Profil vendeur calculé à partir de l'utilisateur connecté et de sa boutique inscrite
+  const dynamicProfile = {
+    ...VENDOR_PROFILE,
+    name: user?.fullName || user?.email?.split("@")[0] || "Vendeur Partenaire",
+    shopName: vendorReg?.shopName || user?.fullName ? `${vendorReg?.shopName || "Boutique de " + (user?.fullName || "Vendeur")}` : VENDOR_PROFILE.shopName,
+    hubLocation: `${vendorReg?.city || user?.city || "Kinshasa"} (RDC)`,
+    phone: vendorReg?.phone || user?.phone || VENDOR_PROFILE.phone,
+    countryCode: user?.country || "CD",
+    countryName: "RD Congo",
+    countryFlag: "🇨🇩",
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -654,8 +636,8 @@ export default function VendorDashboardPage() {
       <PinGate
         correctPin={pin}
         onSuccess={() => setPinPassed(true)}
-        shopName={VENDOR_PROFILE.shopName}
-        vendorName={user?.fullName || VENDOR_PROFILE.name}
+        shopName={dynamicProfile.shopName}
+        vendorName={dynamicProfile.name}
       />
     );
   }
@@ -681,14 +663,14 @@ export default function VendorDashboardPage() {
 
       {/* Header */}
       <VendorHeader
-        shopName={VENDOR_PROFILE.shopName}
-        shopId={VENDOR_PROFILE.shopId}
-        vendorName={user?.fullName || VENDOR_PROFILE.name}
-        vendorAvatar={VENDOR_PROFILE.avatarUrl}
-        vendorRole={VENDOR_PROFILE.role}
-        countryFlag={VENDOR_PROFILE.countryFlag}
-        countryName={VENDOR_PROFILE.countryName}
-        settlementCurrency={VENDOR_PROFILE.settlementCurrency}
+        shopName={dynamicProfile.shopName}
+        shopId={dynamicProfile.shopId}
+        vendorName={dynamicProfile.name}
+        vendorAvatar={dynamicProfile.avatarUrl}
+        vendorRole={dynamicProfile.role}
+        countryFlag={dynamicProfile.countryFlag}
+        countryName={dynamicProfile.countryName}
+        settlementCurrency={dynamicProfile.settlementCurrency}
         mobileSidebarOpen={mobileSidebarOpen}
         onToggleSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)}
         orderSearch={orderSearch}
@@ -716,7 +698,7 @@ export default function VendorDashboardPage() {
           onChange={setActiveTab}
           mobileSidebarOpen={mobileSidebarOpen}
           onClose={() => setMobileSidebarOpen(false)}
-          profile={VENDOR_PROFILE}
+          profile={dynamicProfile}
         />
 
         {/* Main content */}
@@ -766,7 +748,7 @@ export default function VendorDashboardPage() {
             )}
             {activeTab === "settings" && (
               <SettingsTab
-                profile={VENDOR_PROFILE}
+                profile={dynamicProfile}
                 onUpdatePin={handleUpdatePin}
                 onShowToast={showToast}
               />

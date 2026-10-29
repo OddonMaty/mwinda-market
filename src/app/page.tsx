@@ -7,6 +7,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProductCard, Product } from "@/components/ProductCard";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/i18n";
 import { useCatalog } from "@/context/CatalogContext";
 import { toProductCard } from "@/lib/marketData";
@@ -23,6 +24,7 @@ const SHOP_COLORS = [
 
 export default function HomePage() {
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const { t } = useT();
 
   const [activeFilter, setActiveFilter] = useState("all");
@@ -85,10 +87,26 @@ export default function HomePage() {
       .slice(0, 4);
   }, [allProducts]);
 
-  // Produits populaires globaux (15 produits pour remplir la grille 5 colonnes)
-  const featuredProducts: Product[] = useMemo(() => {
-    return allProducts.slice(0, 15).map((p) => toProductCard(p));
+  // Algorithme d'affichage et priorisation selon l'abonnement du vendeur :
+  // Forfaits supérieurs (Grossiste / Élite / Pro) mis en avant dans le catalogue
+  const sortedCatalogProducts = useMemo(() => {
+    return [...allProducts].sort((a, b) => {
+      // Priorité 1 : Boutique certifiée / vérifiée (forfaits pro, élite, grossiste)
+      const aVerified = a.shopVerified ? 1 : 0;
+      const bVerified = b.shopVerified ? 1 : 0;
+      if (bVerified !== aVerified) return bVerified - aVerified;
+
+      // Priorité 2 : Note et avis
+      const aScore = (a.rating || 0) * (a.reviewCount || 0);
+      const bScore = (b.rating || 0) * (b.reviewCount || 0);
+      return bScore - aScore;
+    });
   }, [allProducts]);
+
+  // Produits populaires globaux (15 produits ordonnés selon le rang d'abonnement vendeur)
+  const featuredProducts: Product[] = useMemo(() => {
+    return sortedCatalogProducts.slice(0, 15).map((p) => toProductCard(p));
+  }, [sortedCatalogProducts]);
 
   // Boutiques populaires : ne montre QUE des boutiques ayant au moins 1 produit réel
   const popularShops = useMemo(() => {
@@ -299,21 +317,42 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Boutons Connexion / Inscription */}
-              <div className="grid grid-cols-2 gap-2 my-3.5">
-                <Link
-                  href="/connexion"
-                  className="w-full py-2 px-2 bg-[#0B1B3D] text-white text-xs font-bold rounded-md hover:bg-slate-800 transition text-center truncate shadow-xs"
-                >
-                  {t("home.welcome_login")}
-                </Link>
-                <Link
-                  href="/connexion"
-                  className="w-full py-2 px-2 border border-[#0B1B3D] text-[#0B1B3D] text-xs font-bold rounded-md hover:bg-slate-50 transition text-center truncate"
-                >
-                  {t("home.welcome_register")}
-                </Link>
-              </div>
+              {/* Boutons Connexion / Inscription ou Mon Compte si connecté */}
+              {user ? (
+                <div className="my-3.5 space-y-2">
+                  <div className="p-2.5 bg-slate-50 border border-[#E2E8F0] rounded-md flex items-center gap-2">
+                    <span className="material-symbols-outlined text-secondary text-base">verified_user</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] text-slate-500 uppercase font-bold">Connecté</p>
+                      <p className="text-xs font-bold text-[#0B1B3D] truncate">
+                        {user.fullName || user.phone || user.email}
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/mon-compte"
+                    className="w-full py-2 px-3 bg-[#EA580C] text-white text-xs font-bold rounded-md hover:bg-[#c2410c] transition flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    <span className="material-symbols-outlined text-sm">dashboard</span>
+                    <span>Accéder à Mon Compte</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 my-3.5">
+                  <Link
+                    href="/connexion"
+                    className="w-full py-2 px-2 bg-[#0B1B3D] text-white text-xs font-bold rounded-md hover:bg-slate-800 transition text-center truncate shadow-xs"
+                  >
+                    {t("home.welcome_login")}
+                  </Link>
+                  <Link
+                    href="/connexion"
+                    className="w-full py-2 px-2 border border-[#0B1B3D] text-[#0B1B3D] text-xs font-bold rounded-md hover:bg-slate-50 transition text-center truncate"
+                  >
+                    {t("home.welcome_register")}
+                  </Link>
+                </div>
+              )}
 
               {/* 4 Points de confiance avec icônes */}
               <div className="space-y-2.5 pt-2 border-t border-[#E2E8F0]">

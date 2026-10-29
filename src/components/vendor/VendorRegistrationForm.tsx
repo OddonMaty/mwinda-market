@@ -100,6 +100,22 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
         return;
       }
 
+      // Sauvegarde des données de la boutique pour le compte vendeur connecté
+      try {
+        const vendorData = {
+          shopName: shopName.trim(),
+          category,
+          city,
+          phone: phone.trim() ? `+243${phone.trim().replace(/^0+/, "")}` : user?.phone || "",
+          planId: selectedPlan.id,
+          planName: selectedPlan.name,
+          registeredAt: new Date().toISOString(),
+        };
+        localStorage.setItem("mwinda_vendor_registration", JSON.stringify(vendorData));
+      } catch {
+        // ignore
+      }
+
       setSubmitted(true);
     } catch {
       setErrorMsg(

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { CountrySelector } from "./CountrySelector";
 import { useCart } from "@/context/CartContext";
 import { useMarket, SupportedLanguage, SUPPORTED_LANGUAGES } from "@/context/MarketContext";
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const { user, signOut } = useAuth();
   const { t } = useT();
   const { products: catalogProducts } = useCatalog();
+  const pathname = usePathname();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -393,20 +395,29 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
           <nav className="flex items-center flex-1 overflow-hidden">
             {[
               { href: "/", label: t("header.home"), icon: "home" },
-              { href: "/boutiques", label: t("header.all_shops"), icon: "storefront" },
               { href: "/produits", label: t("header.catalog"), icon: "category" },
               { href: "/devenir-vendeur", label: t("header.become_seller"), icon: "badge" },
               { href: "/suivi", label: t("header.order_tracking"), icon: "track_changes" },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex items-center gap-1 px-3.5 xl:px-4 h-10 text-sm font-semibold text-on-surface-variant hover:text-secondary hover:bg-surface-container-low transition whitespace-nowrap border-b-2 border-transparent hover:border-secondary"
-              >
-                <span className="material-symbols-outlined text-[15px]">{link.icon}</span>
-                <span>{link.label}</span>
-              </Link>
-            ))}
+            ].map((link) => {
+              const isActive =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname === link.href || pathname.startsWith(link.href + "/");
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-1.5 px-3.5 xl:px-4 h-10 text-sm font-semibold transition whitespace-nowrap border-b-2 ${
+                    isActive
+                      ? "text-secondary border-secondary bg-surface-container-low/60 font-bold"
+                      : "text-on-surface-variant hover:text-secondary hover:bg-surface-container-low border-transparent hover:border-secondary"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">{link.icon}</span>
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </div>
@@ -476,26 +487,33 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
               <nav className="space-y-0.5">
                 {[
                   { href: "/", label: t("header.home"), icon: "home", accent: true },
-                  { href: "/boutiques", label: t("header.all_shops"), icon: "storefront" },
                   { href: "/produits", label: t("header.catalog"), icon: "category" },
                   { href: "/devenir-vendeur", label: t("header.become_seller"), icon: "badge" },
                   { href: "/suivi", label: t("header.order_tracking"), icon: "track_changes" },
                   { href: "/assistance", label: t("header.utility_hotline_prefix"), icon: "support_agent" },
-                ].map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${
-                      link.accent
-                        ? "text-secondary font-bold bg-surface-container-low"
-                        : "text-on-surface hover:bg-surface-container font-medium"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-lg">{link.icon}</span>
-                    <span>{link.label}</span>
-                  </Link>
-                ))}
+                ].map((link) => {
+                  const isActive =
+                    link.href === "/"
+                      ? pathname === "/"
+                      : pathname === link.href || pathname.startsWith(link.href + "/");
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${
+                        isActive
+                          ? "bg-secondary/15 text-secondary font-bold"
+                          : link.accent
+                          ? "text-secondary font-bold bg-surface-container-low"
+                          : "text-on-surface hover:bg-surface-container font-medium"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-lg">{link.icon}</span>
+                      <span>{link.label}</span>
+                    </Link>
+                  );
+                })}
                 {user && (
                   <Link
                     href="/mon-compte"

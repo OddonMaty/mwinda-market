@@ -166,7 +166,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   );
 
   // État produit introuvable
-  if (!productFound) {
+  if (!product) {
     return (
       <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
         <Header />
@@ -744,7 +744,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                 Produits similaires dans {product.category}
               </h2>
               <Link
-                href={`/produits?category=${getCategoryForProduct(product.category).slug}`}
+                href={`/produits?category=${getCategoryForProduct(product.category)?.slug ?? encodeURIComponent(product.category)}`}
                 className="text-xs font-semibold text-[#0284C7] hover:underline flex items-center gap-1"
               >
                 <span>Voir plus</span>
