@@ -14,26 +14,30 @@
 - [x] Protection `/admin`
 - [x] Statuts commande côté vendeur
 - [x] Décrémentation / rétablissement du stock
-- [x] Annulation de commande
-- [x] **Notifications email réelles** (Nodemailer)
+- [x] Annulation admin + client
+- [x] **Emails** : admin + vendeur + confirmation client
+- [x] **WhatsApp** (stub Meta Cloud API)
+- [x] Page client `/mon-compte/commandes` avec bouton Annuler
 - [x] i18n limité à FR / EN + nettoyage des principales promesses marketing
 
-## Email
+## Email & WhatsApp
 Configure dans `.env` :
 ```
-SMTP_HOST=smtp.example.com
+SMTP_HOST=...
 SMTP_PORT=587
 SMTP_USER=...
 SMTP_PASS=...
 SMTP_FROM="Mwinda Market <noreply@mwinda.market>"
 ADMIN_EMAIL=admin@mwinda.market
+
+WHATSAPP_TOKEN=
+WHATSAPP_PHONE_ID=
 ```
-Un email est envoyé à `ADMIN_EMAIL` à chaque nouvelle commande.
 
 ## Déploiement NitroHost
 1. Cloner `feature/nitro-admin`
 2. `npm install`
-3. `.env` avec `DATABASE_URL` + SMTP + `ADMIN_ACCESS_TOKEN`
+3. `.env` avec `DATABASE_URL` + SMTP + WhatsApp (optionnel)
 4. `npx prisma migrate dev --name init`
 5. `npx prisma generate`
 6. `npx prisma db seed`
@@ -47,7 +51,6 @@ Un email est envoyé à `ADMIN_EMAIL` à chaque nouvelle commande.
 - Vendeur : `vendeur@mwinda.market` / `admin123`
 
 ## Prochaines étapes
-- Email au vendeur (en plus de l'admin)
-- Bouton d'annulation côté client
-- Amélioration du catalogue
-- Notifications WhatsApp
+- Amélioration du catalogue (filtres, pagination)
+- Notifications de changement de statut
+- Upload images plus robuste
