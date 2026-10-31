@@ -16,6 +16,7 @@ export async function markOrderPaid(orderId: string) {
   await notifyStatusChange(orderId, "paid");
   revalidatePath("/admin/commandes");
   revalidatePath("/admin");
+  revalidatePath("/admin/ventes");
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
@@ -58,6 +59,22 @@ export async function cancelOrder(orderId: string) {
   revalidatePath("/admin");
 }
 
+export async function markWithdrawalPaid(withdrawalId: string) {
+  await prisma.withdrawal.update({
+    where: { id: withdrawalId },
+    data: { status: "paid", processedAt: new Date() },
+  });
+  revalidatePath("/admin/retraits");
+}
+
+export async function rejectWithdrawal(withdrawalId: string) {
+  await prisma.withdrawal.update({
+    where: { id: withdrawalId },
+    data: { status: "rejected", processedAt: new Date() },
+  });
+  revalidatePath("/admin/retraits");
+}
+
 export async function approveSellerApplication(applicationId: string) {
   const app = await prisma.sellerApplication.findUnique({
     where: { id: applicationId },
@@ -94,6 +111,7 @@ export async function approveSellerApplication(applicationId: string) {
       address: app.location || null,
       isActive: true,
       isVerified: true,
+      plan: "starter",
     },
   });
 

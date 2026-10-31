@@ -10,38 +10,32 @@
 - [x] Dashboard vendeur + ajout produits + upload images
 - [x] Suppression Supabase
 - [x] Seed + PM2
-- [x] Catalogue public sur `/api/catalog`
+- [x] Catalogue public amélioré
 - [x] Protection `/admin`
-- [x] Statuts commande côté vendeur
+- [x] Statuts commande + notifications
 - [x] Décrémentation / rétablissement du stock
 - [x] Annulation admin + client
-- [x] Emails : admin + vendeur + confirmation client
-- [x] WhatsApp (stub Meta Cloud API)
-- [x] Page client `/mon-compte/commandes` avec bouton Annuler
-- [x] **Notifications de changement de statut** (email + WhatsApp)
-- [x] **Catalogue amélioré** (recherche, prix, ville, pagination)
-- [x] **Upload images robuste** (redimensionnement Sharp, conversion WebP)
-- [x] i18n limité à FR / EN + nettoyage des principales promesses marketing
+- [x] Emails + WhatsApp
+- [x] **Ventes, commissions et retraits**
+  - Forfaits : starter 5%, pro 3%, elite 2%
+  - Commission calculée à la commande
+  - Admin : `/admin/ventes` + `/admin/retraits`
+  - Vendeur : `/vendeur/finances` (solde + demande de retrait)
+- [x] i18n limité à FR / EN
 
-## Email & WhatsApp
-Configure dans `.env` :
+## Avant déploiement
+Après mise à jour du schéma :
 ```
-SMTP_HOST=...
-SMTP_PORT=587
-SMTP_USER=...
-SMTP_PASS=...
-SMTP_FROM="Mwinda Market <noreply@mwinda.market>"
-ADMIN_EMAIL=admin@mwinda.market
-
-WHATSAPP_TOKEN=
-WHATSAPP_PHONE_ID=
+npx prisma migrate dev --name commissions
+# ou
+npx prisma db push
 ```
 
 ## Déploiement NitroHost
 1. Cloner `feature/nitro-admin`
 2. `npm install`
 3. `.env` avec `DATABASE_URL` + SMTP + WhatsApp (optionnel)
-4. `npx prisma migrate dev --name init`
+4. `npx prisma migrate dev --name init` (ou `db push`)
 5. `npx prisma generate`
 6. `npx prisma db seed`
 7. `npm run build`
@@ -54,6 +48,6 @@ WHATSAPP_PHONE_ID=
 - Vendeur : `vendeur@mwinda.market` / `admin123`
 
 ## Prochaines étapes
-- Brancher les notifications de statut dans les actions admin/vendeur
-- Interface catalogue avec filtres côté front
-- Gestion des retours
+- Déploiement sur NitroHost
+- Tests bout en bout
+- Ajustements UI
