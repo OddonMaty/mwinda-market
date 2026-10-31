@@ -6,26 +6,22 @@
 - Hébergement sur NitroHost (Node.js + PM2)
 - Vrai dashboard administrateur intégré (`/admin`)
 
-## Stack cible proposée
-- Next.js 14 (App Router) — conservé
-- Base de données : PostgreSQL (via Prisma ou drizzle)
-- Auth : NextAuth.js / Auth.js ou session custom + bcrypt
-- Stockage images : disque local ou S3-compatible sur le host
-- Process manager : PM2
+## Stack cible
+- Next.js 14 (App Router)
+- **PostgreSQL + Prisma** (schéma dans `prisma/schema.prisma`)
+- Auth à reconstruire (Auth.js ou sessions custom)
+- Images : stockage local ou S3-compatible
+- PM2
 
-## Modules admin prioritaires
-1. File d’attente paiements (valider « J’ai payé »)
-2. Gestion des commandes
-3. Approbation des candidatures vendeurs
-4. Catalogue (produits, photos, masquage)
-5. Clients
-6. Réglages (numéros Mobile Money, messages)
+## Avancement (branche `feature/nitro-admin`)
+- [x] Squelette `/admin` (layout + pages commandes, vendeurs, catalogue, réglages)
+- [x] Schéma Prisma de base (User, Vendor, Product, Order, OrderItem, SellerApplication, Setting)
+- [x] Checkout honnête : modes **Mobile Money manuel** et **Paiement à la livraison** (plus de faux escrow / carte)
+- [x] Helper Prisma (`src/lib/prisma.ts`)
+- [ ] Brancher les API routes sur Prisma
+- [ ] Protéger `/admin`
+- [ ] Auth réelle
+- [ ] Retirer complètement Supabase
 
-## Prochaines étapes
-- [ ] Créer le schéma Prisma
-- [ ] Implémenter Auth réelle
-- [ ] Brancher les pages `/admin/*` sur la nouvelle base
-- [ ] Adapter le checkout pour paiement manuel
-- [ ] Retirer toutes les dépendances Supabase
-
-Branche de travail : `feature/nitro-admin`
+## Prochaine étape recommandée
+Adapter `/api/orders` pour écrire dans Prisma au lieu de Supabase, puis faire de même pour les candidatures vendeurs.
