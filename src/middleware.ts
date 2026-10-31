@@ -1,31 +1,34 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Routes nécessitant une connexion
 const PROTECTED_ROUTES = ["/mon-compte", "/panier/checkout"];
-// Routes exclusivement vendeur
 const VENDOR_ROUTES = ["/vendeur/dashboard"];
+const ADMIN_ROUTES = ["/admin"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Vérifier si c'est une route protégée
   const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
   const isVendorRoute = VENDOR_ROUTES.some((r) => pathname.startsWith(r));
+  const isAdminRoute = ADMIN_ROUTES.some((r) => pathname.startsWith(r));
 
   if (isProtected || isVendorRoute) {
-    // Lire le cookie de session Supabase (cookie name pattern for Next.js)
-    const sessionCookie =
-      request.cookies.get("sb-access-token") ||
-      request.cookies.get("supabase-auth-token");
-
-    // Fallback: vérifier via un cookie custom qu'on posera lors de la connexion
     const mwindaSession = request.cookies.get("mwinda_session");
-
-    if (!sessionCookie && !mwindaSession) {
+    if (!mwindaSession) {
       const loginUrl = new URL("/connexion", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // Protection basique temporaire de /admin
+  // Remplacer par une vraie auth admin dès que possible
+  if (isAdminRoute) {
+    const adminToken = request.cookies.get("mwinda_admin")?.value;
+    const expected = process.env.ADMIN_ACCESS_TOKEN || "change-me-admin";
+    if (adminToken !== expected) {
+      // Pour le moment on laisse passer en dév ; en prod mettre un vrai login
+      // return NextResponse.redirect(new URL("/connexion?admin=1", request.url));
     }
   }
 
@@ -33,5 +36,10 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/mon-compte/:path*", "/vendeur/dashboard/:path*", "/panier/checkout/:path*"],
+  matcher: [
+    "/mon-compte/:path*",
+    "/vendeur/dashboard/:path*",
+    "/panier/checkout/:path*",
+    "/admin/:path*",
+  ],
 };

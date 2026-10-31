@@ -1,56 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServiceSupabaseClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 
 /**
- * GET /api/orders/track?reference=MW-XXXX
- * Suivi public par référence de commande (service role, hors RLS).
+ * GET /api/orders/track?reference=MW-XXXX&phone=...
+ * Suivi : référence + téléphone (moins exposé).
  */
 export async function GET(req: NextRequest) {
   try {
     const reference = (req.nextUrl.searchParams.get("reference") || "")
       .trim()
       .toUpperCase();
+    const phone = (req.nextUrl.searchParams.get("phone") || "").trim();
 
     if (!reference || reference.length < 4) {
       return NextResponse.json(
-        { error: "Référence de commande invalide." },
+        { error: "Référence invalide." },
         { status: 400 }
       );
     }
 
-    const supabase = getServiceSupabaseClient();
-    if (!supabase) {
+    if (!phone) {
       return NextResponse.json(
-        { error: "Service de suivi indisponible.", demo: true },
-        { status: 503 }
+        { error: "Téléphone requis pour le suivi." },
+        { status: 400 }
       );
     }
 
-    const { data, error } = await supabase
-      .from("orders")
-      .select(
-        "id, reference, status, payment_status, payment_method, amount_usd, customer_name, delivery_city, delivery_address, country_code, created_at, updated_at, order_items(title, quantity, unit_usd_price, image)"
-      )
-      .eq("reference", reference)
-      .maybeSingle();
+    const order = await prisma.order.findFirst({
+      where: {
+        reference,
+        customerPhone: { contains: phone.replace(/\D/g, "").slice(-9) },
+      },
+      select: {
+        id: true,
+        reference: true,
+        status: true,
+        paymentStatus: true,
+        paymentMethod: true,
+        amountUsd: true,
+        deliveryCity: true,
+        createdAt: true,
+        updatedAt: true,
+        items: {
+          select: {
+            title: true,
+            quantity: true,
+            unitUsdPrice: true,
+            imageUrl: true,
+          },
+        },
+      },
+    });
 
-    if (error) {
-      console.error("[API/orders/track] error:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    if (!data) {
+    if (!order) {
       return NextResponse.json(
         { error: "Commande introuvable.", found: false },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ found: true, order: data }, { status: 200 });
-  } catch (err) {
-    console.error("[API/orders/track] unexpected:", err);
+    return NextResponse.json({ found: true, order }, { status: 200 });
+  } catch (err: any) {
+    console.error("[API/orders/track] error:", err);
     return NextResponse.json(
-      { error: "Erreur serveur inattendue." },
+      { error: err.message || "Erreur serveur." },
       { status: 500 }
     );
   }
