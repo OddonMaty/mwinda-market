@@ -8,20 +8,22 @@
 
 ## Stack cible
 - Next.js 14 (App Router)
-- **PostgreSQL + Prisma** (schéma dans `prisma/schema.prisma`)
-- Auth à reconstruire (Auth.js ou sessions custom)
+- **PostgreSQL + Prisma**
+- Auth à reconstruire
 - Images : stockage local ou S3-compatible
 - PM2
 
 ## Avancement (branche `feature/nitro-admin`)
-- [x] Squelette `/admin` (layout + pages commandes, vendeurs, catalogue, réglages)
-- [x] Schéma Prisma de base (User, Vendor, Product, Order, OrderItem, SellerApplication, Setting)
-- [x] Checkout honnête : modes **Mobile Money manuel** et **Paiement à la livraison** (plus de faux escrow / carte)
-- [x] Helper Prisma (`src/lib/prisma.ts`)
-- [ ] Brancher les API routes sur Prisma
-- [ ] Protéger `/admin`
-- [ ] Auth réelle
-- [ ] Retirer complètement Supabase
+- [x] Squelette `/admin`
+- [x] Schéma Prisma
+- [x] Checkout honnête (Mobile Money manuel + paiement à la livraison)
+- [x] Helper Prisma
+- [x] **Étape 2** : `/api/orders`, `/api/orders/track` et `/api/seller-applications` réécrits pour Prisma (plus de service_role)
+- [x] Protection admin basique préparée dans le middleware
+- [ ] Brancher les pages `/admin` sur de vraies requêtes Prisma
+- [ ] Auth réelle (remplacer le fallback localStorage)
+- [ ] Retirer complètement les dépendances Supabase
+- [ ] Migration DB initiale + seed minimal
 
 ## Prochaine étape recommandée
-Adapter `/api/orders` pour écrire dans Prisma au lieu de Supabase, puis faire de même pour les candidatures vendeurs.
+Remplir les pages `/admin/commandes` et `/admin/vendeurs` avec des données Prisma, et ajouter les actions « Paiement reçu » / « Approuver vendeur ».
