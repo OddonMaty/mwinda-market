@@ -14,14 +14,14 @@
 - [x] Protection `/admin`
 - [x] Statuts commande côté vendeur
 - [x] Décrémentation du stock
-- [x] Notification stub
-- [x] **i18n limité à FR / EN** (`src/i18n/index.ts` mis à jour)
-- [ ] Nettoyage final des clés marketing dans `fr.json` et `en.json` (séquestre, etc.) — à finaliser
+- [x] **Annulation de commande + rétablissement du stock**
+- [x] Notification stub améliorée
+- [x] i18n limité à FR / EN + nettoyage des principales promesses marketing
 
 ## Déploiement NitroHost
 1. Cloner `feature/nitro-admin`
 2. `npm install`
-3. `.env` avec `DATABASE_URL` (+ optionnel `ADMIN_ACCESS_TOKEN`)
+3. `.env` avec `DATABASE_URL` (+ optionnel `ADMIN_ACCESS_TOKEN`, `ADMIN_EMAIL`, `SMTP_*`)
 4. `npx prisma migrate dev --name init`
 5. `npx prisma generate`
 6. `npx prisma db seed`
@@ -35,7 +35,7 @@
 - Vendeur : `vendeur@mwinda.market` / `admin123`
 
 ## Prochaines étapes
-- Finaliser le nettoyage des textes marketing dans les JSON i18n
-- Envoi email réel
-- Gestion des annulations avec rétablissement du stock
-- Amélioration du catalogue
+- Envoi email réel (Nodemailer)
+- Bouton d'annulation côté client / admin
+- Amélioration du catalogue (filtres, pagination)
+- Notifications WhatsApp

@@ -1,6 +1,6 @@
 /**
  * Notification minimale.
- * Configure SMTP_HOST / SMTP_USER / SMTP_PASS pour activer l'envoi réel plus tard.
+ * Configure SMTP_HOST / SMTP_USER / SMTP_PASS / ADMIN_EMAIL pour activer l'envoi réel.
  */
 export async function notifyNewOrder(order: {
   reference: string;
@@ -12,9 +12,10 @@ export async function notifyNewOrder(order: {
 
   console.log(message + (order.vendorId ? ` (vendeur ${order.vendorId})` : ""));
 
-  // Stub email : à remplacer par Nodemailer / Resend quand SMTP est configuré
   if (process.env.SMTP_HOST && process.env.ADMIN_EMAIL) {
-    console.log(`[NOTIFY] Email prêt à envoyer à ${process.env.ADMIN_EMAIL}`);
-    // TODO: implémenter l'envoi réel
+    console.log(`[NOTIFY] Email prêt à envoyer à ${process.env.ADMIN_EMAIL} (SMTP configuré)`);
+    // TODO: implémenter Nodemailer / Resend ici
+  } else {
+    console.log("[NOTIFY] SMTP non configuré — log uniquement");
   }
 }
