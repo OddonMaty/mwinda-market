@@ -1,152 +1,170 @@
-# Guide de déploiement Mwinda Market sur NitroHost
+# Comment mettre Mwinda Market en ligne sur CongoCloud (NitroHost)
 
-Branche : `feature/nitro-admin`
+Vous avez déjà le site **mwindaglobal.cd** hébergé sur CongoCloud.  
+Mwinda Market sera mis sur un **sous-domaine** (exemple : `market.mwindaglobal.cd` ou le nom que vous avez choisi).
 
-## Prérequis
-- Compte NitroHost avec accès SSH ou panneau Node.js
-- Base PostgreSQL créée sur NitroHost (ou externe)
-- Domaine pointant vers le serveur (ex: mwinda.market)
-- Node.js 18+ et npm sur le serveur
+Ce guide explique quoi faire **étape par étape**, sans trop de termes techniques.
 
-## Étape 1 — Préparer le serveur
-```bash
-# Connexion SSH
-ssh user@votre-serveur-nitrohost
+---
 
-# Créer le dossier
-mkdir -p ~/mwinda-market
-cd ~/mwinda-market
+## Avant de commencer
 
-# Cloner la branche
-git clone -b feature/nitro-admin https://github.com/OddonMaty/mwinda-market.git .
+Vous aurez besoin de :
+- Votre accès au panneau CongoCloud / NitroHost (cPanel)
+- Le sous-domaine déjà créé pour Mwinda Market
+- Le fichier zip ou tar.gz du projet (celui que vous avez téléchargé)
+
+---
+
+## Étape 1 — Préparer le dossier du sous-domaine
+
+1. Connectez-vous à votre panneau CongoCloud.
+2. Allez dans **Gestionnaire de fichiers** (File Manager).
+3. Trouvez le dossier principal de votre sous-domaine Mwinda Market.  
+   Il s’appelle souvent quelque chose comme :
+   - `market.mwindaglobal.cd`
+   - ou `public_html/market`
+   - ou le nom que vous avez donné au sous-domaine.
+
+4. **Vide ce dossier** (supprimez les fichiers qui s’y trouvent déjà, s’il y en a).  
+   On va y mettre les fichiers de Mwinda Market.
+
+---
+
+## Étape 2 — Télécharger et mettre les fichiers
+
+1. Sur votre ordinateur, décompressez le fichier `mwinda-market-nitrohost.tar.gz` (ou le zip).
+2. Vous obtenez un dossier qui contient tous les fichiers du projet.
+3. Dans le **Gestionnaire de fichiers** de CongoCloud :
+   - Ouvrez le dossier du sous-domaine Mwinda Market.
+   - Cliquez sur **Téléverser** (Upload).
+   - Envoyez **tous** les fichiers et dossiers du projet dans ce dossier.
+
+   À la fin, vous devez voir des fichiers comme :
+   - `package.json`
+   - `prisma`
+   - `src`
+   - `public`
+   - `ecosystem.config.js`
+   - etc.
+
+---
+
+## Étape 3 — Créer la base de données
+
+1. Dans le panneau CongoCloud, allez dans **Bases de données MySQL** (ou PostgreSQL si disponible).
+2. Créez une nouvelle base de données pour Mwinda Market (exemple : `mwindamarket`).
+3. Créez un utilisateur pour cette base et notez :
+   - Le nom de la base
+   - Le nom d’utilisateur
+   - Le mot de passe
+   - L’adresse du serveur (souvent `localhost`)
+
+> **Important** : Mwinda Market utilise **PostgreSQL**.  
+> Si CongoCloud ne propose que MySQL, contactez le support CongoCloud pour savoir s’ils peuvent vous créer une base PostgreSQL, ou demandez-leur comment procéder pour une application Node.js.
+
+---
+
+## Étape 4 — Créer le fichier de configuration (.env)
+
+1. Dans le Gestionnaire de fichiers, dans le dossier de Mwinda Market, créez un nouveau fichier nommé exactement :
+   ```
+   .env
+   ```
+2. Ouvrez-le et collez le texte suivant (en remplaçant les valeurs par les vôtres) :
+
 ```
-
-## Étape 2 — Installer les dépendances
-```bash
-npm install
-```
-
-## Étape 3 — Configurer l'environnement
-Crée le fichier `.env` :
-```bash
-nano .env
-```
-
-Contenu minimum :
-```env
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/mwinda?schema=public"
+DATABASE_URL="postgresql://UTILISATEUR:MOTDEPASSE@localhost:5432/NOM_DE_LA_BASE?schema=public"
 NODE_ENV=production
 PORT=3000
 
-# Optionnel mais recommandé
-ADMIN_ACCESS_TOKEN=un-token-secret-long
-SMTP_HOST=smtp.votre-domaine.com
-SMTP_PORT=587
-SMTP_USER=noreply@mwinda.market
-SMTP_PASS=mot-de-passe-smtp
-SMTP_FROM="Mwinda Market <noreply@mwinda.market>"
-ADMIN_EMAIL=admin@mwinda.market
+ADMIN_ACCESS_TOKEN=un-mot-secret-que-vous-choisissez
 
-# WhatsApp (optionnel)
-WHATSAPP_TOKEN=
-WHATSAPP_PHONE_ID=
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM="Mwinda Market <noreply@mwindaglobal.cd>"
+ADMIN_EMAIL=votre-email@mwindaglobal.cd
 ```
 
-## Étape 4 — Base de données
-```bash
+3. Enregistrez le fichier.
+
+---
+
+## Étape 5 — Activer l’application Node.js
+
+CongoCloud / NitroHost permet de faire tourner des applications Node.js.
+
+1. Dans le panneau, cherchez la section **Node.js** ou **Applications Node.js** (parfois sous « Setup Node.js App » ou « Node.js Apps »).
+2. Créez une nouvelle application :
+   - **Dossier de l’application** : le dossier de votre sous-domaine Mwinda Market
+   - **Version de Node.js** : 18 ou 20 (la plus récente disponible)
+   - **Fichier de démarrage** : `server.js` ou laissez le panneau détecter (Next.js utilise souvent `npm start`)
+   - **Port** : 3000 (ou le port que le panneau vous donne)
+3. Cliquez sur **NPM Install** (ou « Installer les dépendances ») pour installer les bibliothèques.
+4. Une fois l’installation terminée, cliquez sur **Démarrer** ou **Start**.
+
+---
+
+## Étape 6 — Préparer la base de données (première fois)
+
+Après avoir démarré l’application une première fois, il faut créer les tables.
+
+1. Dans le panneau Node.js, cherchez l’option **Terminal** ou **Console** (ou utilisez SSH si vous l’avez).
+2. Allez dans le dossier de Mwinda Market.
+3. Lancez ces deux commandes (une après l’autre) :
+
+```
 npx prisma generate
 npx prisma db push
-# ou : npx prisma migrate dev --name init
-
 npx prisma db seed
 ```
 
-Comptes de test après seed :
-- Admin : admin@mwinda.market / admin123
-- Vendeur : vendeur@mwinda.market / admin123
+La commande `seed` crée deux comptes de test :
+- **Admin** : `admin@mwinda.market` / `admin123`
+- **Vendeur** : `vendeur@mwinda.market` / `admin123`
 
-## Étape 5 — Build
-```bash
-npm run build
-```
+---
 
-## Étape 6 — Démarrer avec PM2
-```bash
-npm install -g pm2
-pm2 start ecosystem.config.js
-pm2 save
-pm2 startup
-```
+## Étape 7 — Lier le sous-domaine
 
-## Étape 7 — Nginx (reverse proxy)
-Exemple de configuration `/etc/nginx/sites-available/mwinda` :
-```nginx
-server {
-    listen 80;
-    server_name mwinda.market www.mwinda.market;
+1. Dans le panneau CongoCloud, allez dans **Sous-domaines** ou **Domaines**.
+2. Vérifiez que votre sous-domaine Mwinda Market pointe bien vers le dossier où vous avez mis les fichiers.
+3. Activez le **certificat SSL** (HTTPS) pour ce sous-domaine (souvent un bouton « Installer SSL » ou « Let’s Encrypt »).
 
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_cache_bypass $http_upgrade;
-    }
+---
 
-    # Uploads
-    location /uploads/ {
-        alias /home/user/mwinda-market/public/uploads/;
-        expires 30d;
-    }
-}
-```
+## Étape 8 — Vérifier que tout fonctionne
 
-Activer :
-```bash
-sudo ln -s /etc/nginx/sites-available/mwinda /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
+1. Ouvrez votre sous-domaine dans le navigateur (exemple : `https://market.mwindaglobal.cd`).
+2. Vous devez voir la page d’accueil de Mwinda Market avec le carrousel d’images.
+3. Testez :
+   - La connexion avec le compte admin
+   - La page `/admin`
+   - La page `/vendeur/finances`
+   - Un ajout de produit (si vous êtes vendeur)
 
-## Étape 8 — HTTPS
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d mwinda.market -d www.mwinda.market
-```
-
-## Étape 9 — Permissions uploads
-```bash
-mkdir -p public/uploads/products
-chmod -R 755 public/uploads
-chown -R $USER:$USER public/uploads
-```
-
-## Étape 10 — Vérifications
-1. Ouvrir https://mwinda.market
-2. Tester le hero (carrousel d'images)
-3. Créer un compte / se connecter
-4. Passer une commande test
-5. Vérifier `/admin` (avec le token si configuré)
-6. Vérifier `/vendeur/finances`
-7. Vérifier `/admin/ventes` et `/admin/retraits`
-
-## Commandes utiles
-```bash
-pm2 logs mwinda-market
-pm2 restart mwinda-market
-pm2 status
-```
-
-## Notes
-- Les images uploadées sont dans `public/uploads/products` (format WebP).
-- Le catalogue public charge les produits depuis Prisma via `/api/catalog`.
-- Les commissions sont calculées selon le forfait vendeur (starter 5%, pro 3%, elite 2%).
-- Les retraits se font via `/vendeur/finances` et sont validés dans `/admin/retraits`.
+---
 
 ## En cas de problème
-- Vérifier les logs : `pm2 logs`
-- Vérifier la connexion DB : `npx prisma studio` (local) ou logs
-- S'assurer que `DATABASE_URL` est correct
-- Vérifier que le port 3000 n'est pas déjà utilisé
+
+- **Page blanche ou erreur 500** : retournez dans la section Node.js du panneau et cliquez sur **Redémarrer**.
+- **Erreur de base de données** : vérifiez que le fichier `.env` contient les bons identifiants.
+- **Images qui ne s’affichent pas** : vérifiez que le dossier `public/uploads` existe et qu’il est accessible.
+- **Besoin d’aide** : contactez le support CongoCloud en leur disant que vous voulez faire tourner une application Node.js (Next.js) sur un sous-domaine.
+
+---
+
+## Récapitulatif rapide
+
+1. Vider le dossier du sous-domaine Mwinda Market
+2. Y téléverser tous les fichiers du projet
+3. Créer la base de données et noter les identifiants
+4. Créer le fichier `.env` avec ces identifiants
+5. Créer et démarrer l’application Node.js dans le panneau
+6. Lancer les commandes Prisma pour créer les tables
+7. Activer le SSL sur le sous-domaine
+8. Tester le site
+
+Une fois ces étapes faites, Mwinda Market est en ligne et prêt pour les tests.
