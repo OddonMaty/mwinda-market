@@ -6,16 +6,31 @@
 - [x] Checkout honnête
 - [x] Routes API sur Prisma
 - [x] Pages admin branchées + actions
-- [x] **Étape 4** : Auth minimale réelle
-  - Routes `/api/auth/signup`, `/login`, `/me`, `/logout`
-  - Mot de passe hashé (bcryptjs)
-  - Cookie `mwinda_uid` (httpOnly)
-  - `AuthContext` réécrit : plus de fallback localStorage, plus de Supabase
-  - Dashboard vendeur simplifié branché sur Prisma (commandes + produits de sa boutique)
-- [ ] Retirer complètement les dépendances Supabase
-- [ ] Protection admin plus solide
-- [ ] Gestion produits côté vendeur (ajout/photo)
-- [ ] Migration DB initiale + seed
+- [x] Auth minimale réelle (bcrypt + cookie)
+- [x] Dashboard vendeur simplifié
+- [x] **Étape 5** : Suppression de la dépendance Supabase
+  - `@supabase/supabase-js` retiré de `package.json`
+  - Clients Supabase stubbés (retournent null)
+  - Seed Prisma (`prisma/seed.ts`) avec admin + vendeur de test
+  - Config PM2 (`ecosystem.config.js`) pour NitroHost
 
-## Prochaine étape recommandée
-Retirer Supabase du projet, ajouter un seed minimal, et préparer le déploiement NitroHost (PM2 + .env).
+## Déploiement NitroHost (checklist)
+1. Cloner la branche `feature/nitro-admin`
+2. `npm install`
+3. Créer `.env` avec `DATABASE_URL=postgresql://...`
+4. `npx prisma migrate dev --name init` (ou `prisma db push`)
+5. `npx prisma generate`
+6. `npx prisma db seed`
+7. `npm run build`
+8. `pm2 start ecosystem.config.js`
+9. Configurer Nginx + HTTPS + domaine
+
+## Comptes de test (après seed)
+- Admin : `admin@mwinda.market` / `admin123`
+- Vendeur : `vendeur@mwinda.market` / `admin123`
+
+## Prochaines étapes
+- Brancher le catalogue public sur Prisma (au lieu des données statiques)
+- Gestion produits côté vendeur (ajout + photo)
+- Protection admin plus solide
+- Notifications (email / WhatsApp)
