@@ -51,34 +51,48 @@ export async function POST(req: NextRequest) {
       vendorId = product?.vendorId || null;
     }
 
-    const order = await prisma.order.create({
-      data: {
-        reference: body.reference,
-        amountUsd: body.amount_usd,
-        customerName: body.customer_name.trim(),
-        customerPhone: body.customer_phone.trim(),
-        customerEmail: body.customer_email || null,
-        deliveryAddress: body.delivery_address.trim(),
-        deliveryCity: body.delivery_city || "Kinshasa",
-        paymentMethod: body.payment_method || "manual_mm",
-        paymentStatus: body.payment_status || "pending",
-        status: body.status || "pending_payment",
-        notes: body.notes || null,
-        vendorId,
-        items: {
-          create: (body.items || []).map((it) => ({
-            title: it.title,
-            quantity: it.quantity,
-            unitUsdPrice: it.unit_usd_price,
-            imageUrl: it.image || null,
-            productId: it.product_id || null,
-          })),
+    // Transaction : création commande + décrémentation stock
+    const order = await prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          reference: body.reference,
+          amountUsd: body.amount_usd,
+          customerName: body.customer_name.trim(),
+          customerPhone: body.customer_phone.trim(),
+          customerEmail: body.customer_email || null,
+          deliveryAddress: body.delivery_address.trim(),
+          deliveryCity: body.delivery_city || "Kinshasa",
+          paymentMethod: body.payment_method || "manual_mm",
+          paymentStatus: body.payment_status || "pending",
+          status: body.status || "pending_payment",
+          notes: body.notes || null,
+          vendorId,
+          items: {
+            create: (body.items || []).map((it) => ({
+              title: it.title,
+              quantity: it.quantity,
+              unitUsdPrice: it.unit_usd_price,
+              imageUrl: it.image || null,
+              productId: it.product_id || null,
+            })),
+          },
         },
-      },
-      include: { items: true },
+        include: { items: true },
+      });
+
+      // Décrémenter le stock pour les produits connus
+      for (const it of body.items || []) {
+        if (it.product_id && it.quantity > 0) {
+          await tx.product.update({
+            where: { id: it.product_id },
+            data: { stock: { decrement: it.quantity } },
+          });
+        }
+      }
+
+      return created;
     });
 
-    // Notification (stub pour le moment)
     await notifyNewOrder({
       reference: order.reference,
       customerName: order.customerName,
