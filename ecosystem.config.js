@@ -4,7 +4,7 @@ module.exports = {
       name: "mwinda-market",
       script: "npm",
       args: "start",
-      cwd: "./,
+      cwd: "./",
       instances: 1,
       autorestart: true,
       watch: false,
