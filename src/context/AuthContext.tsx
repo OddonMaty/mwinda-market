@@ -1,8 +1,6 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
-import { getSupabaseClient } from "@/lib/supabase/client";
 
 export interface UserProfile {
   id: string;
@@ -11,11 +9,6 @@ export interface UserProfile {
   fullName?: string;
   role?: "customer" | "vendor" | "admin";
   shopId?: string | null;
-  avatarUrl?: string | null;
-  city?: string;
-  country?: string;
-  address?: string;
-  emailConfirmed?: boolean;
 }
 
 interface AuthContextType {
@@ -32,254 +25,84 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_KEY = "mwinda_auth_user";
-
-function setSessionCookie() {
-  if (typeof document !== "undefined") {
-    document.cookie = "mwinda_session=1; path=/; max-age=604800; SameSite=Lax";
-  }
-}
-
-function removeSessionCookie() {
-  if (typeof document !== "undefined") {
-    document.cookie = "mwinda_session=; path=/; max-age=0; SameSite=Lax";
-  }
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initial load
   useEffect(() => {
-    async function initAuth() {
-      const supabase = getSupabaseClient();
-      const auth = (supabase as any)?.auth;
-      if (auth) {
-        try {
-          const { data } = await auth.getSession();
-          if (data?.session?.user) {
-            const u = data.session.user;
-            setUser({
-              id: u.id,
-              email: u.email,
-              phone: u.phone,
-              fullName: u.user_metadata?.full_name || u.email?.split("@")[0] || "Client Mwinda",
-              role: u.user_metadata?.role || "customer",
-              shopId: u.user_metadata?.shop_id || null,
-            });
-            setIsLoading(false);
-            return;
-          }
-        } catch {
-          // fallback to localStorage if network or session check fails
-        }
-      }
-
-      // Local storage fallback for seamless PWA / offline / demo experience
+    async function load() {
       try {
-        const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setUser(parsed);
-          if (typeof document !== "undefined") {
-            document.cookie = "mwinda_session=1; path=/; max-age=604800; SameSite=Lax";
-          }
-        }
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        setUser(data.user || null);
       } catch {
-        // ignore
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     }
-
-    initAuth();
+    load();
   }, []);
 
   const signInWithEmail = async (email: string, password: string) => {
     setIsLoading(true);
-    const supabase = getSupabaseClient();
-    const auth = (supabase as any)?.auth;
-    if (auth) {
-      try {
-        const { data, error } = await auth.signInWithPassword({ email, password });
-        if (error) {
-          setIsLoading(false);
-          return { success: false, error: error.message };
-        }
-          if (data.user) {
-          const profile: UserProfile = {
-            id: data.user.id,
-            email: data.user.email,
-            fullName: data.user.user_metadata?.full_name || data.user.email?.split("@")[0],
-            role: data.user.user_metadata?.role || "customer",
-            shopId: data.user.user_metadata?.shop_id || null,
-            emailConfirmed: Boolean(data.user.email_confirmed_at),
-          };
-          setUser(profile);
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile));
-          setSessionCookie();
-          setIsLoading(false);
-          return { success: true };
-        }
-      } catch (err: unknown) {
-        console.warn("Supabase auth failed, fallback to local session", err);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setIsLoading(false);
+        return { success: false, error: data.error || "Connexion impossible." };
       }
+      setUser(data.user);
+      setIsLoading(false);
+      return { success: true };
+    } catch {
+      setIsLoading(false);
+      return { success: false, error: "Erreur réseau." };
     }
-
-    // Fallback demo/mock login if no supabase backend connection
-    const profile: UserProfile = {
-      id: "usr-" + Math.floor(100000 + Math.random() * 900000),
-      email,
-      fullName: email.split("@")[0],
-      role: "customer",
-      emailConfirmed: true,
-    };
-    setUser(profile);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile));
-    setSessionCookie();
-    setIsLoading(false);
-    return { success: true };
   };
 
   const signUpWithEmail = async (email: string, password: string, fullName: string, phone: string) => {
     setIsLoading(true);
-    const supabase = getSupabaseClient();
-    const auth = (supabase as any)?.auth;
-    if (auth) {
-      try {
-        const { data, error } = await auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullName, phone },
-          },
-        });
-        if (error) {
-          setIsLoading(false);
-          return { success: false, error: error.message };
-        }
-        if (data.user) {
-          const profile: UserProfile = {
-            id: data.user.id,
-            email: data.user.email,
-            phone,
-            fullName,
-            role: "customer",
-            emailConfirmed: Boolean(data.user.email_confirmed_at),
-          };
-          setUser(profile);
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile));
-          setSessionCookie();
-          setIsLoading(false);
-          return { success: true };
-        }
-      } catch (err: unknown) {
-        console.warn("Supabase signup failed, fallback to local session", err);
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, fullName, phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setIsLoading(false);
+        return { success: false, error: data.error || "Inscription impossible." };
       }
+      setUser(data.user);
+      setIsLoading(false);
+      return { success: true };
+    } catch {
+      setIsLoading(false);
+      return { success: false, error: "Erreur réseau." };
     }
-
-    // Fallback demo account
-    const profile: UserProfile = {
-      id: "usr-" + Math.floor(100000 + Math.random() * 900000),
-      email,
-      phone,
-      fullName,
-      role: "customer",
-      emailConfirmed: false,
-    };
-    setUser(profile);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile));
-    setSessionCookie();
-    setIsLoading(false);
-    return { success: true };
   };
 
-  const signInWithPhone = async (phone: string, fullName?: string) => {
-    setIsLoading(true);
-    const supabase = getSupabaseClient();
-    if (supabase) {
-      try {
-        const { error } = await supabase.auth.signInWithOtp({
-          phone,
-          options: {
-            data: fullName ? { full_name: fullName } : undefined,
-          },
-        });
-        if (error) {
-          setIsLoading(false);
-          return {
-            success: false,
-            error:
-              error.message.toLowerCase().includes("phone")
-                ? "La connexion par SMS n'est pas encore activée sur ce projet. Utilisez l'email pour le moment."
-                : error.message,
-          };
-        }
-        setIsLoading(false);
-        return {
-          success: false,
-          error:
-            "Un code SMS vous a été envoyé. La validation OTP sera disponible dès l'activation complète du canal téléphone.",
-        };
-      } catch {
-        // fall through to clear message
-      }
-    }
-    setIsLoading(false);
+  const signInWithPhone = async () => {
     return {
       success: false,
-      error:
-        "La connexion par téléphone arrive bientôt. Connectez-vous avec votre email pour continuer.",
+      error: "La connexion par téléphone n'est pas disponible. Utilisez votre email.",
     };
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    setUser((prev) => {
-      if (!prev) return null;
-      const updated = { ...prev, ...updates };
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-      } catch {
-        // ignore
-      }
-      return updated;
-    });
-
-    // Optionnel: synchroniser avec Supabase Auth si dispo
-    const supabase = getSupabaseClient();
-    const auth = (supabase as any)?.auth;
-    if (auth) {
-      try {
-        await auth.updateUser({
-          data: {
-            full_name: updates.fullName,
-            phone: updates.phone,
-            city: updates.city,
-            country: updates.country,
-            address: updates.address,
-            avatar_url: updates.avatarUrl,
-          },
-        });
-      } catch {
-        // ignore
-      }
-    }
+    // À brancher plus tard sur une route /api/auth/profile
+    setUser((prev) => (prev ? { ...prev, ...updates } : null));
   };
 
   const signOut = async () => {
-    const supabase = getSupabaseClient();
-    const auth = (supabase as any)?.auth;
-    if (auth) {
-      try {
-        await auth.signOut();
-      } catch {
-        // ignore
-      }
-    }
+    await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
-    removeSessionCookie();
   };
 
   const value = useMemo(
@@ -302,8 +125,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 }
