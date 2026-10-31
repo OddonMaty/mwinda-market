@@ -15,9 +15,12 @@
 - [x] Statuts commande côté vendeur
 - [x] Décrémentation / rétablissement du stock
 - [x] Annulation admin + client
-- [x] **Emails** : admin + vendeur + confirmation client
-- [x] **WhatsApp** (stub Meta Cloud API)
+- [x] Emails : admin + vendeur + confirmation client
+- [x] WhatsApp (stub Meta Cloud API)
 - [x] Page client `/mon-compte/commandes` avec bouton Annuler
+- [x] **Notifications de changement de statut** (email + WhatsApp)
+- [x] **Catalogue amélioré** (recherche, prix, ville, pagination)
+- [x] **Upload images robuste** (redimensionnement Sharp, conversion WebP)
 - [x] i18n limité à FR / EN + nettoyage des principales promesses marketing
 
 ## Email & WhatsApp
@@ -51,6 +54,6 @@ WHATSAPP_PHONE_ID=
 - Vendeur : `vendeur@mwinda.market` / `admin123`
 
 ## Prochaines étapes
-- Amélioration du catalogue (filtres, pagination)
-- Notifications de changement de statut
-- Upload images plus robuste
+- Brancher les notifications de statut dans les actions admin/vendeur
+- Interface catalogue avec filtres côté front
+- Gestion des retours

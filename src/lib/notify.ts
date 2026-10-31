@@ -10,6 +10,15 @@ interface OrderNotify {
   customerPhone?: string;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  pending_payment: "En attente de paiement",
+  paid: "Paiement reçu",
+  preparing: "En préparation",
+  shipped: "Expédiée",
+  delivered: "Livrée",
+  cancelled: "Annulée",
+};
+
 function getTransporter() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || 587);
@@ -29,7 +38,7 @@ function getTransporter() {
 async function sendMail(to: string, subject: string, text: string) {
   const transporter = getTransporter();
   if (!transporter) {
-    console.log(`[NOTIFY] SMTP non configuré — destinataire ${to}: ${subject}`);
+    console.log(`[NOTIFY] SMTP non configuré — ${to}: ${subject}`);
     return;
   }
 
@@ -95,12 +104,10 @@ export async function notifyNewOrder(order: OrderNotify) {
 
   console.log(adminText);
 
-  // 1. Admin
   if (process.env.ADMIN_EMAIL) {
     await sendMail(process.env.ADMIN_EMAIL, `[Mwinda] Nouvelle commande ${order.reference}`, adminText);
   }
 
-  // 2. Vendeur
   if (order.vendorId) {
     const vendor = await prisma.vendor.findUnique({
       where: { id: order.vendorId },
@@ -130,7 +137,6 @@ export async function notifyNewOrder(order: OrderNotify) {
     }
   }
 
-  // 3. Client
   if (order.customerEmail) {
     const clientText = [
       `Merci pour votre commande sur Mwinda Market`,
@@ -150,5 +156,42 @@ export async function notifyNewOrder(order: OrderNotify) {
       order.customerPhone,
       `Mwinda : Commande ${order.reference} enregistrée — ${order.amountUsd} USD. Merci !`
     );
+  }
+}
+
+export async function notifyStatusChange(orderId: string, newStatus: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { vendor: { include: { user: true } } },
+  });
+
+  if (!order) return;
+
+  const label = STATUS_LABELS[newStatus] || newStatus;
+  const subject = `[Mwinda] Commande ${order.reference} — ${label}`;
+  const text = [
+    `Le statut de votre commande a changé.`,
+    ``,
+    `Référence : ${order.reference}`,
+    `Nouveau statut : ${label}`,
+    `Montant : ${Number(order.amountUsd).toFixed(2)} USD`,
+  ].join("\n");
+
+  console.log(text);
+
+  if (order.customerEmail) {
+    await sendMail(order.customerEmail, subject, text);
+  }
+
+  if (order.customerPhone) {
+    await sendWhatsApp(order.customerPhone, `Mwinda : Commande ${order.reference} — ${label}`);
+  }
+
+  if (order.vendor?.user?.email) {
+    await sendMail(order.vendor.user.email, subject, text);
+  }
+
+  if (order.vendor?.whatsapp) {
+    await sendWhatsApp(order.vendor.whatsapp, `Mwinda : Commande ${order.reference} — ${label}`);
   }
 }
