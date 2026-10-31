@@ -54,7 +54,7 @@ export default async function AdminCommandes() {
                 </td>
                 <td className="p-3 text-xs">{o.status}</td>
                 <td className="p-3 space-x-2">
-                  {o.paymentStatus !== "paid" && (
+                  {o.paymentStatus !== "paid" && o.status !== "cancelled" && (
                     <form action={async () => { "use server"; await markOrderPaid(o.id); }}>
                       <button
                         type="submit"
@@ -68,6 +68,18 @@ export default async function AdminCommandes() {
                     <form action={async () => { "use server"; await updateOrderStatus(o.id, "preparing"); }}>
                       <button type="submit" className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
                         En préparation
+                      </button>
+                    </form>
+                  )}
+                  {o.status !== "cancelled" && o.status !== "delivered" && (
+                    <form action={async () => {
+                      "use server";
+                      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/orders/${o.id}/cancel`, {
+                        method: "POST",
+                      }).catch(() => {});
+                    }}>
+                      <button type="submit" className="text-xs bg-red-600 text-white px-2 py-1 rounded">
+                        Annuler
                       </button>
                     </form>
                   )}
