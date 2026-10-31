@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { notifyNewOrder } from "@/lib/notify";
 
 export interface OrderPayload {
   reference: string;
@@ -40,7 +41,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Tente de lier au vendeur via le premier product_id connu
     let vendorId: string | null = null;
     const firstProductId = body.items?.find((i) => i.product_id)?.product_id;
     if (firstProductId) {
@@ -76,6 +76,14 @@ export async function POST(req: NextRequest) {
         },
       },
       include: { items: true },
+    });
+
+    // Notification (stub pour le moment)
+    await notifyNewOrder({
+      reference: order.reference,
+      customerName: order.customerName,
+      amountUsd: Number(order.amountUsd),
+      vendorId: order.vendorId,
     });
 
     return NextResponse.json(
