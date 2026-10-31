@@ -1,0 +1,118 @@
+// Mwinda Market — Schéma Prisma (migration hors Supabase)
+// Base cible : PostgreSQL sur NitroHost
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  phone         String?
+  passwordHash  String?
+  role          String   @default("customer") // customer | vendor | admin
+  emailVerified DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orders              Order[]
+  vendor              Vendor?
+  sellerApplications  SellerApplication[]
+}
+
+model Vendor {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  shopName    String
+  whatsapp    String?
+  address     String?
+  city        String?
+  isActive    Boolean  @default(true)
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  products    Product[]
+  orders      Order[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  vendorId    String
+  vendor      Vendor   @relation(fields: [vendorId], references: [id])
+  title       String
+  description String?
+  priceUsd    Decimal  @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  reference       String   @unique
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  vendorId        String?
+  vendor          Vendor?  @relation(fields: [vendorId], references: [id])
+
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  deliveryAddress String
+  deliveryCity    String?
+
+  amountUsd       Decimal  @db.Decimal(10, 2)
+  paymentMethod   String   // manual_mm | cash_on_delivery
+  paymentStatus   String   @default("pending") // pending | paid | failed
+  status          String   @default("pending_payment") // pending_payment | paid | preparing | shipped | delivered | cancelled
+
+  notes           String?
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id            String  @id @default(cuid())
+  orderId       String
+  order         Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String?
+  product       Product? @relation(fields: [productId], references: [id])
+  title         String
+  quantity      Int
+  unitUsdPrice  Decimal @db.Decimal(10, 2)
+  imageUrl      String?
+}
+
+model SellerApplication {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  fullName    String
+  shopName    String
+  phone       String
+  email       String
+  category    String?
+  location    String?
+  notes       String?
+  status      String   @default("pending") // pending | approved | rejected
+  createdAt   DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
