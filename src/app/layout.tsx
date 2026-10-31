@@ -14,12 +14,31 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://mwinda.market"),
   title: {
     default: "Mwinda Market | Marketplace Panafricaine - Marchés Connectés",
     template: "%s | Mwinda Market",
   },
   description:
-    "La marketplace e-commerce panafricaine connectant les marchés d'Afrique. Commandez dans votre devise locale, payez par Mobile Money et faites-vous livrer rapidement.",
+    "Marketplace e-commerce panafricaine. Commandez auprès de vendeurs vérifiés, payez par Mobile Money et faites-vous livrer en RDC et en Afrique.",
+  keywords: ["marketplace", "Afrique", "RDC", "Kinshasa", "Mobile Money", "e-commerce", "Mwinda Market"],
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: "https://mwinda.market",
+    siteName: "Mwinda Market",
+    title: "Mwinda Market | Marketplace Panafricaine",
+    description: "Commandez, payez par Mobile Money et faites-vous livrer.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mwinda Market",
+    description: "Marketplace panafricaine avec paiement Mobile Money.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
