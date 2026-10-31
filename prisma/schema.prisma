@@ -34,12 +34,14 @@ model Vendor {
   whatsapp    String?
   address     String?
   city        String?
+  plan        String   @default("starter") // starter (5%) | pro (3%) | elite (2%)
   isActive    Boolean  @default(true)
   isVerified  Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   products    Product[]
   orders      Order[]
+  withdrawals Withdrawal[]
 }
 
 model Product {
@@ -73,6 +75,9 @@ model Order {
   deliveryCity    String?
 
   amountUsd       Decimal  @db.Decimal(10, 2)
+  commissionUsd   Decimal  @default(0) @db.Decimal(10, 2)
+  vendorEarningUsd Decimal @default(0) @db.Decimal(10, 2)
+
   paymentMethod   String   // manual_mm | cash_on_delivery
   paymentStatus   String   @default("pending") // pending | paid | failed
   status          String   @default("pending_payment") // pending_payment | paid | preparing | shipped | delivered | cancelled
@@ -95,6 +100,18 @@ model OrderItem {
   quantity      Int
   unitUsdPrice  Decimal @db.Decimal(10, 2)
   imageUrl      String?
+}
+
+model Withdrawal {
+  id        String   @id @default(cuid())
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id])
+  amountUsd Decimal  @db.Decimal(10, 2)
+  method    String   // mobile_money | bank
+  details   String?  // numéro ou IBAN
+  status    String   @default("pending") // pending | approved | paid | rejected
+  createdAt DateTime @default(now())
+  processedAt DateTime?
 }
 
 model SellerApplication {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notifyNewOrder } from "@/lib/notify";
+import { calculateCommission } from "@/lib/commission";
 
 export interface OrderPayload {
   reference: string;
@@ -42,20 +43,29 @@ export async function POST(req: NextRequest) {
     }
 
     let vendorId: string | null = null;
+    let plan = "starter";
+
     const firstProductId = body.items?.find((i) => i.product_id)?.product_id;
     if (firstProductId) {
       const product = await prisma.product.findUnique({
         where: { id: firstProductId },
-        select: { vendorId: true },
+        include: { vendor: true },
       });
-      vendorId = product?.vendorId || null;
+      if (product) {
+        vendorId = product.vendorId;
+        plan = product.vendor.plan || "starter";
+      }
     }
+
+    const { commissionUsd, vendorEarningUsd } = calculateCommission(body.amount_usd, plan);
 
     const order = await prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
         data: {
           reference: body.reference,
           amountUsd: body.amount_usd,
+          commissionUsd,
+          vendorEarningUsd,
           customerName: body.customer_name.trim(),
           customerPhone: body.customer_phone.trim(),
           customerEmail: body.customer_email || null,
