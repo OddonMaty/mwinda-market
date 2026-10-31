@@ -5,13 +5,15 @@
 - [x] Schéma Prisma
 - [x] Checkout honnête (Mobile Money manuel + paiement à la livraison)
 - [x] Routes API sur Prisma
-- [x] Pages admin branchées + actions (Paiement reçu / Approuver vendeur)
-- [x] Auth minimale réelle (bcrypt + cookie `mwinda_uid`)
-- [x] Dashboard vendeur simplifié + ajout de produits
-- [x] Suppression de la dépendance Supabase
-- [x] Seed Prisma + config PM2
-- [x] **Catalogue public branché** sur `/api/catalog` (Prisma)
-- [x] Protection `/admin` renforcée (session requise)
+- [x] Pages admin branchées + actions
+- [x] Auth minimale réelle
+- [x] Dashboard vendeur + ajout produits (avec URL image)
+- [x] Suppression Supabase
+- [x] Seed + PM2
+- [x] Catalogue public sur `/api/catalog`
+- [x] Protection `/admin`
+- [x] **Statuts commande côté vendeur** (J'ai le colis → Expédié → Livré)
+- [x] Champ image URL sur les produits
 
 ## Déploiement NitroHost
 1. Cloner `feature/nitro-admin`
@@ -29,7 +31,7 @@
 - Vendeur : `vendeur@mwinda.market` / `admin123`
 
 ## Prochaines étapes
-- Upload de photos produits (stockage local ou S3)
-- Notifications vendeur (email / WhatsApp) à la commande
-- Gestion des statuts de commande côté vendeur
-- Nettoyage des promesses marketing restantes sur le site public
+- Lier automatiquement les commandes au bon vendeur (vendorId) à la création
+- Upload de fichiers images (au lieu d'URL)
+- Notifications (email / WhatsApp)
+- Nettoyage des textes marketing restants sur les pages publiques
