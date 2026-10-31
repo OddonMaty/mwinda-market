@@ -40,6 +40,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Tente de lier au vendeur via le premier product_id connu
+    let vendorId: string | null = null;
+    const firstProductId = body.items?.find((i) => i.product_id)?.product_id;
+    if (firstProductId) {
+      const product = await prisma.product.findUnique({
+        where: { id: firstProductId },
+        select: { vendorId: true },
+      });
+      vendorId = product?.vendorId || null;
+    }
+
     const order = await prisma.order.create({
       data: {
         reference: body.reference,
@@ -53,6 +64,7 @@ export async function POST(req: NextRequest) {
         paymentStatus: body.payment_status || "pending",
         status: body.status || "pending_payment",
         notes: body.notes || null,
+        vendorId,
         items: {
           create: (body.items || []).map((it) => ({
             title: it.title,
@@ -86,10 +98,7 @@ export async function GET(req: NextRequest) {
     const phone = (searchParams.get("phone") || "").trim();
 
     if (!email && !phone) {
-      return NextResponse.json(
-        { error: "email ou phone requis." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "email ou phone requis." }, { status: 400 });
     }
 
     const orders = await prisma.order.findMany({
