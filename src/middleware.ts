@@ -1,34 +1,37 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_ROUTES = ["/mon-compte", "/panier/checkout"];
-const VENDOR_ROUTES = ["/vendeur/dashboard"];
-const ADMIN_ROUTES = ["/admin"];
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
-  const isVendorRoute = VENDOR_ROUTES.some((r) => pathname.startsWith(r));
-  const isAdminRoute = ADMIN_ROUTES.some((r) => pathname.startsWith(r));
+  const isProtected =
+    pathname.startsWith("/mon-compte") ||
+    pathname.startsWith("/panier/checkout") ||
+    pathname.startsWith("/vendeur/dashboard");
 
-  if (isProtected || isVendorRoute) {
-    const mwindaSession = request.cookies.get("mwinda_session");
-    if (!mwindaSession) {
-      const loginUrl = new URL("/connexion", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+  const isAdmin = pathname.startsWith("/admin");
+
+  const uid = request.cookies.get("mwinda_uid")?.value;
+
+  if (isProtected && !uid) {
+    const loginUrl = new URL("/connexion", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Protection basique temporaire de /admin
-  // Remplacer par une vraie auth admin dès que possible
-  if (isAdminRoute) {
+  if (isAdmin) {
+    // Protection basique : présence du cookie + token optionnel
+    // En production, vérifier le rôle admin via une route ou un claim
     const adminToken = request.cookies.get("mwinda_admin")?.value;
     const expected = process.env.ADMIN_ACCESS_TOKEN || "change-me-admin";
-    if (adminToken !== expected) {
-      // Pour le moment on laisse passer en dév ; en prod mettre un vrai login
-      // return NextResponse.redirect(new URL("/connexion?admin=1", request.url));
+
+    if (!uid) {
+      return NextResponse.redirect(new URL("/connexion?redirect=/admin", request.url));
+    }
+
+    // Si un token admin est défini, l'exiger
+    if (process.env.ADMIN_ACCESS_TOKEN && adminToken !== expected) {
+      return NextResponse.redirect(new URL("/connexion?error=admin", request.url));
     }
   }
 
