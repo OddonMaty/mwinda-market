@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { notifyStatusChange } from "@/lib/notify";
 
 export async function markOrderPaid(orderId: string) {
   await prisma.order.update({
@@ -12,6 +13,7 @@ export async function markOrderPaid(orderId: string) {
       paidAt: new Date(),
     },
   });
+  await notifyStatusChange(orderId, "paid");
   revalidatePath("/admin/commandes");
   revalidatePath("/admin");
 }
@@ -21,6 +23,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
     where: { id: orderId },
     data: { status },
   });
+  await notifyStatusChange(orderId, status);
   revalidatePath("/admin/commandes");
 }
 
@@ -50,6 +53,7 @@ export async function cancelOrder(orderId: string) {
     }
   });
 
+  await notifyStatusChange(orderId, "cancelled");
   revalidatePath("/admin/commandes");
   revalidatePath("/admin");
 }

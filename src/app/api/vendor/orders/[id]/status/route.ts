@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { notifyStatusChange } from "@/lib/notify";
 
 const ALLOWED = ["preparing", "shipped", "delivered", "cancelled"];
 
@@ -36,6 +37,8 @@ export async function POST(
     where: { id: params.id },
     data: { status },
   });
+
+  await notifyStatusChange(params.id, status);
 
   return NextResponse.json({ success: true, order: updated });
 }
