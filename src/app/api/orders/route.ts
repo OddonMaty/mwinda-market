@@ -51,7 +51,6 @@ export async function POST(req: NextRequest) {
       vendorId = product?.vendorId || null;
     }
 
-    // Transaction : création commande + décrémentation stock
     const order = await prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
         data: {
@@ -80,7 +79,6 @@ export async function POST(req: NextRequest) {
         include: { items: true },
       });
 
-      // Décrémenter le stock pour les produits connus
       for (const it of body.items || []) {
         if (it.product_id && it.quantity > 0) {
           await tx.product.update({
@@ -98,6 +96,8 @@ export async function POST(req: NextRequest) {
       customerName: order.customerName,
       amountUsd: Number(order.amountUsd),
       vendorId: order.vendorId,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
     });
 
     return NextResponse.json(
