@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { markOrderPaid, updateOrderStatus } from "../actions";
+import { markOrderPaid, updateOrderStatus, cancelOrder } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -72,12 +72,7 @@ export default async function AdminCommandes() {
                     </form>
                   )}
                   {o.status !== "cancelled" && o.status !== "delivered" && (
-                    <form action={async () => {
-                      "use server";
-                      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/orders/${o.id}/cancel`, {
-                        method: "POST",
-                      }).catch(() => {});
-                    }}>
+                    <form action={async () => { "use server"; await cancelOrder(o.id); }}>
                       <button type="submit" className="text-xs bg-red-600 text-white px-2 py-1 rounded">
                         Annuler
                       </button>

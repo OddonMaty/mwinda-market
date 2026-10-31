@@ -24,6 +24,36 @@ export async function updateOrderStatus(orderId: string, status: string) {
   revalidatePath("/admin/commandes");
 }
 
+export async function cancelOrder(orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true },
+  });
+
+  if (!order || order.status === "cancelled" || order.status === "delivered") {
+    return;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.order.update({
+      where: { id: orderId },
+      data: { status: "cancelled" },
+    });
+
+    for (const item of order.items) {
+      if (item.productId && item.quantity > 0) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+    }
+  });
+
+  revalidatePath("/admin/commandes");
+  revalidatePath("/admin");
+}
+
 export async function approveSellerApplication(applicationId: string) {
   const app = await prisma.sellerApplication.findUnique({
     where: { id: applicationId },
@@ -33,7 +63,6 @@ export async function approveSellerApplication(applicationId: string) {
     throw new Error("Candidature introuvable ou déjà traitée.");
   }
 
-  // Crée un utilisateur minimal + vendor si pas déjà lié
   let userId = app.userId;
 
   if (!userId) {
