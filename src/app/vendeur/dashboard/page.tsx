@@ -12,6 +12,7 @@ export default function VendorDashboard() {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("1");
   const [imageUrl, setImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
@@ -25,6 +26,24 @@ export default function VendorDashboard() {
       .then((d) => setOrders(d.orders || []))
       .catch(() => {});
   }, [isVendor]);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setMsg("");
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch("/api/vendor/upload", { method: "POST", body: form });
+    const data = await res.json();
+    setUploading(false);
+    if (res.ok) {
+      setImageUrl(data.url);
+      setMsg("Image téléversée.");
+    } else {
+      setMsg(data.error || "Échec upload");
+    }
+  };
 
   const addProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,7 +130,12 @@ export default function VendorDashboard() {
       <form onSubmit={addProduct} className="bg-surface-container-lowest border rounded-xl p-4 space-y-3">
         <h2 className="font-bold">Ajouter un article</h2>
         <input className="w-full border rounded-lg p-2 text-sm" placeholder="Nom" value={title} onChange={(e) => setTitle(e.target.value)} required />
-        <input className="w-full border rounded-lg p-2 text-sm" placeholder="URL image (optionnel)" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+        <div>
+          <label className="text-xs font-bold">Photo</label>
+          <input type="file" accept="image/*" onChange={handleFile} className="block text-sm mt-1" />
+          {uploading && <p className="text-xs">Téléversement…</p>}
+          {imageUrl && <p className="text-xs text-emerald-600">Image prête : {imageUrl}</p>}
+        </div>
         <div className="flex gap-2">
           <input className="flex-1 border rounded-lg p-2 text-sm" type="number" step="0.01" placeholder="Prix USD" value={price} onChange={(e) => setPrice(e.target.value)} required />
           <input className="w-24 border rounded-lg p-2 text-sm" type="number" placeholder="Stock" value={stock} onChange={(e) => setStock(e.target.value)} />
