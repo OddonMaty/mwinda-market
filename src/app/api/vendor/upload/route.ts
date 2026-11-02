@@ -4,6 +4,8 @@ import path from "path";
 import sharp from "sharp";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const MAX_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 

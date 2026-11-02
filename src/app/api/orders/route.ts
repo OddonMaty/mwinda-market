@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { notifyNewOrder } from "@/lib/notify";
 import { calculateCommission } from "@/lib/commission";
 
+export const dynamic = "force-dynamic";
+
 export interface OrderPayload {
   reference: string;
   amount_usd: number;

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   const uid = req.cookies.get("mwinda_uid")?.value;
   if (!uid) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });

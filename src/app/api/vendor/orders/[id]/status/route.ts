@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notifyStatusChange } from "@/lib/notify";
 
+export const dynamic = "force-dynamic";
+
 const ALLOWED = ["preparing", "shipped", "delivered", "cancelled"];
 
 export async function POST(
