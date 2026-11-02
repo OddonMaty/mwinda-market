@@ -95,10 +95,13 @@ function CatalogContent() {
 
   // Données globales sans filtre pays (catalogue panafricain — live via CatalogContext)
   const availableProvinces = useMemo(
-    () => getAllProductProvinces(),
+    () => (typeof getAllProductProvinces === "function" ? getAllProductProvinces() : []),
     [getAllProductProvinces]
   );
-  const availableShops = useMemo(() => getAllShopNames(), [getAllShopNames]);
+  const availableShops = useMemo(
+    () => (typeof getAllShopNames === "function" ? getAllShopNames() : []),
+    [getAllShopNames]
+  );
   const catalogCategories = useMemo(
     () => Array.from(new Set(allProducts.map((p) => p.category))),
     [allProducts]

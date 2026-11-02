@@ -13,6 +13,7 @@ import { useCatalog } from "@/context/CatalogContext";
 import { toProductCard } from "@/lib/marketData";
 import { getActiveCategories, countProductsInCategory } from "@/config/categories";
 import { getMaxRealDiscount } from "@/lib/discounts";
+import { HeroCarousel } from "@/components/HeroCarousel";
 
 // Palettes de couleurs pour les cartes boutiques
 const SHOP_COLORS = [
@@ -227,7 +228,7 @@ export default function HomePage() {
           </aside>
 
           {/* Colonne centrale (flex-1) : Bannière héros hauteur ~360px */}
-          <div className="flex-1 min-w-0 relative rounded-lg overflow-hidden bg-gradient-to-r from-[#0B1B3D] via-[#0F294A] to-[#1E3A8A] text-white shadow-sm border border-[#E2E8F0] flex flex-col justify-between min-h-[340px] lg:min-h-[360px]">
+          <div className="flex-1 min-w-0 relative rounded-lg overflow-hidden bg-[#0B1B3D] text-white shadow-sm border border-[#E2E8F0] flex flex-col justify-between min-h-[340px] lg:min-h-[360px]">
             <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-6 sm:p-8 flex-1">
               <div className="md:col-span-7 space-y-3.5">
                 <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
@@ -267,29 +268,7 @@ export default function HomePage() {
               </div>
 
               <div className="hidden md:flex md:col-span-5 justify-center">
-                <div className="relative w-full max-w-[260px] aspect-[4/3] rounded-lg overflow-hidden shadow-lg border border-white/20">
-                  <Image
-                    src="/images/hero/commerce-moderne.jpg"
-                    alt="Commerce moderne"
-                    fill
-                    priority
-                    sizes="(max-width: 1024px) 100vw, 300px"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B1B3D]/80 via-transparent to-transparent flex items-end p-2.5">
-                    <div className="bg-white/95 backdrop-blur-md rounded p-2 w-full text-slate-800 shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] uppercase font-bold text-[#0284C7] tracking-wider">
-                          {t("home.hero_offer_special")}
-                        </span>
-                        <span className="text-[9px] font-bold bg-[#EA580C] text-white px-1.5 py-0.5 rounded">
-                          {maxRealDiscount > 0 ? `-${maxRealDiscount}%` : t("home.hero_offer_special")}
-                        </span>
-                      </div>
-                      <p className="text-xs font-bold text-[#0B1B3D] mt-0.5 truncate">{t("home.hero_offer_pack")}</p>
-                    </div>
-                  </div>
-                </div>
+                <HeroCarousel />
               </div>
             </div>
           </div>
@@ -498,7 +477,7 @@ export default function HomePage() {
           </div>
 
           {/* Panneau 2 : Meilleures promotions (fond bleu / dégradé) */}
-          <div className="bg-gradient-to-br from-sky-900 to-[#0B1B3D] text-white rounded-lg p-4 sm:p-5 flex flex-col justify-between shadow-sm">
+          <div className="bg-[#0B1B3D] text-white rounded-lg p-4 sm:p-5 flex flex-col justify-between shadow-sm">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3.5">
               <div className="flex items-center gap-2">
                 <span
@@ -856,7 +835,7 @@ export default function HomePage() {
         </section>
 
         {/* ─── 8. CALLOUT : VOUS ÊTES COMMERÇANT OU IMPORTATEUR ? ──────────── */}
-        <section className="rounded-lg bg-gradient-to-r from-slate-50 to-sky-50 border border-[#E2E8F0] p-6 lg:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-2xs">
+        <section className="rounded-lg bg-slate-50 border border-[#E2E8F0] p-6 lg:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-2xs">
           <div className="space-y-1.5">
             <span className="text-[10px] font-bold uppercase bg-[#0284C7] text-white px-2 py-0.5 rounded tracking-wider">
               {t("home.seller_tag")}
