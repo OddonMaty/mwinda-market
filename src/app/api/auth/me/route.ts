@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
       phone: user.phone,
       role: user.role,
       shopId: user.vendor?.id || null,
+      isVerified: Boolean(user.emailVerified),
+      emailConfirmed: Boolean(user.emailVerified),
     },
   });
 }

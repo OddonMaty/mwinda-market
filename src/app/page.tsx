@@ -476,12 +476,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Panneau 2 : Meilleures promotions (fond bleu / dégradé) */}
-          <div className="bg-[#0B1B3D] text-white rounded-lg p-4 sm:p-5 flex flex-col justify-between shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3.5">
+          {/* Panneau 2 : Meilleures promotions (fond orange vif Mwinda) */}
+          <div className="bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white rounded-xl p-4 sm:p-5 flex flex-col justify-between shadow-md border border-orange-400/30">
+            <div className="flex items-center justify-between pb-3 border-b border-white/20 mb-3.5">
               <div className="flex items-center gap-2">
                 <span
-                  className="material-symbols-outlined text-lg text-[#EA580C]"
+                  className="material-symbols-outlined text-lg text-white"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   local_offer
@@ -492,7 +492,7 @@ export default function HomePage() {
               </div>
               <Link
                 href="/produits"
-                className="text-[11px] font-semibold text-slate-300 hover:text-white flex items-center gap-0.5 transition"
+                className="text-[11px] font-semibold text-orange-100 hover:text-white flex items-center gap-0.5 transition"
               >
                 <span>{t("home.view_all")}</span>
                 <span className="material-symbols-outlined text-xs">chevron_right</span>

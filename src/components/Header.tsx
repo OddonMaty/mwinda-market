@@ -31,7 +31,10 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [catPanelOpen, setCatPanelOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifRead, setNotifRead] = useState(false);
   const catBtnRef = useRef<HTMLButtonElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   // Catégories actives (exclut celles ayant 0 produit) — source CatalogContext (live ou mock)
   const activeCategories = React.useMemo(
@@ -52,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const hotline = CONTACT_CONFIG.phone;
   const hotlineRaw = CONTACT_CONFIG.phoneRaw;
 
-  // Close cat panel on outside click
+  // Close cat panel and notif on outside click
   useEffect(() => {
     if (!catPanelOpen) return;
     const handler = (e: MouseEvent) => {
@@ -63,6 +66,17 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [catPanelOpen]);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [notifOpen]);
 
   return (
     <header className="sticky top-0 z-50 w-full overflow-x-clip">
@@ -222,15 +236,106 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
               <span className="material-symbols-outlined text-[22px]">favorite_border</span>
             </button>
 
-            {/* Notifications — desktop only */}
-            <button
-              type="button"
-              className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition relative hidden lg:flex items-center"
-              title={t("header.notifications")}
-            >
-              <span className="material-symbols-outlined text-[22px]">notifications_none</span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-tertiary rounded-full ring-2 ring-white" />
-            </button>
+            {/* Notifications — opérationnel mobile & desktop */}
+            <div className="relative" ref={notifRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setNotifOpen(!notifOpen);
+                  if (!notifRead) setNotifRead(true);
+                }}
+                className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition relative flex items-center"
+                title={t("header.notifications") || "Notifications"}
+                aria-label="Centre de notifications"
+              >
+                <span className="material-symbols-outlined text-[22px]">
+                  {notifRead ? "notifications_none" : "notifications"}
+                </span>
+                {!notifRead && (
+                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#EA580C] rounded-full ring-2 ring-white animate-pulse" />
+                )}
+              </button>
+
+              {/* Popover Notifications */}
+              {notifOpen && (
+                <div className="absolute right-0 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 mt-2 w-72 sm:w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-fadeIn text-slate-800">
+                  <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <span className="font-bold text-xs text-[#0B1B3D] flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-base text-[#EA580C]">notifications</span>
+                      <span>Notifications Mwinda</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setNotifRead(true)}
+                      className="text-[10px] text-slate-500 hover:text-slate-800 font-semibold"
+                    >
+                      Tout marquer comme lu
+                    </button>
+                  </div>
+
+                  <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+                    {/* Notification vérification compte */}
+                    {(!user?.isVerified && !user?.emailConfirmed) && (
+                      <Link
+                        href="/mon-compte"
+                        onClick={() => setNotifOpen(false)}
+                        className="p-3 flex items-start gap-2.5 hover:bg-slate-50 transition block bg-amber-50/50"
+                      >
+                        <span className="material-symbols-outlined text-amber-600 text-lg shrink-0 mt-0.5">
+                          hourglass_empty
+                        </span>
+                        <div>
+                          <p className="text-xs font-bold text-[#0B1B3D]">Compte non vérifié</p>
+                          <p className="text-[11px] text-slate-600 mt-0.5">
+                            Validez votre email ou téléphone par code OTP pour obtenir le badge officiel Membre Vérifié.
+                          </p>
+                        </div>
+                      </Link>
+                    )}
+
+                    {/* Notification garantie Escrow */}
+                    <div className="p-3 flex items-start gap-2.5 hover:bg-slate-50 transition">
+                      <span className="material-symbols-outlined text-emerald-600 text-lg shrink-0 mt-0.5">
+                        verified_user
+                      </span>
+                      <div>
+                        <p className="text-xs font-bold text-[#0B1B3D]">Paiements protégés (Escrow)</p>
+                        <p className="text-[11px] text-slate-600 mt-0.5">
+                          Vos paiements Mobile Money et Cash sont bloqués en séquestre jusqu'à la confirmation de votre livraison.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Notification Promotions */}
+                    <Link
+                      href="/produits"
+                      onClick={() => setNotifOpen(false)}
+                      className="p-3 flex items-start gap-2.5 hover:bg-slate-50 transition block"
+                    >
+                      <span className="material-symbols-outlined text-[#EA580C] text-lg shrink-0 mt-0.5">
+                        local_offer
+                      </span>
+                      <div>
+                        <p className="text-xs font-bold text-[#0B1B3D]">Offres & Promotions actives</p>
+                        <p className="text-[11px] text-slate-600 mt-0.5">
+                          Jusqu'à -30% sur les boutiques partenaires certifiées ce mois-ci.
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+
+                  <div className="p-2.5 bg-slate-50 border-t border-slate-200 text-center">
+                    <Link
+                      href="/mon-compte"
+                      onClick={() => setNotifOpen(false)}
+                      className="text-xs font-bold text-[#EA580C] hover:underline"
+                    >
+                      Accéder à mon espace client &rarr;
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Cart — always visible */}
             <Link

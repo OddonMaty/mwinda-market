@@ -198,9 +198,17 @@ function OverviewTab({
               <h2 className="text-xl font-black font-display tracking-tight">
                 {user.fullName || "Membre Mwinda Market"}
               </h2>
-              <span className="bg-secondary text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider border border-white/20 shadow-sm">
-                Membre Vérifié
-              </span>
+              {user.isVerified || user.emailConfirmed ? (
+                <span className="bg-emerald-500/90 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider border border-white/20 shadow-sm flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">verified</span>
+                  Membre Vérifié
+                </span>
+              ) : (
+                <span className="bg-amber-500/90 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider border border-white/20 shadow-sm flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">hourglass_empty</span>
+                  Non Vérifié
+                </span>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-white/80">
@@ -215,20 +223,20 @@ function OverviewTab({
               </span>
             </div>
 
-            {/* Email Status Alert */}
+            {/* Email / Compte Status Alert */}
             <div className="mt-2.5 flex items-center gap-2">
-              {user.emailConfirmed ? (
+              {user.isVerified || user.emailConfirmed ? (
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-400/30">
-                  <span className="material-symbols-outlined text-xs">verified</span>
-                  Adresse email confirmée
+                  <span className="material-symbols-outlined text-xs">verified_user</span>
+                  Identité & Coordonnées confirmées
                 </span>
               ) : (
                 <button
                   onClick={onConfirmEmail}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-200 bg-amber-950/50 hover:bg-amber-900/60 px-2.5 py-0.5 rounded-md border border-amber-400/40 transition"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-200 bg-amber-950/50 hover:bg-amber-900/60 px-2.5 py-1 rounded-md border border-amber-400/40 transition shadow-sm animate-pulse"
                 >
-                  <span className="material-symbols-outlined text-xs">warning</span>
-                  Confirmer mon adresse email →
+                  <span className="material-symbols-outlined text-xs">mark_email_unread</span>
+                  Confirmer mon adresse email ou téléphone (Code OTP) →
                 </button>
               )}
             </div>
@@ -508,9 +516,11 @@ function OrdersTab({ orders }: { orders: ClientOrder[] }) {
 function ProfileTab({
   user,
   onSaveProfile,
+  onOpenVerify,
 }: {
   user: UserProfile;
   onSaveProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  onOpenVerify: () => void;
 }) {
   const [fullName, setFullName] = useState(user.fullName || "");
   const [email, setEmail] = useState(user.email || "");
@@ -521,7 +531,6 @@ function ProfileTab({
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl || "");
   const [isSaving, setIsSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
-  const [confirmStatusMsg, setConfirmStatusMsg] = useState("");
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -540,12 +549,6 @@ function ProfileTab({
     setTimeout(() => setSavedMsg(""), 3500);
   };
 
-  const handleVerifyEmail = async () => {
-    setConfirmStatusMsg("Un email de confirmation vient de vous être envoyé. Votre adresse a été validée.");
-    await onSaveProfile({ emailConfirmed: true });
-    setTimeout(() => setConfirmStatusMsg(""), 5000);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
@@ -559,13 +562,6 @@ function ProfileTab({
           Compte Acheteur
         </span>
       </div>
-
-      {confirmStatusMsg && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
-          <span className="material-symbols-outlined text-base">check_circle</span>
-          <span>{confirmStatusMsg}</span>
-        </div>
-      )}
 
       {/* Avatar / Photo de profil */}
       <div className="p-5 bg-surface-container-low border border-outline-variant rounded-2xl flex flex-col sm:flex-row items-center gap-4">
@@ -605,7 +601,7 @@ function ProfileTab({
               <label className="text-xs font-bold text-primary uppercase tracking-wide">
                 Adresse email
               </label>
-              {user.emailConfirmed ? (
+              {user.isVerified || user.emailConfirmed ? (
                 <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-0.5">
                   <span className="material-symbols-outlined text-xs">verified</span>
                   Vérifié
@@ -613,10 +609,11 @@ function ProfileTab({
               ) : (
                 <button
                   type="button"
-                  onClick={handleVerifyEmail}
-                  className="text-[11px] font-bold text-secondary hover:underline"
+                  onClick={onOpenVerify}
+                  className="text-[11px] font-bold text-secondary hover:underline flex items-center gap-1"
                 >
-                  Confirmer l&apos;email
+                  <span className="material-symbols-outlined text-xs">verified_user</span>
+                  Vérifier par code OTP
                 </button>
               )}
             </div>
@@ -801,8 +798,8 @@ function SecurityTab() {
 
     setIsSaving(true);
     try {
-      const supabase = getSupabaseClient();
-      if (supabase) {
+      const supabase = getSupabaseClient() as any;
+      if (supabase && supabase.auth) {
         const { error } = await supabase.auth.updateUser({ password: newPwd });
         if (error) {
           setErrorMsg(error.message);
@@ -894,10 +891,76 @@ function NotificationsTab() {
 // ─── Main Client Dashboard Page ───────────────────────────────────────────
 export default function AccountPage() {
   const router = useRouter();
-  const { user, isLoading, isAuthenticated, updateProfile, signOut } = useAuth();
+  const { user, isLoading, isAuthenticated, updateProfile, signOut, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<AccountTab>("overview");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [orders, setOrders] = useState<ClientOrder[]>([]);
+
+  // OTP Verification state
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpStep, setOtpStep] = useState<"send" | "verify">("send");
+  const [otpChannel, setOtpChannel] = useState<"email" | "phone">("email");
+  const [otpCodeInput, setOtpCodeInput] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpStatus, setOtpStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [demoCode, setDemoCode] = useState<string | null>(null);
+
+  const handleSendOtp = async () => {
+    setOtpLoading(true);
+    setOtpStatus(null);
+    try {
+      const res = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send", channel: otpChannel }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setOtpStatus({ type: "error", message: data.error || "Échec de l'envoi du code." });
+      } else {
+        setOtpStep("verify");
+        if (data.demoCode) setDemoCode(data.demoCode);
+        setOtpStatus({ type: "success", message: data.message || "Code envoyé avec succès !" });
+      }
+    } catch {
+      setOtpStatus({ type: "error", message: "Erreur de connexion serveur." });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCodeInput.trim()) {
+      setOtpStatus({ type: "error", message: "Veuillez entrer le code à 6 chiffres." });
+      return;
+    }
+    setOtpLoading(true);
+    setOtpStatus(null);
+    try {
+      const res = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", code: otpCodeInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setOtpStatus({ type: "error", message: data.error || "Code incorrect ou expiré." });
+      } else {
+        setOtpStatus({ type: "success", message: "Félicitations ! Votre compte est certifié vérifié." });
+        await refreshUser();
+        setTimeout(() => {
+          setShowOtpModal(false);
+          setOtpCodeInput("");
+          setOtpStep("send");
+          setOtpStatus(null);
+        }, 1200);
+      }
+    } catch {
+      setOtpStatus({ type: "error", message: "Erreur de communication." });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 
   // Charge les commandes locales et Supabase
   useEffect(() => {
@@ -1056,6 +1119,26 @@ export default function AccountPage() {
                 <p className="text-xs text-on-surface-variant truncate">
                   {user.phone || user.email || ""}
                 </p>
+                <div className="mt-2 flex justify-center">
+                  {user.isVerified || user.emailConfirmed ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full shadow-sm">
+                      <span className="material-symbols-outlined text-xs">verified</span>
+                      Membre Vérifié
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setShowOtpModal(true);
+                        setOtpStatus(null);
+                        setOtpStep("send");
+                      }}
+                      className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-800 bg-amber-50 border border-amber-300 hover:bg-amber-100 px-2.5 py-0.5 rounded-full transition shadow-sm animate-pulse"
+                    >
+                      <span className="material-symbols-outlined text-xs">hourglass_empty</span>
+                      Vérifier mon compte
+                    </button>
+                  )}
+                </div>
               </div>
 
               {user.role === "vendor" ? (
@@ -1101,7 +1184,11 @@ export default function AccountPage() {
                 user={user}
                 orders={orders}
                 onNavigate={setActiveTab}
-                onConfirmEmail={() => setActiveTab("profile")}
+                onConfirmEmail={() => {
+                  setShowOtpModal(true);
+                  setOtpStatus(null);
+                  setOtpStep("send");
+                }}
               />
             )}
             {activeTab === "orders" && <OrdersTab orders={orders} />}
@@ -1114,13 +1201,157 @@ export default function AccountPage() {
               />
             )}
             {activeTab === "profile" && (
-              <ProfileTab user={user} onSaveProfile={handleSaveProfile} />
+              <ProfileTab
+                user={user}
+                onSaveProfile={handleSaveProfile}
+                onOpenVerify={() => {
+                  setShowOtpModal(true);
+                  setOtpStatus(null);
+                  setOtpStep("send");
+                }}
+              />
             )}
             {activeTab === "security" && <SecurityTab />}
             {activeTab === "notifications" && <NotificationsTab />}
           </div>
         </div>
       </main>
+
+      {/* MODAL DE VÉRIFICATION OTP COMPTE CLIENT (Email / Téléphone) */}
+      {showOtpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowOtpModal(false)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-primary p-1.5 rounded-full hover:bg-surface-container transition"
+            >
+              <span className="material-symbols-outlined text-xl">close</span>
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-secondary/10 border border-secondary/20 flex items-center justify-center text-secondary">
+                <span className="material-symbols-outlined text-2xl">verified_user</span>
+              </div>
+              <div>
+                <h3 className="text-base font-black text-primary font-display">
+                  Certification & Sécurité du Compte
+                </h3>
+                <p className="text-xs text-on-surface-variant">
+                  Confirmation officielle Mwinda Market
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-on-surface-variant mb-5 leading-relaxed">
+              Pour obtenir le badge officiel <strong>Membre Vérifié</strong> et protéger vos transactions, validez votre identité par code OTP envoyé par email ou SMS.
+            </p>
+
+            {otpStatus && (
+              <div
+                className={`mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 border ${
+                  otpStatus.type === "success"
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                    : "bg-red-50 border-red-200 text-red-800"
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">
+                  {otpStatus.type === "success" ? "check_circle" : "error"}
+                </span>
+                <span>{otpStatus.message}</span>
+              </div>
+            )}
+
+            {otpStep === "send" ? (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-primary">Canal de réception du code</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setOtpChannel("email")}
+                      className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition ${
+                        otpChannel === "email"
+                          ? "border-secondary bg-secondary/10 text-secondary"
+                          : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-lg">mail</span>
+                      <span>Par Email</span>
+                      <span className="text-[10px] font-normal truncate max-w-full">
+                        {user.email || "Non défini"}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setOtpChannel("phone")}
+                      className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition ${
+                        otpChannel === "phone"
+                          ? "border-secondary bg-secondary/10 text-secondary"
+                          : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-lg">sms</span>
+                      <span>Par SMS / WhatsApp</span>
+                      <span className="text-[10px] font-normal truncate max-w-full">
+                        {user.phone || "Non défini"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleSendOtp}
+                  variant="secondary"
+                  className="w-full py-3 rounded-xl text-xs font-bold shadow-md"
+                  isLoading={otpLoading}
+                >
+                  Envoyer mon code de validation →
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-primary">
+                    Entrez le code à 6 chiffres reçu :
+                  </label>
+                  <Input
+                    value={otpCodeInput}
+                    onChange={(e) => setOtpCodeInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="Ex: 849201"
+                    className="text-center text-xl font-mono tracking-widest font-black h-12"
+                    maxLength={6}
+                    autoFocus
+                  />
+                  {demoCode && (
+                    <div className="mt-2 p-2 rounded-lg bg-secondary/10 border border-secondary/20 text-secondary text-[11px] font-semibold text-center">
+                      Code de test : <span className="font-mono font-black">{demoCode}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setOtpStep("send")}
+                    className="px-4 py-2.5 rounded-xl border border-outline-variant text-xs font-bold text-on-surface-variant hover:bg-surface-container transition"
+                  >
+                    Renvoyer
+                  </button>
+                  <Button
+                    onClick={handleVerifyOtp}
+                    variant="secondary"
+                    className="flex-1 py-2.5 rounded-xl text-xs font-bold shadow-md"
+                    isLoading={otpLoading}
+                  >
+                    Confirmer et Certifier mon Compte
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

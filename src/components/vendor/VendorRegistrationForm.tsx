@@ -24,6 +24,15 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
   const [description, setDescription] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
 
+  // Informations Légales Obligatoires pour Certification
+  const [companyType, setCompanyType] = useState("ETS");
+  const [rccm, setRccm] = useState("");
+  const [idNat, setIdNat] = useState("");
+  const [taxId, setTaxId] = useState("");
+  const [managerName, setManagerName] = useState(user?.fullName || "");
+  const [managerIdCard, setManagerIdCard] = useState("");
+  const [physicalAddress, setPhysicalAddress] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -65,6 +74,14 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
       setErrorMsg("Veuillez renseigner le nom de votre boutique.");
       return;
     }
+    if (!rccm.trim() && !idNat.trim()) {
+      setErrorMsg("Veuillez fournir au moins votre N° RCCM ou ID. NAT pour certifier votre boutique.");
+      return;
+    }
+    if (!physicalAddress.trim()) {
+      setErrorMsg("Veuillez indiquer l'adresse physique complète de votre magasin ou siège.");
+      return;
+    }
     if (!agreeTerms) {
       setErrorMsg("Veuillez accepter la charte et les conditions vendeurs de Mwinda Market.");
       return;
@@ -78,7 +95,7 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         body: JSON.stringify({
-          full_name: user?.fullName || "Vendeur Mwinda",
+          full_name: managerName.trim() || user?.fullName || "Gérant Boutique",
           shop_name: shopName.trim(),
           category,
           location: city,
@@ -86,7 +103,14 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
             ? `+243${phone.trim().replace(/^0+/, "")}`
             : user?.phone || "",
           email: email.trim() || user?.email || "vendeur@mwinda.market",
-          notes: `Offre choisie: ${selectedPlan.name} (${selectedPlan.priceUsd}$/mois, ${selectedPlan.commissionRate}% commission). Description: ${description}`,
+          company_type: companyType,
+          rccm: rccm.trim(),
+          id_nat: idNat.trim(),
+          tax_id: taxId.trim(),
+          manager_name: managerName.trim(),
+          manager_id: managerIdCard.trim(),
+          physical_address: physicalAddress.trim(),
+          notes: `Offre: ${selectedPlan.name} (${selectedPlan.priceUsd}$/m, ${selectedPlan.commissionRate}% comm.). Activité: ${description}`,
           country_code: "CD",
         }),
       });
@@ -266,8 +290,113 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-primary">Description de votre commerce</label>
+          {/* ─── Informations Légales & Certification ─── */}
+          <div className="pt-4 border-t border-outline-variant space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-secondary text-lg">policy</span>
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Dossier Juridique & Certification Vendeur
+                </h4>
+                <p className="text-[11px] text-on-surface-variant">
+                  Ces informations sont exigées pour certifier votre boutique et sécuriser les acheteurs.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-primary">Forme Juridique *</label>
+                <select
+                  value={companyType}
+                  onChange={(e) => setCompanyType(e.target.value)}
+                  className="w-full h-11 px-3 bg-surface border border-outline-variant rounded-xl text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-secondary"
+                >
+                  <option value="ETS">Établissement (ETS) / Entreprise Individuelle</option>
+                  <option value="SARL">SARL / SARLU</option>
+                  <option value="SA">Société Anonyme (SA)</option>
+                  <option value="Cooperative">Coopérative Agricole / Artisanale</option>
+                  <option value="Artisan">Artisan Enregistré</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-primary">Numéro RCCM *</label>
+                <Input
+                  type="text"
+                  placeholder="Ex: CD/KIN/RCCM/20-A-01234"
+                  value={rccm}
+                  onChange={(e) => setRccm(e.target.value)}
+                  icon="badge"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-primary">Numéro Identification Nationale (ID. NAT)</label>
+                <Input
+                  type="text"
+                  placeholder="Ex: 01-83-N12345P"
+                  value={idNat}
+                  onChange={(e) => setIdNat(e.target.value)}
+                  icon="fingerprint"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-primary">Numéro Impôt (NIF)</label>
+                <Input
+                  type="text"
+                  placeholder="Ex: A0701234Z"
+                  value={taxId}
+                  onChange={(e) => setTaxId(e.target.value)}
+                  icon="receipt_long"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-primary">Nom Complet du Gérant / Représentant *</label>
+                <Input
+                  type="text"
+                  placeholder="Nom, Post-nom et Prénom"
+                  value={managerName}
+                  onChange={(e) => setManagerName(e.target.value)}
+                  icon="person"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-primary">N° Pièce d&apos;identité (Passeport / Électeur)</label>
+                <Input
+                  type="text"
+                  placeholder="N° carte d'électeur ou passeport"
+                  value={managerIdCard}
+                  onChange={(e) => setManagerIdCard(e.target.value)}
+                  icon="credit_card"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-primary">Adresse Physique Exacte du Magasin / Siège *</label>
+              <Input
+                type="text"
+                placeholder="Ex: 15 Avenue du Commerce, Commune de la Gombe, Réf. Galerie..."
+                value={physicalAddress}
+                onChange={(e) => setPhysicalAddress(e.target.value)}
+                icon="location_on"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1 pt-2">
+            <label className="text-xs font-bold text-primary">Description de votre commerce & produits</label>
             <textarea
               rows={3}
               value={description}

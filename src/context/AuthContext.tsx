@@ -9,11 +9,18 @@ export interface UserProfile {
   fullName?: string;
   role?: "customer" | "vendor" | "admin";
   shopId?: string | null;
+  isVerified?: boolean;
+  emailConfirmed?: boolean;
+  avatarUrl?: string | null;
+  city?: string;
+  country?: string;
+  address?: string;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
   isLoading: boolean;
+  refreshUser: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithEmail: (email: string, password: string, fullName: string, phone: string) => Promise<{ success: boolean; error?: string }>;
   signInWithPhone: (phone: string, fullName?: string) => Promise<{ success: boolean; error?: string }>;
@@ -43,6 +50,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     load();
   }, []);
+
+  const refreshUser = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      setUser(data.user || null);
+    } catch {
+      // ignore
+    }
+  };
 
   const signInWithEmail = async (email: string, password: string) => {
     setIsLoading(true);
@@ -109,6 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       isLoading,
+      refreshUser,
       signInWithEmail,
       signUpWithEmail,
       signInWithPhone,

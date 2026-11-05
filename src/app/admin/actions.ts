@@ -84,40 +84,68 @@ export async function approveSellerApplication(applicationId: string) {
     throw new Error("Candidature introuvable ou déjà traitée.");
   }
 
-  let userId = app.userId;
+  // 1. Recherche de l'utilisateur par userId existant ou par son email (insensible à la casse)
+  let user = app.userId ? await prisma.user.findUnique({ where: { id: app.userId } }) : null;
+  if (!user && app.email) {
+    user = await prisma.user.findUnique({
+      where: { email: app.email.trim().toLowerCase() },
+    });
+  }
 
-  if (!userId) {
-    const user = await prisma.user.create({
+  // 2. Si l'utilisateur n'existe pas encore, le créer proprement
+  if (!user) {
+    user = await prisma.user.create({
       data: {
-        email: app.email,
-        name: app.fullName,
-        phone: app.phone,
+        email: app.email.trim().toLowerCase(),
+        name: app.fullName.trim(),
+        phone: app.phone.trim(),
         role: "vendor",
       },
     });
-    userId = user.id;
   } else {
+    // Si l'utilisateur existe déjà, s'assurer que son rôle est passé à 'vendor'
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: { role: "vendor" },
     });
   }
 
-  await prisma.vendor.create({
-    data: {
-      userId,
-      shopName: app.shopName,
-      whatsapp: app.phone,
-      address: app.location || null,
+  // 3. Extraire le plan choisi si mentionné dans les notes
+  let plan = "starter";
+  if (app.notes) {
+    const notesLower = app.notes.toLowerCase();
+    if (notesLower.includes("élite") || notesLower.includes("elite")) plan = "elite";
+    else if (notesLower.includes("pro")) plan = "pro";
+  }
+
+  // 4. Upsert de la boutique Vendeur (évite toute violation de contrainte unique)
+  await prisma.vendor.upsert({
+    where: { userId: user.id },
+    update: {
+      shopName: app.shopName.trim(),
+      whatsapp: app.phone.trim(),
+      address: app.location || undefined,
+      city: app.location || "Kinshasa",
+      plan,
       isActive: true,
       isVerified: true,
-      plan: "starter",
+    },
+    create: {
+      userId: user.id,
+      shopName: app.shopName.trim(),
+      whatsapp: app.phone.trim(),
+      address: app.location || null,
+      city: app.location || "Kinshasa",
+      plan,
+      isActive: true,
+      isVerified: true,
     },
   });
 
+  // 5. Mettre à jour le statut de la candidature
   await prisma.sellerApplication.update({
     where: { id: applicationId },
-    data: { status: "approved", userId },
+    data: { status: "approved", userId: user.id },
   });
 
   revalidatePath("/admin/vendeurs");
