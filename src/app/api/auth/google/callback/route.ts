@@ -129,3 +129,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(new URL("/connexion?error=Server_Error", req.url));
   }
 }
+

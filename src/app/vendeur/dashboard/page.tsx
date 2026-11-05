@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { convertUsdToCurrency, formatLocalPrice } from "@/lib/currency";
+import { AfricaPlacesAutocomplete } from "@/components/ui/AfricaPlacesAutocomplete";
 
 type VendorTab = "overview" | "orders" | "products" | "finances" | "settings";
 
@@ -167,6 +168,7 @@ function VendorDashboardInner() {
   // Settings Form State
   const [shopNameEdit, setShopNameEdit] = useState("");
   const [shopTaglineEdit, setShopTaglineEdit] = useState("");
+  const [shopCityEdit, setShopCityEdit] = useState("");
   const [shopWhatsappEdit, setShopWhatsappEdit] = useState("");
   const [shopAddressEdit, setShopAddressEdit] = useState("");
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -184,6 +186,7 @@ function VendorDashboardInner() {
         if (profData.vendor) {
           setShopNameEdit(profData.vendor.shopName || "");
           setShopTaglineEdit(profData.vendor.tagline || "");
+          setShopCityEdit(profData.vendor.city || "");
           setShopWhatsappEdit(profData.vendor.whatsapp || "");
           setShopAddressEdit(profData.vendor.address || "");
         }
@@ -554,6 +557,7 @@ function VendorDashboardInner() {
         body: JSON.stringify({
           shopName: shopNameEdit,
           tagline: shopTaglineEdit,
+          city: shopCityEdit,
           whatsapp: shopWhatsappEdit,
           address: shopAddressEdit,
         }),
@@ -1945,6 +1949,17 @@ function VendorDashboardInner() {
               </div>
 
               <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase">
+                  Ville &amp; Pays d'activité (Google Places &amp; Afrique)
+                </label>
+                <AfricaPlacesAutocomplete
+                  value={shopCityEdit}
+                  onChange={(val) => setShopCityEdit(val)}
+                  placeholder="Tapez votre ville ou pays (ex: Kinshasa, Lubumbashi, Abidjan...)"
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 uppercase">Adresse physique du magasin / siège</label>
                 <input
                   type="text"
@@ -2092,12 +2107,10 @@ function VendorDashboardInner() {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700">Adresse Physique Exacte du Magasin / Siège *</label>
-                <input
-                  type="text"
-                  placeholder="Ex: 15 Avenue du Commerce, Gombe, Kinshasa"
+                <AfricaPlacesAutocomplete
                   value={certifyPhysicalAddress}
-                  onChange={(e) => setCertifyPhysicalAddress(e.target.value)}
-                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                  onChange={(val) => setCertifyPhysicalAddress(val)}
+                  placeholder="Ex: 15 Avenue du Commerce, Gombe, Kinshasa..."
                   required
                 />
               </div>

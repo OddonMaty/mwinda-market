@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { VENDOR_PLANS } from "@/data/vendorPlans";
+import { AfricaPlacesAutocomplete, PlaceSuggestion } from "@/components/ui/AfricaPlacesAutocomplete";
 
 interface VendorRegistrationFormProps {
   selectedPlanId: string;
@@ -14,10 +15,8 @@ interface VendorRegistrationFormProps {
 
 /**
  * Formulaire d'ouverture de boutique simplifié.
- * Seules les infos essentielles sont demandées ici :
- *   - Nom de boutique, catégorie, ville, téléphone, description
- * Les informations légales (RCCM, NIF, etc.) sont déplacées dans le
- * dashboard vendeur via le bouton "Certifier ma boutique".
+ * - Utilise Google Places Autocomplete + base exhaustive de toute l'Afrique
+ * - Détecte automatiquement la ville, le pays et le préfixe téléphonique
  */
 export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFormProps) {
   const { user, isAuthenticated } = useAuth();
@@ -25,8 +24,14 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
 
   const [shopName, setShopName] = useState("");
   const [category, setCategory] = useState("mode");
-  const [city, setCity] = useState("Kinshasa");
-  const [phone, setPhone] = useState(user?.phone?.replace(/^\+243/, "") || "");
+  const [location, setLocation] = useState("Kinshasa, RD Congo");
+  const [selectedCity, setSelectedCity] = useState("Kinshasa");
+  const [selectedCountry, setSelectedCountry] = useState("RD Congo");
+  const [selectedCountryCode, setSelectedCountryCode] = useState("CD");
+  const [selectedFlag, setSelectedFlag] = useState("🇨🇩");
+  const [selectedPhoneCode, setSelectedPhoneCode] = useState("+243");
+
+  const [phone, setPhone] = useState(user?.phone?.replace(/^\+\d+/, "") || "");
   const [email] = useState(user?.email || "");
   const [description, setDescription] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -34,6 +39,17 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const handlePlaceChange = (value: string, details?: PlaceSuggestion) => {
+    setLocation(value);
+    if (details) {
+      if (details.city) setSelectedCity(details.city);
+      if (details.country) setSelectedCountry(details.country);
+      if (details.countryCode) setSelectedCountryCode(details.countryCode);
+      if (details.flag) setSelectedFlag(details.flag);
+      if (details.phoneCode) setSelectedPhoneCode(details.phoneCode);
+    }
+  };
 
   // RÈGLE MÉTIER : Seul un utilisateur connecté peut ouvrir une boutique
   if (!isAuthenticated) {
@@ -80,6 +96,10 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
     setIsSubmitting(true);
 
     try {
+      const fullPhone = phone.trim()
+        ? `${selectedPhoneCode}${phone.trim().replace(/^0+/, "")}`
+        : user?.phone || "";
+
       const res = await fetch("/api/seller-applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,13 +108,11 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
           full_name: user?.fullName || user?.email?.split("@")[0] || "Gérant Boutique",
           shop_name: shopName.trim(),
           category,
-          location: city,
-          phone: phone.trim()
-            ? `+243${phone.trim().replace(/^0+/, "")}`
-            : user?.phone || "",
+          location: location.trim() || selectedCity,
+          phone: fullPhone,
           email: email.trim() || user?.email || "",
-          notes: `Offre: ${selectedPlan.name} (${selectedPlan.priceUsd}$/m, ${selectedPlan.commissionRate}% comm.). Activité: ${description}`,
-          country_code: "CD",
+          notes: `Offre: ${selectedPlan.name} (${selectedPlan.priceUsd}$/m, ${selectedPlan.commissionRate}% comm.). Activité: ${description}. Pays: ${selectedCountry} (${selectedCountryCode})`,
+          country_code: selectedCountryCode,
         }),
       });
 
@@ -114,8 +132,11 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
           JSON.stringify({
             shopName: shopName.trim(),
             category,
-            city,
-            phone: phone.trim() ? `+243${phone.trim().replace(/^0+/, "")}` : user?.phone || "",
+            city: selectedCity,
+            country: selectedCountry,
+            countryCode: selectedCountryCode,
+            location,
+            phone: fullPhone,
             planId: selectedPlan.id,
             planName: selectedPlan.name,
             registeredAt: new Date().toISOString(),
@@ -250,29 +271,27 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-primary">Ville d&apos;activité</label>
-              <select
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full h-11 px-3 bg-surface border border-outline-variant rounded-xl text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-secondary"
-              >
-                <option value="Kinshasa">Kinshasa</option>
-                <option value="Lubumbashi">Lubumbashi</option>
-                <option value="Goma">Goma</option>
-                <option value="Kisangani">Kisangani</option>
-                <option value="Matadi">Matadi</option>
-                <option value="Bukavu">Bukavu</option>
-                <option value="Kolwezi">Kolwezi</option>
-                <option value="Brazzaville">Brazzaville</option>
-                <option value="Pointe-Noire">Pointe-Noire</option>
-              </select>
+              <label className="text-xs font-bold text-primary flex items-center justify-between">
+                <span>Ville ou Pays d&apos;Afrique *</span>
+                <span className="text-[10px] text-slate-400 font-normal">Google Places &amp; Toute l&apos;Afrique</span>
+              </label>
+              <AfricaPlacesAutocomplete
+                value={location}
+                onChange={handlePlaceChange}
+                placeholder="Rechercher une ville ou un pays (ex: Kinshasa, Dakar, Abidjan...)"
+                required
+              />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-primary">Numéro WhatsApp / Téléphone</label>
+              <label className="text-xs font-bold text-primary">Numéro WhatsApp Commercial *</label>
               <div className="flex gap-2">
-                <span className="h-11 px-3 bg-surface-container border border-outline-variant rounded-xl text-xs font-bold text-primary flex items-center">
-                  🇨🇩 +243
+                <span
+                  className="h-11 px-3 bg-surface-container border border-outline-variant rounded-xl text-xs font-bold text-primary flex items-center gap-1.5 shrink-0"
+                  title={`Pays sélectionné : ${selectedCountry} (${selectedPhoneCode})`}
+                >
+                  <span className="text-base">{selectedFlag}</span>
+                  <span>{selectedPhoneCode}</span>
                 </span>
                 <div className="flex-1">
                   <Input
