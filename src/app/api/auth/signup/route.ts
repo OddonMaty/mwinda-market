@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
         phone: user.phone,
         role: user.role,
       },
+      redirect: "/", // Rediriger vers l'accueil après inscription
     });
 
     // Session simple via cookie (token = userId pour le moment — à renforcer plus tard)

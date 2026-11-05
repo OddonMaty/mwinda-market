@@ -71,17 +71,15 @@ export async function PUT(req: NextRequest) {
     if (!user?.vendor) return NextResponse.json({ error: "Boutique introuvable." }, { status: 403 });
 
     const body = await req.json();
-    const { shopName, tagline, whatsapp, address, city, logoUrl } = body;
+    const { shopName, whatsapp, address, city } = body;
 
     const updated = await prisma.vendor.update({
       where: { id: user.vendor.id },
       data: {
         shopName: shopName?.trim() || user.vendor.shopName,
-        tagline: tagline?.trim() ?? user.vendor.tagline,
-        whatsapp: whatsapp?.trim() ?? user.vendor.whatsapp,
-        address: address?.trim() ?? user.vendor.address,
-        city: city?.trim() ?? user.vendor.city,
-        logoUrl: logoUrl?.trim() ?? user.vendor.logoUrl,
+        whatsapp: whatsapp !== undefined ? (whatsapp?.trim() || null) : user.vendor.whatsapp,
+        address: address !== undefined ? (address?.trim() || null) : user.vendor.address,
+        city: city !== undefined ? (city?.trim() || null) : user.vendor.city,
       },
     });
 

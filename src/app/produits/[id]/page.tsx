@@ -272,25 +272,26 @@ export default function ProductDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Miniatures cliquables */}
+            {/* Miniatures cliquables (jusqu'à 5 photos comme Alibaba / KiKuu) */}
             {images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {images.map((imgUrl, idx) => (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {images.slice(0, 5).map((imgUrl, idx) => (
                   <button
                     key={imgUrl + idx}
                     type="button"
+                    onMouseEnter={() => setSelectedImageIndex(idx)}
                     onClick={() => setSelectedImageIndex(idx)}
-                    className={`relative aspect-square rounded-md overflow-hidden border-2 bg-white transition-all ${
+                    className={`relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-lg overflow-hidden border-2 bg-white transition-all ${
                       selectedImageIndex === idx
-                        ? "border-[#0284C7] shadow-xs"
-                        : "border-[#E2E8F0] opacity-70 hover:opacity-100"
+                        ? "border-[#EA580C] shadow-sm ring-2 ring-[#EA580C]/20 scale-105"
+                        : "border-[#E2E8F0] opacity-75 hover:opacity-100 hover:border-slate-400"
                     }`}
                   >
                     <Image
                       src={imgUrl}
                       alt={`${product.title} - vue ${idx + 1}`}
                       fill
-                      sizes="100px"
+                      sizes="80px"
                       className="w-full h-full object-cover"
                     />
                   </button>

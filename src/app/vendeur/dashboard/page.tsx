@@ -68,6 +68,8 @@ interface VendorProduct {
   stock: number;
   category?: string | null;
   imageUrl?: string | null;
+  images?: string[];
+  description?: string | null;
   isActive: boolean;
   createdAt: string;
 }
@@ -114,17 +116,44 @@ function VendorDashboardInner() {
   const [withdrawals, setWithdrawals] = useState<WithdrawalItem[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
 
-  // Product Form State
+  // Product Form State (jusqu'à 5 photos : 1 principale + 4 secondaires)
   const [prodTitle, setProdTitle] = useState("");
   const [prodCategory, setProdCategory] = useState("Électronique");
   const [prodPriceUsd, setProdPriceUsd] = useState("");
   const [prodStock, setProdStock] = useState("5");
   const [prodDescription, setProdDescription] = useState("");
   const [prodImageUrl, setProdImageUrl] = useState("");
+  const [prodExtraImages, setProdExtraImages] = useState<string[]>([]);
   const [prodUploading, setProdUploading] = useState(false);
   const [prodSubmitting, setProdSubmitting] = useState(false);
   const [prodSuccessMsg, setProdSuccessMsg] = useState("");
   const [prodErrorMsg, setProdErrorMsg] = useState("");
+
+  // Product Edit State
+  const [editingProduct, setEditingProduct] = useState<VendorProduct | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editCategory, setEditCategory] = useState("Électronique");
+  const [editPriceUsd, setEditPriceUsd] = useState("");
+  const [editStock, setEditStock] = useState("5");
+  const [editDescription, setEditDescription] = useState("");
+  const [editImageUrl, setEditImageUrl] = useState("");
+  const [editExtraImages, setEditExtraImages] = useState<string[]>([]);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editErrorMsg, setEditErrorMsg] = useState("");
+  const [editSuccessMsg, setEditSuccessMsg] = useState("");
+
+  // Modal Certification Boutique State
+  const [showCertifyModal, setShowCertifyModal] = useState(false);
+  const [certifyCompanyType, setCertifyCompanyType] = useState("ETS");
+  const [certifyRccm, setCertifyRccm] = useState("");
+  const [certifyIdNat, setCertifyIdNat] = useState("");
+  const [certifyTaxId, setCertifyTaxId] = useState("");
+  const [certifyManagerName, setCertifyManagerName] = useState("");
+  const [certifyManagerIdCard, setCertifyManagerIdCard] = useState("");
+  const [certifyPhysicalAddress, setCertifyPhysicalAddress] = useState("");
+  const [certifySubmitting, setCertifySubmitting] = useState(false);
+  const [certifySuccessMsg, setCertifySuccessMsg] = useState("");
+  const [certifyErrorMsg, setCertifyErrorMsg] = useState("");
 
   // Withdrawal Form State
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -210,7 +239,7 @@ function VendorDashboardInner() {
     router.replace(`/vendeur/dashboard?tab=${tab}`, { scroll: false });
   };
 
-  // Upload image produit
+  // Upload image produit principale
   const handleUploadProductImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -224,7 +253,7 @@ function VendorDashboardInner() {
       const data = await res.json();
       if (res.ok && data.url) {
         setProdImageUrl(data.url);
-        setProdSuccessMsg("Photo enregistrée avec succès !");
+        setProdSuccessMsg("Photo principale enregistrée avec succès !");
       } else {
         setProdErrorMsg(data.error || "Échec du téléversement de la photo.");
       }
@@ -235,7 +264,28 @@ function VendorDashboardInner() {
     }
   };
 
-  // Publication d'un produit
+  // Upload photo additionnelle (jusqu'à 4 photos secondaires)
+  const handleUploadExtraImage = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/vendor/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        if (isEdit) {
+          setEditExtraImages((prev) => (prev.length < 4 ? [...prev, data.url] : prev));
+        } else {
+          setProdExtraImages((prev) => (prev.length < 4 ? [...prev, data.url] : prev));
+        }
+      }
+    } catch {
+      alert("Erreur lors de l'envoi de la photo.");
+    }
+  };
+
+  // Publication d'un produit (avec jusqu'à 5 photos)
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setProdErrorMsg("");
@@ -258,6 +308,7 @@ function VendorDashboardInner() {
           stock: Number(prodStock) || 0,
           description: prodDescription.trim(),
           imageUrl: prodImageUrl.trim() || null,
+          images: prodExtraImages,
         }),
       });
 
@@ -271,6 +322,7 @@ function VendorDashboardInner() {
         setProdStock("5");
         setProdDescription("");
         setProdImageUrl("");
+        setProdExtraImages([]);
         // Recharger les produits
         const pRes = await fetch("/api/vendor/products");
         if (pRes.ok) {
@@ -282,6 +334,113 @@ function VendorDashboardInner() {
       setProdErrorMsg("Erreur de connexion au serveur.");
     } finally {
       setProdSubmitting(false);
+    }
+  };
+
+  // Débuter la modification d'un produit
+  const handleStartEditProduct = (p: VendorProduct) => {
+    setEditingProduct(p);
+    setEditTitle(p.title);
+    setEditCategory(p.category || "Électronique");
+    setEditPriceUsd(p.priceUsd.toString());
+    setEditStock(p.stock.toString());
+    setEditDescription(p.description || "");
+    setEditImageUrl(p.imageUrl || "");
+    setEditExtraImages(Array.isArray(p.images) ? p.images : []);
+    setEditErrorMsg("");
+    setEditSuccessMsg("");
+  };
+
+  // Enregistrer la modification du produit (PATCH)
+  const handleSaveEditProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    setEditSubmitting(true);
+    setEditErrorMsg("");
+    setEditSuccessMsg("");
+
+    try {
+      const res = await fetch("/api/vendor/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingProduct.id,
+          title: editTitle.trim(),
+          category: editCategory,
+          priceUsd: Number(editPriceUsd),
+          stock: Number(editStock) || 0,
+          description: editDescription.trim(),
+          imageUrl: editImageUrl.trim() || null,
+          images: editExtraImages,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setEditErrorMsg(data.error || "Échec de modification du produit.");
+      } else {
+        setEditSuccessMsg("Article mis à jour avec succès !");
+        // Mettre à jour l'état local
+        setProducts((prev) =>
+          prev.map((item) => (item.id === editingProduct.id ? { ...item, ...data.product } : item))
+        );
+        setTimeout(() => {
+          setEditingProduct(null);
+          setEditSuccessMsg("");
+        }, 1200);
+      }
+    } catch {
+      setEditErrorMsg("Erreur réseau pendant la mise à jour.");
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  // Soumettre le dossier légal de certification
+  const handleSubmitCertification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCertifyErrorMsg("");
+    setCertifySuccessMsg("");
+
+    if (!certifyRccm.trim() && !certifyIdNat.trim()) {
+      setCertifyErrorMsg("Veuillez renseigner au moins votre N° RCCM ou ID. NAT.");
+      return;
+    }
+    if (!certifyPhysicalAddress.trim()) {
+      setCertifyErrorMsg("Veuillez renseigner l'adresse physique de votre établissement.");
+      return;
+    }
+
+    setCertifySubmitting(true);
+    try {
+      const res = await fetch("/api/vendor/certify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyType: certifyCompanyType,
+          rccm: certifyRccm.trim(),
+          idNat: certifyIdNat.trim(),
+          taxId: certifyTaxId.trim(),
+          managerName: certifyManagerName.trim(),
+          managerIdCard: certifyManagerIdCard.trim(),
+          physicalAddress: certifyPhysicalAddress.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setCertifyErrorMsg(data.error || "Impossible d'enregistrer le dossier.");
+      } else {
+        setCertifySuccessMsg(data.message || "Dossier légal transmis !");
+        setTimeout(() => {
+          setShowCertifyModal(false);
+          setCertifySuccessMsg("");
+        }, 2000);
+      }
+    } catch {
+      setCertifyErrorMsg("Erreur réseau.");
+    } finally {
+      setCertifySubmitting(false);
     }
   };
 
@@ -439,8 +598,8 @@ function VendorDashboardInner() {
               <Image src="/images/logo-mwinda.png" alt="Mwinda" width={32} height={32} />
               <span className="font-black text-lg font-display">Mwinda Market</span>
             </Link>
-            <Link href="/mon-compte" className="text-xs text-slate-300 hover:text-white">
-              Mon compte client &rarr;
+            <Link href="/" className="text-xs text-slate-300 hover:text-white">
+              Retour à l'accueil &rarr;
             </Link>
           </div>
         </header>
@@ -532,11 +691,21 @@ function VendorDashboardInner() {
               <span className="font-bold text-xs sm:text-sm text-white truncate max-w-[150px] sm:max-w-xs">
                 {vendor.shopName}
               </span>
-              {vendor.isVerified && (
-                <span className="inline-flex items-center gap-0.5 bg-sky-500/20 text-sky-300 text-[10px] font-black uppercase px-2 py-0.5 rounded-full border border-sky-400/30">
+              {vendor.isVerified ? (
+                <span className="inline-flex items-center gap-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border border-emerald-400/30">
                   <span className="material-symbols-outlined text-xs">verified</span>
-                  Certifié
+                  Boutique Certifiée
                 </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowCertifyModal(true)}
+                  className="inline-flex items-center gap-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-black uppercase px-2.5 py-1 rounded-full border border-amber-400/40 transition cursor-pointer"
+                  title="Cliquez pour fournir vos documents légaux et certifier votre boutique"
+                >
+                  <span className="material-symbols-outlined text-xs">shield</span>
+                  <span>Non certifié &bull; Certifier ma boutique</span>
+                </button>
               )}
               <span className="bg-[#EA580C] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
                 Plan {vendor.plan}
@@ -553,15 +722,6 @@ function VendorDashboardInner() {
             >
               <span className="material-symbols-outlined text-sm">visibility</span>
               <span className="hidden md:inline">Voir la Marketplace</span>
-            </Link>
-
-            <Link
-              href="/mon-compte"
-              className="text-xs text-slate-300 hover:text-white flex items-center gap-1 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition"
-              title="Espace acheteur personnel"
-            >
-              <span className="material-symbols-outlined text-sm">person</span>
-              <span className="hidden md:inline">Mon Compte Client</span>
             </Link>
 
             <button
@@ -1087,33 +1247,101 @@ function VendorDashboardInner() {
                     )}
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase">
-                      Photo de l'article (Fichier ou URL)
-                    </label>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleUploadProductImage}
-                        className="text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#0B1B3D] file:text-white hover:file:bg-[#1E293B] cursor-pointer"
-                      />
-                      {prodUploading && <span className="text-xs text-[#EA580C] animate-pulse">Envoi…</span>}
+                  {/* Gestion des photos (jusqu'à 5 photos) */}
+                  <div className="space-y-2 sm:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-base text-[#EA580C]">photo_library</span>
+                        <span>Photos de l'article (1 principale + jusqu'à 4 photos secondaires — Max 5)</span>
+                      </label>
+                      <span className="text-[11px] font-bold text-slate-500">
+                        {(prodImageUrl ? 1 : 0) + prodExtraImages.length} / 5 photos
+                      </span>
                     </div>
-                    {prodImageUrl && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 relative">
-                          <Image src={prodImageUrl} alt="Aperçu" fill className="object-cover" />
-                        </div>
-                        <span className="text-[11px] text-emerald-600 font-semibold truncate">
-                          Photo prête
-                        </span>
+
+                    <p className="text-[11px] text-slate-500">
+                      Comme sur Alibaba ou KiKuu, vos clients pourront faire défiler les différentes vues sur la photo principale.
+                    </p>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+                      {/* Photo 1 : Principale */}
+                      <div className="border-2 border-dashed border-[#EA580C]/40 rounded-xl p-2.5 flex flex-col items-center justify-center text-center bg-white relative min-h-[110px]">
+                        {prodImageUrl ? (
+                          <div className="w-full h-full relative aspect-square rounded-lg overflow-hidden">
+                            <Image src={prodImageUrl} alt="Photo 1" fill className="object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setProdImageUrl("")}
+                              className="absolute top-1 right-1 bg-black/70 hover:bg-red-600 text-white rounded-full p-1"
+                              title="Supprimer"
+                            >
+                              <span className="material-symbols-outlined text-xs">close</span>
+                            </button>
+                            <span className="absolute bottom-1 left-1 bg-[#EA580C] text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded">
+                              Principale
+                            </span>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
+                            <span className="material-symbols-outlined text-2xl text-[#EA580C]">add_a_photo</span>
+                            <span className="text-[10px] font-bold text-slate-700 mt-1">Photo 1 (Principale) *</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleUploadProductImage}
+                              className="hidden"
+                            />
+                          </label>
+                        )}
                       </div>
-                    )}
+
+                      {/* Photos 2 à 5 : Secondaires */}
+                      {[0, 1, 2, 3].map((slotIdx) => {
+                        const img = prodExtraImages[slotIdx];
+                        return (
+                          <div
+                            key={slotIdx}
+                            className="border-2 border-dashed border-slate-300 rounded-xl p-2.5 flex flex-col items-center justify-center text-center bg-white relative min-h-[110px]"
+                          >
+                            {img ? (
+                              <div className="w-full h-full relative aspect-square rounded-lg overflow-hidden">
+                                <Image src={img} alt={`Vue ${slotIdx + 2}`} fill className="object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setProdExtraImages((prev) => prev.filter((_, i) => i !== slotIdx))
+                                  }
+                                  className="absolute top-1 right-1 bg-black/70 hover:bg-red-600 text-white rounded-full p-1"
+                                  title="Supprimer"
+                                >
+                                  <span className="material-symbols-outlined text-xs">close</span>
+                                </button>
+                                <span className="absolute bottom-1 left-1 bg-slate-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                  Vue {slotIdx + 2}
+                                </span>
+                              </div>
+                            ) : (
+                              <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
+                                <span className="material-symbols-outlined text-xl text-slate-400">add_photo_alternate</span>
+                                <span className="text-[10px] font-semibold text-slate-500 mt-1">
+                                  Vue {slotIdx + 2}
+                                </span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleUploadExtraImage(e, false)}
+                                  className="hidden"
+                                />
+                              </label>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-xs font-bold text-slate-700 uppercase">Description & Caractéristiques</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase">Description &amp; Caractéristiques</label>
                     <textarea
                       rows={3}
                       value={prodDescription}
@@ -1135,6 +1363,194 @@ function VendorDashboardInner() {
               </form>
             </div>
 
+            {/* Modal / Formulaire d'édition d'article */}
+            {editingProduct && (
+              <div className="bg-amber-50/70 border-2 border-[#EA580C] rounded-2xl p-6 shadow-md space-y-4 animate-in fade-in">
+                <div className="flex items-center justify-between pb-3 border-b border-[#EA580C]/20">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-xl text-[#EA580C]">edit_note</span>
+                    <h2 className="text-base font-bold text-[#0B1B3D]">
+                      Modifier l'article : « {editingProduct.title} »
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingProduct(null)}
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-black hover:bg-slate-200"
+                  >
+                    <span className="material-symbols-outlined text-base">close</span>
+                  </button>
+                </div>
+
+                {editSuccessMsg && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold">
+                    {editSuccessMsg}
+                  </div>
+                )}
+                {editErrorMsg && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-xs font-semibold">
+                    {editErrorMsg}
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveEditProduct} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-700 uppercase">Titre de l'article *</label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full text-xs p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700 uppercase">Catégorie</label>
+                      <select
+                        value={editCategory}
+                        onChange={(e) => setEditCategory(e.target.value)}
+                        className="w-full text-xs p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                      >
+                        <option value="Électronique">Électronique</option>
+                        <option value="Smartphones & Tablettes">Smartphones & Tablettes</option>
+                        <option value="Mode & Habillement">Mode & Habillement</option>
+                        <option value="Maison & Décoration">Maison & Décoration</option>
+                        <option value="Beauté & Santé">Beauté & Santé</option>
+                        <option value="Alimentation & Épicerie">Alimentation & Épicerie</option>
+                        <option value="Énergie Solaire & Onduleurs">Énergie Solaire & Onduleurs</option>
+                        <option value="Informatique & Ordinateurs">Informatique & Ordinateurs</option>
+                        <option value="Électroménager">Électroménager</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700 uppercase">Stock disponible</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editStock}
+                        onChange={(e) => setEditStock(e.target.value)}
+                        className="w-full text-xs p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700 uppercase">Prix USD ($) *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.5"
+                        value={editPriceUsd}
+                        onChange={(e) => setEditPriceUsd(e.target.value)}
+                        className="w-full text-xs p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA580C] font-bold"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-700 uppercase">Photos (jusqu'à 5)</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        {/* Photo 1 principale */}
+                        <div className="border border-slate-300 rounded-lg p-2 text-center bg-white relative min-h-[90px] flex items-center justify-center">
+                          {editImageUrl ? (
+                            <div className="w-full h-full relative aspect-square rounded overflow-hidden">
+                              <Image src={editImageUrl} alt="Vue 1" fill className="object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => setEditImageUrl("")}
+                                className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5"
+                              >
+                                <span className="material-symbols-outlined text-[10px]">close</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="cursor-pointer text-[10px] text-slate-500">
+                              + Photo 1
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const formData = new FormData();
+                                  formData.append("file", file);
+                                  const res = await fetch("/api/vendor/upload", { method: "POST", body: formData });
+                                  const d = await res.json();
+                                  if (d.url) setEditImageUrl(d.url);
+                                }}
+                                className="hidden"
+                              />
+                            </label>
+                          )}
+                        </div>
+
+                        {/* Photos secondaires */}
+                        {[0, 1, 2, 3].map((idx) => {
+                          const img = editExtraImages[idx];
+                          return (
+                            <div key={idx} className="border border-slate-300 rounded-lg p-2 text-center bg-white relative min-h-[90px] flex items-center justify-center">
+                              {img ? (
+                                <div className="w-full h-full relative aspect-square rounded overflow-hidden">
+                                  <Image src={img} alt={`Vue ${idx + 2}`} fill className="object-cover" />
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditExtraImages((prev) => prev.filter((_, i) => i !== idx))}
+                                    className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5"
+                                  >
+                                    <span className="material-symbols-outlined text-[10px]">close</span>
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="cursor-pointer text-[10px] text-slate-500">
+                                  + Vue {idx + 2}
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleUploadExtraImage(e, true)}
+                                    className="hidden"
+                                  />
+                                </label>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-700 uppercase">Description</label>
+                      <textarea
+                        rows={3}
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        className="w-full text-xs p-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={editSubmitting}
+                      className="px-6 py-2.5 bg-[#0B1B3D] hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow transition"
+                    >
+                      {editSubmitting ? "Enregistrement…" : "Enregistrer les modifications"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingProduct(null)}
+                      className="px-4 py-2.5 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-100 transition"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
             {/* Liste des articles du catalogue */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
               <h2 className="text-base font-bold text-[#0B1B3D]">Catalogue de ma boutique ({products.length})</h2>
@@ -1148,6 +1564,7 @@ function VendorDashboardInner() {
                   {products.map((p) => {
                     const cdf = convertUsdToCurrency(Number(p.priceUsd), "CDF");
                     const formattedCdf = formatLocalPrice(cdf, "CDF");
+                    const totalImagesCount = (p.imageUrl ? 1 : 0) + (Array.isArray(p.images) ? p.images.length : 0);
                     return (
                       <div
                         key={p.id}
@@ -1161,6 +1578,11 @@ function VendorDashboardInner() {
                               <div className="w-full h-full flex items-center justify-center text-slate-300">
                                 <span className="material-symbols-outlined text-2xl">image</span>
                               </div>
+                            )}
+                            {totalImagesCount > 1 && (
+                              <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-black px-1 rounded">
+                                {totalImagesCount} 📷
+                              </span>
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1185,13 +1607,24 @@ function VendorDashboardInner() {
                           <span className="text-[11px] text-slate-500 font-medium">
                             Stock : <strong className="text-slate-800">{p.stock}</strong>
                           </span>
-                          <button
-                            onClick={() => handleDeleteProduct(p.id)}
-                            className="text-[11px] text-red-600 hover:text-red-800 font-bold hover:underline flex items-center gap-0.5"
-                          >
-                            <span className="material-symbols-outlined text-sm">delete</span>
-                            <span>Retirer</span>
-                          </button>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditProduct(p)}
+                              className="text-[11px] text-blue-600 hover:text-blue-800 font-bold hover:underline flex items-center gap-0.5"
+                            >
+                              <span className="material-symbols-outlined text-sm">edit</span>
+                              <span>Modifier</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteProduct(p.id)}
+                              className="text-[11px] text-red-600 hover:text-red-800 font-bold hover:underline flex items-center gap-0.5"
+                            >
+                              <span className="material-symbols-outlined text-sm">delete</span>
+                              <span>Retirer</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -1533,6 +1966,162 @@ function VendorDashboardInner() {
           </div>
         )}
       </main>
+
+      {/* ══════════════════════════════════════════════════════════
+          MODAL CERTIFICATION BOUTIQUE (DOSSIER LÉGAL)
+      ══════════════════════════════════════════════════════════ */}
+      {showCertifyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowCertifyModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-black p-1.5 rounded-full hover:bg-slate-100 transition"
+            >
+              <span className="material-symbols-outlined text-xl">close</span>
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center border border-amber-300">
+                <span className="material-symbols-outlined text-2xl">verified</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-[#0B1B3D] font-display">
+                  Dossier de Certification Boutique
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Obtenez le badge vérifié et rassurez vos acheteurs
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-5 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              Pour obtenir le badge officiel <strong>Boutique Certifiée</strong> et bénéficier d'une visibilité prioritaire sur Mwinda Market, veuillez fournir vos éléments légaux d'immatriculation.
+            </p>
+
+            {certifySuccessMsg && (
+              <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">check_circle</span>
+                <span>{certifySuccessMsg}</span>
+              </div>
+            )}
+            {certifyErrorMsg && (
+              <div className="mb-4 p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">error</span>
+                <span>{certifyErrorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitCertification} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Forme Juridique *</label>
+                  <select
+                    value={certifyCompanyType}
+                    onChange={(e) => setCertifyCompanyType(e.target.value)}
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                  >
+                    <option value="ETS">Établissement (ETS) / Entreprise Individuelle</option>
+                    <option value="SARL">SARL / SARLU</option>
+                    <option value="SA">Société Anonyme (SA)</option>
+                    <option value="Cooperative">Coopérative Agricole / Artisanale</option>
+                    <option value="Artisan">Artisan Enregistré</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Numéro RCCM *</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: CD/KIN/RCCM/20-A-01234"
+                    value={certifyRccm}
+                    onChange={(e) => setCertifyRccm(e.target.value)}
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Numéro Identification Nationale (ID. NAT)</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 01-83-N12345P"
+                    value={certifyIdNat}
+                    onChange={(e) => setCertifyIdNat(e.target.value)}
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Numéro Impôt (NIF)</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: A0701234Z"
+                    value={certifyTaxId}
+                    onChange={(e) => setCertifyTaxId(e.target.value)}
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Nom Complet du Gérant / Représentant *</label>
+                  <input
+                    type="text"
+                    placeholder="Nom, Post-nom et Prénom"
+                    value={certifyManagerName}
+                    onChange={(e) => setCertifyManagerName(e.target.value)}
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">N° Pièce d'identité (Passeport / Électeur)</label>
+                  <input
+                    type="text"
+                    placeholder="N° carte d'électeur ou passeport"
+                    value={certifyManagerIdCard}
+                    onChange={(e) => setCertifyManagerIdCard(e.target.value)}
+                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Adresse Physique Exacte du Magasin / Siège *</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 15 Avenue du Commerce, Gombe, Kinshasa"
+                  value={certifyPhysicalAddress}
+                  onChange={(e) => setCertifyPhysicalAddress(e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                  required
+                />
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="submit"
+                  disabled={certifySubmitting}
+                  className="flex-1 py-3 bg-[#EA580C] hover:bg-[#c2410c] text-white font-bold rounded-xl text-xs shadow-md transition disabled:opacity-50"
+                >
+                  {certifySubmitting ? "Transmission en cours…" : "Soumettre mon dossier de certification"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCertifyModal(false)}
+                  className="px-5 py-3 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                >
+                  Annuler
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

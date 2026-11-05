@@ -113,6 +113,7 @@ export default function CartPage() {
               <CartOrderSummary
                 subtotalUsd={subtotalUsd}
                 totalCount={totalCount}
+                itemsCount={items.length}
               />
               <CheckoutGate
                 subtotalUsd={subtotalUsd}

@@ -140,7 +140,12 @@ export function CheckoutGate({
 
   return (
     <form onSubmit={handleCheckout} className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6 shadow-card space-y-6">
-      <h3 className="text-base font-bold text-primary">Livraison & Paiement</h3>
+      <div className="flex items-center justify-between pb-2 border-b border-outline-variant">
+        <h3 className="text-base font-bold text-primary">Livraison &amp; Paiement</h3>
+        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+          Livraison incluse (0 $)
+        </span>
+      </div>
 
       {formError && (
         <div className="p-3 bg-error/10 border border-error/20 text-error rounded-xl text-xs font-semibold">

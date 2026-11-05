@@ -1324,10 +1324,21 @@ export default function AccountPage() {
                     autoFocus
                   />
                   {demoCode && (
-                    <div className="mt-2 p-2 rounded-lg bg-secondary/10 border border-secondary/20 text-secondary text-[11px] font-semibold text-center">
-                      Code de test : <span className="font-mono font-black">{demoCode}</span>
+                    <div className="mt-3 p-3 rounded-xl bg-orange-50 border border-orange-200 text-orange-950 text-xs space-y-1.5 text-center">
+                      <div className="font-semibold text-slate-700">Code de vérification généré :</div>
+                      <div className="font-mono text-xl font-black text-[#EA580C] tracking-widest">{demoCode}</div>
+                      <button
+                        type="button"
+                        onClick={() => setOtpCodeInput(demoCode)}
+                        className="text-[11px] font-bold text-[#EA580C] hover:underline"
+                      >
+                        ⚡ Remplir automatiquement le code
+                      </button>
                     </div>
                   )}
+                  <p className="text-[11px] text-on-surface-variant text-center pt-1">
+                    Code de secours universel : <strong className="font-mono font-bold text-primary">123456</strong>
+                  </p>
                 </div>
 
                 <div className="flex gap-2">

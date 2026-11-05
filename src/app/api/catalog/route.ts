@@ -44,20 +44,24 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    const products = productsRaw.map((p: any) => ({
-      id: p.id,
-      shopId: p.vendorId,
-      shopName: p.vendor?.shopName || "Boutique Partenaire",
-      title: p.title,
-      description: p.description,
-      usdPrice: Number(p.priceUsd),
-      stockCount: p.stock,
-      image: p.imageUrl || "/images/products/placeholder.jpg",
-      inStock: p.stock > 0,
-      category: p.category || "Électronique",
-      province: p.province || p.vendor?.city || "Kinshasa",
-      city: p.city || p.vendor?.city || "Kinshasa",
-    }));
+    const products = productsRaw.map((p: any) => {
+      const allImages = [p.imageUrl, ...(Array.isArray(p.images) ? p.images : [])].filter(Boolean);
+      return {
+        id: p.id,
+        shopId: p.vendorId,
+        shopName: p.vendor?.shopName || "Boutique Partenaire",
+        title: p.title,
+        description: p.description,
+        usdPrice: Number(p.priceUsd),
+        stockCount: p.stock,
+        image: p.imageUrl || "/images/products/placeholder.jpg",
+        images: allImages.length > 0 ? allImages : [p.imageUrl || "/images/products/placeholder.jpg"],
+        inStock: p.stock > 0,
+        category: p.category || "Électronique",
+        province: p.province || p.vendor?.city || "Kinshasa",
+        city: p.city || p.vendor?.city || "Kinshasa",
+      };
+    });
 
     const shops = await prisma.vendor.findMany({
       where: { isActive: true },

@@ -12,6 +12,13 @@ interface VendorRegistrationFormProps {
   selectedPlanId: string;
 }
 
+/**
+ * Formulaire d'ouverture de boutique simplifié.
+ * Seules les infos essentielles sont demandées ici :
+ *   - Nom de boutique, catégorie, ville, téléphone, description
+ * Les informations légales (RCCM, NIF, etc.) sont déplacées dans le
+ * dashboard vendeur via le bouton "Certifier ma boutique".
+ */
 export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFormProps) {
   const { user, isAuthenticated } = useAuth();
   const selectedPlan = VENDOR_PLANS.find((p) => p.id === selectedPlanId) || VENDOR_PLANS[0];
@@ -24,20 +31,11 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
   const [description, setDescription] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  // Informations Légales Obligatoires pour Certification
-  const [companyType, setCompanyType] = useState("ETS");
-  const [rccm, setRccm] = useState("");
-  const [idNat, setIdNat] = useState("");
-  const [taxId, setTaxId] = useState("");
-  const [managerName, setManagerName] = useState(user?.fullName || "");
-  const [managerIdCard, setManagerIdCard] = useState("");
-  const [physicalAddress, setPhysicalAddress] = useState("");
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // RÈGLE MÉTIER STRICTE : Seul un utilisateur connecté peut ouvrir une boutique
+  // RÈGLE MÉTIER : Seul un utilisateur connecté peut ouvrir une boutique
   if (!isAuthenticated) {
     return (
       <div className="bg-surface-container-lowest rounded-2xl border-2 border-dashed border-secondary/40 p-8 text-center max-w-xl mx-auto space-y-4 shadow-card">
@@ -74,14 +72,6 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
       setErrorMsg("Veuillez renseigner le nom de votre boutique.");
       return;
     }
-    if (!rccm.trim() && !idNat.trim()) {
-      setErrorMsg("Veuillez fournir au moins votre N° RCCM ou ID. NAT pour certifier votre boutique.");
-      return;
-    }
-    if (!physicalAddress.trim()) {
-      setErrorMsg("Veuillez indiquer l'adresse physique complète de votre magasin ou siège.");
-      return;
-    }
     if (!agreeTerms) {
       setErrorMsg("Veuillez accepter la charte et les conditions vendeurs de Mwinda Market.");
       return;
@@ -95,21 +85,14 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         body: JSON.stringify({
-          full_name: managerName.trim() || user?.fullName || "Gérant Boutique",
+          full_name: user?.fullName || user?.email?.split("@")[0] || "Gérant Boutique",
           shop_name: shopName.trim(),
           category,
           location: city,
           phone: phone.trim()
             ? `+243${phone.trim().replace(/^0+/, "")}`
             : user?.phone || "",
-          email: email.trim() || user?.email || "vendeur@mwinda.market",
-          company_type: companyType,
-          rccm: rccm.trim(),
-          id_nat: idNat.trim(),
-          tax_id: taxId.trim(),
-          manager_name: managerName.trim(),
-          manager_id: managerIdCard.trim(),
-          physical_address: physicalAddress.trim(),
+          email: email.trim() || user?.email || "",
           notes: `Offre: ${selectedPlan.name} (${selectedPlan.priceUsd}$/m, ${selectedPlan.commissionRate}% comm.). Activité: ${description}`,
           country_code: "CD",
         }),
@@ -119,32 +102,32 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
         const payload = await res.json().catch(() => ({}));
         setErrorMsg(
           payload?.error ||
-            "Impossible d'enregistrer la candidature. Réessayez plus tard."
+          "Impossible d'enregistrer la candidature. Réessayez plus tard."
         );
         return;
       }
 
-      // Sauvegarde des données de la boutique pour le compte vendeur connecté
+      // Sauvegarde locale temporaire
       try {
-        const vendorData = {
-          shopName: shopName.trim(),
-          category,
-          city,
-          phone: phone.trim() ? `+243${phone.trim().replace(/^0+/, "")}` : user?.phone || "",
-          planId: selectedPlan.id,
-          planName: selectedPlan.name,
-          registeredAt: new Date().toISOString(),
-        };
-        localStorage.setItem("mwinda_vendor_registration", JSON.stringify(vendorData));
+        localStorage.setItem(
+          "mwinda_vendor_registration",
+          JSON.stringify({
+            shopName: shopName.trim(),
+            category,
+            city,
+            phone: phone.trim() ? `+243${phone.trim().replace(/^0+/, "")}` : user?.phone || "",
+            planId: selectedPlan.id,
+            planName: selectedPlan.name,
+            registeredAt: new Date().toISOString(),
+          })
+        );
       } catch {
         // ignore
       }
 
       setSubmitted(true);
     } catch {
-      setErrorMsg(
-        "Réseau indisponible. Vérifiez votre connexion et réessayez."
-      );
+      setErrorMsg("Réseau indisponible. Vérifiez votre connexion et réessayez.");
     } finally {
       setIsSubmitting(false);
     }
@@ -165,7 +148,22 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
             Félicitations, votre dossier est en cours d&apos;examen !
           </h3>
           <p className="text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed">
-            Votre demande pour la boutique <strong className="text-primary font-bold">« {shopName} »</strong> sous le forfait <strong className="text-secondary font-bold">{selectedPlan.name}</strong> a bien été reçue. Notre équipe vous contactera sous 24h ouvrées.
+            Votre demande pour la boutique{" "}
+            <strong className="text-primary font-bold">« {shopName} »</strong> sous le forfait{" "}
+            <strong className="text-secondary font-bold">{selectedPlan.name}</strong> a bien été
+            reçue. Notre équipe vous contactera sous 24h ouvrées.
+          </p>
+        </div>
+
+        {/* Info : certifier la boutique depuis le dashboard */}
+        <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-left space-y-1.5">
+          <div className="flex items-center gap-2 font-bold text-amber-800">
+            <span className="material-symbols-outlined text-amber-600 text-base">verified</span>
+            <span>Certifier votre boutique après approbation</span>
+          </div>
+          <p className="text-amber-700 text-[11px] leading-relaxed">
+            Une fois votre boutique approuvée, rendez-vous dans votre espace vendeur et cliquez sur{" "}
+            <strong>«&nbsp;Certifier ma boutique&nbsp;»</strong> pour soumettre vos informations légales (RCCM, NIF, pièce d&apos;identité du gérant, adresse physique).
           </p>
         </div>
 
@@ -200,15 +198,13 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
     <Card className="max-w-2xl mx-auto p-6 sm:p-8" id="inscription-vendeur">
       <CardHeader className="p-0 pb-6 border-b border-outline-variant space-y-1.5">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <CardTitle className="text-xl sm:text-2xl">
-            Ouvrir ma boutique
-          </CardTitle>
+          <CardTitle className="text-xl sm:text-2xl">Ouvrir ma boutique</CardTitle>
           <span className="text-xs font-bold px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full border border-secondary/20">
             Forfait : {selectedPlan.name} ({selectedPlan.priceUsd}$/m)
           </span>
         </div>
         <CardDescription>
-          Remplissez les informations de votre commerce pour commencer à vendre.
+          Remplissez les informations de base de votre commerce pour commencer à vendre. Les informations légales pourront être fournies ensuite depuis votre espace vendeur.
         </CardDescription>
       </CardHeader>
 
@@ -221,6 +217,7 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ─── Infos essentielles boutique ─── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-bold text-primary">Nom de votre boutique *</label>
@@ -290,113 +287,11 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
             </div>
           </div>
 
-          {/* ─── Informations Légales & Certification ─── */}
-          <div className="pt-4 border-t border-outline-variant space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary text-lg">policy</span>
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Dossier Juridique & Certification Vendeur
-                </h4>
-                <p className="text-[11px] text-on-surface-variant">
-                  Ces informations sont exigées pour certifier votre boutique et sécuriser les acheteurs.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-primary">Forme Juridique *</label>
-                <select
-                  value={companyType}
-                  onChange={(e) => setCompanyType(e.target.value)}
-                  className="w-full h-11 px-3 bg-surface border border-outline-variant rounded-xl text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-secondary"
-                >
-                  <option value="ETS">Établissement (ETS) / Entreprise Individuelle</option>
-                  <option value="SARL">SARL / SARLU</option>
-                  <option value="SA">Société Anonyme (SA)</option>
-                  <option value="Cooperative">Coopérative Agricole / Artisanale</option>
-                  <option value="Artisan">Artisan Enregistré</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-primary">Numéro RCCM *</label>
-                <Input
-                  type="text"
-                  placeholder="Ex: CD/KIN/RCCM/20-A-01234"
-                  value={rccm}
-                  onChange={(e) => setRccm(e.target.value)}
-                  icon="badge"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-primary">Numéro Identification Nationale (ID. NAT)</label>
-                <Input
-                  type="text"
-                  placeholder="Ex: 01-83-N12345P"
-                  value={idNat}
-                  onChange={(e) => setIdNat(e.target.value)}
-                  icon="fingerprint"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-primary">Numéro Impôt (NIF)</label>
-                <Input
-                  type="text"
-                  placeholder="Ex: A0701234Z"
-                  value={taxId}
-                  onChange={(e) => setTaxId(e.target.value)}
-                  icon="receipt_long"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-primary">Nom Complet du Gérant / Représentant *</label>
-                <Input
-                  type="text"
-                  placeholder="Nom, Post-nom et Prénom"
-                  value={managerName}
-                  onChange={(e) => setManagerName(e.target.value)}
-                  icon="person"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-primary">N° Pièce d&apos;identité (Passeport / Électeur)</label>
-                <Input
-                  type="text"
-                  placeholder="N° carte d'électeur ou passeport"
-                  value={managerIdCard}
-                  onChange={(e) => setManagerIdCard(e.target.value)}
-                  icon="credit_card"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-primary">Adresse Physique Exacte du Magasin / Siège *</label>
-              <Input
-                type="text"
-                placeholder="Ex: 15 Avenue du Commerce, Commune de la Gombe, Réf. Galerie..."
-                value={physicalAddress}
-                onChange={(e) => setPhysicalAddress(e.target.value)}
-                icon="location_on"
-                required
-              />
-            </div>
-          </div>
-
           <div className="space-y-1 pt-2">
-            <label className="text-xs font-bold text-primary">Description de votre commerce & produits</label>
+            <label className="text-xs font-bold text-primary">
+              Description de votre commerce &amp; produits{" "}
+              <span className="font-normal text-outline">(optionnel)</span>
+            </label>
             <textarea
               rows={3}
               value={description}
@@ -404,6 +299,14 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
               placeholder="Décrivez les produits que vous vendez, vos marques, votre expérience..."
               className="w-full rounded-xl border border-outline-variant bg-surface p-3 text-sm text-primary placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-secondary"
             />
+          </div>
+
+          {/* Notice certification */}
+          <div className="p-3.5 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-800 flex items-start gap-2">
+            <span className="material-symbols-outlined text-blue-500 text-base mt-0.5">info</span>
+            <span>
+              Les informations légales (RCCM, NIF, pièce d&apos;identité) seront demandées <strong>après approbation de votre boutique</strong>, depuis votre tableau de bord vendeur.
+            </span>
           </div>
 
           <div className="p-3.5 bg-surface-container rounded-xl border border-outline-variant text-xs space-y-2">
@@ -416,7 +319,8 @@ export function VendorRegistrationForm({ selectedPlanId }: VendorRegistrationFor
               />
               <span className="text-on-surface leading-snug">
                 J&apos;accepte les conditions générales vendeurs, le versement de la commission de{" "}
-                <strong className="text-primary font-bold">{selectedPlan.commissionRate}%</strong> sur les ventes et m&apos;engage à fournir des produits authentiques et de qualité.
+                <strong className="text-primary font-bold">{selectedPlan.commissionRate}%</strong> sur
+                les ventes et m&apos;engage à fournir des produits authentiques et de qualité.
               </span>
             </label>
           </div>

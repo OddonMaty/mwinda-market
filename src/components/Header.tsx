@@ -18,8 +18,8 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
-  const { totalCount } = useCart();
-  const displayCartCount = totalCount !== undefined ? totalCount : (cartCount ?? 0);
+  const { items } = useCart();
+  const displayCartCount = cartCount !== undefined ? cartCount : items.length;
   const { language, setLanguage, availableLanguages } = useMarket();
   const { user, signOut } = useAuth();
   const { t } = useT();

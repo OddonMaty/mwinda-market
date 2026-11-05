@@ -80,7 +80,14 @@ export function CartItemList({
 
               {/* Prix & Quantité */}
               <div className="flex items-center justify-between pt-2 flex-wrap gap-2">
-                <PriceTag usdPrice={item.usdPrice} size="sm" />
+                <div>
+                  <PriceTag usdPrice={item.usdPrice * item.quantity} size="sm" />
+                  {item.quantity > 1 && (
+                    <span className="text-[11px] text-on-surface-variant block">
+                      ${item.usdPrice.toFixed(2)} / unité
+                    </span>
+                  )}
+                </div>
 
                 <div className="flex items-center border border-outline-variant rounded-lg bg-surface">
                   <button
