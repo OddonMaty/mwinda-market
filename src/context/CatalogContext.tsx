@@ -1,13 +1,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
-import { Shop, SHOPS_DATA } from "@/data/shops";
-import { ElectronicProduct, ELECTRONICS_PRODUCTS } from "@/data/electronics";
+import { Shop } from "@/data/shops";
+import { ElectronicProduct } from "@/data/electronics";
 
 interface CatalogContextType {
   shops: Shop[];
   products: ElectronicProduct[];
   isLive: boolean;
+  isLoading: boolean;
   getShopById: (id: string) => Shop | undefined;
   getProductById: (id: string) => ElectronicProduct | undefined;
   getProductsByShop: (shopId: string) => ElectronicProduct[];
@@ -18,15 +19,20 @@ interface CatalogContextType {
 const CatalogContext = createContext<CatalogContextType | undefined>(undefined);
 
 export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [shops, setShops] = useState<Shop[]>(SHOPS_DATA);
-  const [products, setProducts] = useState<ElectronicProduct[]>(ELECTRONICS_PRODUCTS);
+  // Démarrer avec des tableaux vides — NE PAS charger les données mock offline
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [products, setProducts] = useState<ElectronicProduct[]>([]);
   const [isLive, setIsLive] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
         const res = await fetch("/api/catalog");
-        if (!res.ok) return;
+        if (!res.ok) {
+          setIsLoading(false);
+          return;
+        }
         const data = await res.json();
 
         if (data.products && data.products.length > 0) {
@@ -37,7 +43,7 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
             title: p.title,
             shopName: p.shopName,
             image: p.image,
-            images: [p.image],
+            images: p.images?.length ? p.images : (p.image ? [p.image] : []),
             usdPrice: p.usdPrice,
             rating: p.rating || 4.5,
             reviewCount: p.reviewCount || 0,
@@ -51,7 +57,7 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
             badges: {},
           }));
 
-          const mappedShops: Shop[] = data.shops.map((s: any) => ({
+          const mappedShops: Shop[] = (data.shops || []).map((s: any) => ({
             id: s.id,
             name: s.name,
             tagline: "",
@@ -85,7 +91,9 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
           setIsLive(true);
         }
       } catch {
-        // reste sur les données statiques
+        // Hors ligne ou erreur réseau — afficher état vide (pas de données mock)
+      } finally {
+        setIsLoading(false);
       }
     }
     load();
@@ -122,6 +130,7 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
       shops,
       products,
       isLive,
+      isLoading,
       getShopById,
       getProductById,
       getProductsByShop,
@@ -132,6 +141,7 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
       shops,
       products,
       isLive,
+      isLoading,
       getShopById,
       getProductById,
       getProductsByShop,

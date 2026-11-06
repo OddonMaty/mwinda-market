@@ -450,29 +450,36 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-              {certifiedShowcaseProducts.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/produits/${p.id}`}
-                  className="group bg-white rounded-md p-2 text-slate-900 flex flex-col hover:shadow transition border border-white/20"
-                >
-                  <div className="relative aspect-square rounded overflow-hidden bg-slate-100 mb-1.5">
-                    <Image
-                      src={p.image}
-                      alt={p.title}
-                      fill
-                      sizes="120px"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                  </div>
-                  <p className="text-[11px] font-medium text-slate-800 line-clamp-1 group-hover:text-[#0284C7] transition-colors">
-                    {p.title}
-                  </p>
-                  <p className="text-xs font-bold text-[#0B1B3D] mt-0.5">
-                    {p.usdPrice} $
-                  </p>
-                </Link>
-              ))}
+              {certifiedShowcaseProducts.length > 0 ? (
+                certifiedShowcaseProducts.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/produits/${p.id}`}
+                    className="group bg-white rounded-md p-2 text-slate-900 flex flex-col hover:shadow transition border border-white/20"
+                  >
+                    <div className="relative aspect-square rounded overflow-hidden bg-slate-100 mb-1.5">
+                      <Image
+                        src={p.image}
+                        alt={p.title}
+                        fill
+                        sizes="120px"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    </div>
+                    <p className="text-[11px] font-medium text-slate-800 line-clamp-1 group-hover:text-[#0284C7] transition-colors">
+                      {p.title}
+                    </p>
+                    <p className="text-xs font-bold text-[#0B1B3D] mt-0.5">
+                      {p.usdPrice} $
+                    </p>
+                  </Link>
+                ))
+              ) : (
+                <div className="col-span-2 sm:col-span-4 py-8 text-center text-xs text-slate-300">
+                  <span className="material-symbols-outlined text-2xl text-sky-400/60 block mb-1">verified</span>
+                  Boutiques certifiées bientôt disponibles
+                </div>
+              )}
             </div>
           </div>
 
@@ -500,44 +507,51 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-              {discountShowcaseProducts.map((p) => {
-                const disc = p.originalUsdPrice
-                  ? Math.round(((p.originalUsdPrice - p.usdPrice) / p.originalUsdPrice) * 100)
-                  : 0;
-                return (
-                  <Link
-                    key={p.id}
-                    href={`/produits/${p.id}`}
-                    className="group bg-white rounded-md p-2 text-slate-900 flex flex-col hover:shadow transition border border-white/20"
-                  >
-                    <div className="relative aspect-square rounded overflow-hidden bg-slate-100 mb-1.5">
-                      <Image
-                        src={p.image}
-                        alt={p.title}
-                        fill
-                        sizes="120px"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                      {disc > 0 && (
-                        <span className="absolute top-1 left-1 bg-[#EA580C] text-white text-[9px] font-bold px-1 py-0.5 rounded leading-none">
-                          -{disc}%
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] font-medium text-slate-800 line-clamp-1 group-hover:text-[#0284C7] transition-colors">
-                      {p.title}
-                    </p>
-                    <div className="flex items-baseline gap-1 mt-0.5">
-                      <span className="text-xs font-bold text-[#EA580C]">{p.usdPrice} $</span>
-                      {p.originalUsdPrice && (
-                        <span className="text-[10px] text-slate-400 line-through">
-                          {p.originalUsdPrice} $
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
+              {discountShowcaseProducts.length > 0 ? (
+                discountShowcaseProducts.map((p) => {
+                  const disc = p.originalUsdPrice
+                    ? Math.round(((p.originalUsdPrice - p.usdPrice) / p.originalUsdPrice) * 100)
+                    : 0;
+                  return (
+                    <Link
+                      key={p.id}
+                      href={`/produits/${p.id}`}
+                      className="group bg-white rounded-md p-2 text-slate-900 flex flex-col hover:shadow transition border border-white/20"
+                    >
+                      <div className="relative aspect-square rounded overflow-hidden bg-slate-100 mb-1.5">
+                        <Image
+                          src={p.image}
+                          alt={p.title}
+                          fill
+                          sizes="120px"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        {disc > 0 && (
+                          <span className="absolute top-1 left-1 bg-[#EA580C] text-white text-[9px] font-bold px-1 py-0.5 rounded leading-none">
+                            -{disc}%
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-medium text-slate-800 line-clamp-1 group-hover:text-[#0284C7] transition-colors">
+                        {p.title}
+                      </p>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-xs font-bold text-[#EA580C]">{p.usdPrice} $</span>
+                        {p.originalUsdPrice && (
+                          <span className="text-[10px] text-slate-400 line-through">
+                            {p.originalUsdPrice} $
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })
+              ) : (
+                <div className="col-span-2 sm:col-span-4 py-8 text-center text-xs text-orange-100">
+                  <span className="material-symbols-outlined text-2xl text-white/70 block mb-1">local_offer</span>
+                  Promotions exclusives à venir très bientôt
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -623,72 +637,89 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {popularShops.map((shop) => {
-              if (!shop) return null;
-              return (
-                <div
-                  key={shop.id}
-                  className="bg-white rounded-lg border border-[#E2E8F0] p-4 hover:shadow-md transition-shadow flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-start justify-between">
-                      <div
-                        className={`w-11 h-11 rounded-lg flex items-center justify-center font-bold text-base shadow-xs ${shop.colorBg}`}
-                      >
-                        {shop.tag}
+            {popularShops.length > 0 ? (
+              popularShops.map((shop) => {
+                if (!shop) return null;
+                return (
+                  <div
+                    key={shop.id}
+                    className="bg-white rounded-lg border border-[#E2E8F0] p-4 hover:shadow-md transition-shadow flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between">
+                        <div
+                          className={`w-11 h-11 rounded-lg flex items-center justify-center font-bold text-base shadow-xs ${shop.colorBg}`}
+                        >
+                          {shop.tag}
+                        </div>
+                        {shop.verified && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-[#0284C7] border border-sky-200">
+                            <span
+                              className="material-symbols-outlined text-xs"
+                              style={{ fontVariationSettings: "'FILL' 1" }}
+                            >
+                              verified
+                            </span>
+                            {t("home.certified_mwinda")}
+                          </span>
+                        )}
                       </div>
-                      {shop.verified && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-[#0284C7] border border-sky-200">
+
+                      <h3 className="text-sm font-bold text-[#0B1B3D] mt-3 font-display truncate">
+                        {shop.name}
+                      </h3>
+                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                        <span className="material-symbols-outlined text-xs text-[#0284C7] shrink-0">location_on</span>
+                        {shop.location}
+                      </p>
+
+                      <div className="flex items-center gap-2 my-2.5 text-xs">
+                        <span className="flex items-center text-amber-500 font-bold">
                           <span
-                            className="material-symbols-outlined text-xs"
+                            className="material-symbols-outlined text-sm mr-0.5"
                             style={{ fontVariationSettings: "'FILL' 1" }}
                           >
-                            verified
+                            star
                           </span>
-                          {t("home.certified_mwinda")}
+                          {shop.rating}
+                          <span className="text-[11px] text-slate-400 font-normal ml-1">
+                            ({shop.reviewCount})
+                          </span>
                         </span>
-                      )}
+                        {shop.productsCount && (
+                          <>
+                            <span className="text-slate-300">•</span>
+                            <span className="text-slate-600 font-medium text-[11px]">{shop.productsCount}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    <h3 className="text-sm font-bold text-[#0B1B3D] mt-3 font-display truncate">
-                      {shop.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
-                      <span className="material-symbols-outlined text-xs text-[#0284C7] shrink-0">location_on</span>
-                      {shop.location}
-                    </p>
-
-                    <div className="flex items-center gap-2 my-2.5 text-xs">
-                      <span className="flex items-center text-amber-500 font-bold">
-                        <span
-                          className="material-symbols-outlined text-sm mr-0.5"
-                          style={{ fontVariationSettings: "'FILL' 1" }}
-                        >
-                          star
-                        </span>
-                        {shop.rating}
-                        <span className="text-[11px] text-slate-400 font-normal ml-1">
-                          ({shop.reviewCount})
-                        </span>
-                      </span>
-                      {shop.productsCount && (
-                        <>
-                          <span className="text-slate-300">•</span>
-                          <span className="text-slate-600 font-medium text-[11px]">{shop.productsCount}</span>
-                        </>
-                      )}
-                    </div>
+                    <Link
+                      href={`/boutiques/${shop.id}`}
+                      className="w-full py-2 rounded-md border border-[#0284C7] text-[#0284C7] hover:bg-sky-50 font-bold text-xs text-center transition block mt-1"
+                    >
+                      {t("home.view_shop")}
+                    </Link>
                   </div>
-
-                  <Link
-                    href={`/boutiques/${shop.id}`}
-                    className="w-full py-2 rounded-md border border-[#0284C7] text-[#0284C7] hover:bg-sky-50 font-bold text-xs text-center transition block mt-1"
-                  >
-                    {t("home.view_shop")}
-                  </Link>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="col-span-full bg-white rounded-xl border border-slate-200 p-8 text-center">
+                <span className="material-symbols-outlined text-3xl text-sky-400 mb-2 block">storefront</span>
+                <p className="text-sm font-bold text-slate-800">Nouvelles boutiques en cours d'ouverture</p>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                  Rejoignez les premiers marchands vérifiés de la plateforme pour exposer vos produits.
+                </p>
+                <Link
+                  href="/devenir-vendeur"
+                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-[#0284C7] text-white rounded-lg text-xs font-bold hover:bg-sky-700 transition"
+                >
+                  <span>Créer ma boutique</span>
+                  <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 
@@ -725,13 +756,32 @@ export default function HomePage() {
 
           {/* Grille dense : 2 col mobile, 3 tablette, 4 lg, 5 xl */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-              />
-            ))}
+            {filteredProducts.length > 0 ? (
+              filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                />
+              ))
+            ) : (
+              <div className="col-span-full py-12 text-center bg-white rounded-xl border border-slate-200 p-8 shadow-xs">
+                <span className="material-symbols-outlined text-4xl text-slate-300 mb-2 block">inventory_2</span>
+                <h3 className="text-base font-bold text-slate-800">Catalogue en cours d'actualisation</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                  Les vendeurs ajoutent de nouveaux articles. Vous pouvez également ouvrir votre propre boutique pour commencer à vendre dès aujourd'hui.
+                </p>
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <Link
+                    href="/devenir-vendeur"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#EA580C] text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition shadow-sm"
+                  >
+                    <span>Ouvrir une boutique</span>
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

@@ -18,54 +18,15 @@ interface PromotedSlide {
   planBadge: string;
 }
 
-// Slides par défaut garanties avec images locales de haute qualité
-const FALLBACK_PROMOTIONS: PromotedSlide[] = [
-  {
-    id: "station-solaire-1000w",
-    title: "Station d'Énergie Solaire 1000W Hybride",
-    image: "/images/products/station-energie-solaire-1000w.jpg",
-    usdPrice: 289.0,
-    originalUsdPrice: 349.0,
-    discountPercent: 17,
-    shopName: "Solaris RDC",
-    isShopVerified: true,
-    planBadge: "BOUTIQUE ÉLITE",
-  },
-  {
-    id: "samsung-galaxy-a54",
-    title: "Samsung Galaxy A54 5G 128GB Double SIM",
-    image: "/images/products/samsung-galaxy-a54-5g.jpg",
-    usdPrice: 235.0,
-    originalUsdPrice: 280.0,
-    discountPercent: 16,
-    shopName: "Kazi Tech Kinshasa",
-    isShopVerified: true,
-    planBadge: "BOUTIQUE PRO",
-  },
-  {
-    id: "robe-wax-ndoki",
-    title: "Robe Longue Wax Authentique Ndoki Couture",
-    image: "/images/products/brazza-robe-wax-ndoki.jpg",
-    usdPrice: 48.0,
-    originalUsdPrice: 65.0,
-    discountPercent: 26,
-    shopName: "Brazza Wax Couture",
-    isShopVerified: true,
-    planBadge: "BOUTIQUE ÉLITE",
-  },
-];
-
 export function HeroCarousel() {
-  const { products: catalogProducts, shops } = useCatalog();
+  const { products: catalogProducts, shops, isLoading } = useCatalog();
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Algorithme de priorisation :
-  // 1. Boutiques partenaires vérifiées
-  // 2. Détermination de la remise promo selon le niveau d'abonnement (Élite = 20-25%, Pro = 15%, etc.)
+  // Produits réels issus de la base de données
   const slides: PromotedSlide[] = useMemo(() => {
     if (!catalogProducts || catalogProducts.length === 0) {
-      return FALLBACK_PROMOTIONS;
+      return [];
     }
 
     // Filtrer les produits ayant une image valide
@@ -80,7 +41,7 @@ export function HeroCarousel() {
       return bV - aV;
     });
 
-    const chosen = sorted.slice(0, 5).map((p, idx) => {
+    return sorted.slice(0, 5).map((p, idx) => {
       const shop = shops.find((s) => s.id === p.shopId || s.name === p.shopName);
       const isVerified = shop ? shop.verified : true;
 
@@ -101,17 +62,66 @@ export function HeroCarousel() {
         planBadge,
       };
     });
-
-    return chosen.length > 0 ? chosen : FALLBACK_PROMOTIONS;
   }, [catalogProducts, shops]);
 
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || slides.length <= 1) return;
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % slides.length);
     }, 4500);
     return () => clearInterval(timer);
   }, [slides.length, isPaused]);
+
+  // Si le catalogue charge ou n'a aucun produit (offline / DB vide), afficher une carte vitrine officielle Mwinda
+  if (slides.length === 0) {
+    return (
+      <div className="relative w-full max-w-[310px] sm:max-w-[340px] rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-gradient-to-br from-[#0B1B3D] via-slate-900 to-[#0284C7] text-white p-6 flex flex-col justify-between min-h-[300px]">
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-sky-300">
+              {isLoading ? "Chargement des offres..." : "Marketplace Panafricaine"}
+            </span>
+          </div>
+          <h3 className="text-lg font-bold font-display text-white mb-2 leading-tight">
+            Mwinda Market
+          </h3>
+          <p className="text-xs text-slate-300 leading-relaxed mb-4">
+            Connectez-vous directement aux meilleurs vendeurs vérifiés de toute l'Afrique. Paiements mobiles sécurisés et expéditions rapides.
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs text-slate-200">
+              <span className="material-symbols-outlined text-sm text-sky-400">verified</span>
+              <span>Comptes vendeurs certifiés</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-200">
+              <span className="material-symbols-outlined text-sm text-emerald-400">payments</span>
+              <span>Mobile Money (Airtel, Orange, M-Pesa)</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-200">
+              <span className="material-symbols-outlined text-sm text-amber-400">local_shipping</span>
+              <span>Livraison suivie sans frais cachés</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-2 mt-4">
+          <Link
+            href="/produits"
+            className="flex-1 text-center py-2 px-3 bg-[#EA580C] hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition shadow-sm"
+          >
+            Voir le catalogue
+          </Link>
+          <Link
+            href="/devenir-vendeur"
+            className="flex-1 text-center py-2 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition border border-white/20"
+          >
+            Vendre ici
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const current = slides[index] || slides[0];
   const cdfPrice = convertUsdToCurrency(current.usdPrice, "CDF");

@@ -9,6 +9,9 @@ const withPWA = withPWAInit({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
   // Le lint et le typage restent disponibles via `npm run lint` / `tsc`.
   // Ils ne doivent PLUS bloquer le déploiement Vercel.
   eslint: {
@@ -18,6 +21,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "https",
