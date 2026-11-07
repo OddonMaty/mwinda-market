@@ -61,19 +61,22 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
 
   return (
     <>
-      {/* ─── VARIANT HEADER (Desktop) ─────────────────────────────────── */}
+      {/* ─── VARIANT HEADER (Desktop style KiKUU avec Select Trigger) ─────────── */}
       {variant === "header" && (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className={`flex items-center gap-1.5 px-2 py-1 rounded hover:bg-white/10 text-slate-200 hover:text-white transition text-xs font-medium leading-none group ${className}`}
-          title={t("country_selector.change_title")}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 text-white transition text-xs font-medium shadow-2xs group focus:outline-none focus:ring-2 focus:ring-[#EA580C] ${className}`}
+          title="Choisir votre pays de livraison"
         >
-          <span className="text-sm select-none">{country.flag}</span>
-          <span className="truncate max-w-[130px]">{countryDisplayName}</span>
-          <span className="text-white/60">·</span>
-          <span className="font-semibold text-secondary-accent">{country.currency.code}</span>
-          <span className="material-symbols-outlined text-xs text-white/70 group-hover:translate-y-0.5 transition-transform">
+          <span className="text-sm select-none">🌍</span>
+          <span className="text-slate-300 hidden xl:inline text-[11px]">Pays :</span>
+          <span className="text-base leading-none select-none">{country.flag}</span>
+          <span className="font-semibold text-white truncate max-w-[120px]">{countryDisplayName}</span>
+          <span className="text-orange-400 font-mono font-bold text-[11px] bg-black/30 px-1.5 py-0.5 rounded">
+            {country.currency.code}
+          </span>
+          <span className="material-symbols-outlined text-xs text-slate-300 group-hover:translate-y-0.5 transition-transform">
             expand_more
           </span>
         </button>
@@ -84,12 +87,14 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-outline-variant bg-surface text-xs font-semibold text-primary active:scale-95 transition ${className}`}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white shadow-xs text-xs font-semibold text-slate-800 active:scale-95 transition hover:border-[#EA580C] ${className}`}
+          title="Changer de pays"
         >
+          <span className="text-sm leading-none">🌍</span>
           <span className="text-base leading-none">{country.flag}</span>
-          <span>{country.code}</span>
-          <span className="text-[10px] text-secondary font-bold">({country.currency.code})</span>
-          <span className="material-symbols-outlined text-xs text-outline">expand_more</span>
+          <span className="font-bold">{country.code}</span>
+          <span className="text-[10px] text-[#EA580C] font-mono font-bold">({country.currency.code})</span>
+          <span className="material-symbols-outlined text-xs text-slate-400">expand_more</span>
         </button>
       )}
 

@@ -1,43 +1,43 @@
 import { AFRICAN_COUNTRIES, Country } from "@/data/countries";
-import { SHOPS_DATA, Shop } from "@/data/shops";
+import { Shop } from "@/data/shops";
 
 /**
- * Déduit la liste des pays actifs (ceux où au moins un vendeur a créé une boutique).
- * Une seule source de vérité, prête à être branchée sur une API ou base de données plus tard.
+ * Retourne la liste complète des pays africains pour le sélecteur panafricain.
+ * La RDC (CD) et les grands pôles commerciaux sont placés en tête,
+ * suivis de tous les pays d'Afrique par ordre alphabétique.
  */
-export function getActiveCountries(shops: Shop[] = SHOPS_DATA): Country[] {
-  // Ensemble des codes pays présents dans les boutiques (défaut 'CD' si non spécifié)
-  const activeCodes = new Set<string>();
+export function getActiveCountries(shops?: Shop[]): Country[] {
+  // Cloner la liste complète des 54 pays africains
+  const list = [...AFRICAN_COUNTRIES];
 
-  for (const shop of shops) {
-    const code = (shop.countryCode || "CD").toUpperCase();
-    activeCodes.add(code);
+  // Priorités d'affichage en tête : RDC, Congo Brazzaville, Côte d'Ivoire, Sénégal, Cameroun
+  const priorityCodes = ["CD", "CG", "CI", "SN", "CM", "GA", "RW", "AO"];
+  const prioritized: Country[] = [];
+  const others: Country[] = [];
+
+  for (const code of priorityCodes) {
+    const found = list.find((c) => c.code.toUpperCase() === code);
+    if (found) prioritized.push(found);
   }
 
-  // Filtrer les pays africains correspondants, en conservant la RDC en premier (zone phare)
-  const activeList = AFRICAN_COUNTRIES.filter((country) =>
-    activeCodes.has(country.code.toUpperCase())
-  );
-
-  // Garantir que la RDC (CD) est toujours présente et en tête
-  const drcIndex = activeList.findIndex((c) => c.code === "CD");
-  if (drcIndex > 0) {
-    const [drc] = activeList.splice(drcIndex, 1);
-    activeList.unshift(drc);
-  } else if (drcIndex === -1) {
-    const drc = AFRICAN_COUNTRIES.find((c) => c.code === "CD");
-    if (drc) activeList.unshift(drc);
+  for (const c of list) {
+    if (!priorityCodes.includes(c.code.toUpperCase())) {
+      others.push(c);
+    }
   }
 
-  return activeList;
+  // Trier le reste alphabétiquement par nom français
+  others.sort((a, b) => a.name.fr.localeCompare(b.name.fr));
+
+  return [...prioritized, ...others];
 }
 
 /**
- * Vérifie si un pays donné dispose de vendeurs actifs sur Mwinda Market.
+ * Vérifie si un pays donné est supporté sur Mwinda Market (tous les pays d'Afrique).
  */
-export function isCountryActive(countryCode: string, shops: Shop[] = SHOPS_DATA): boolean {
-  const activeList = getActiveCountries(shops);
-  return activeList.some((c) => c.code.toUpperCase() === countryCode.toUpperCase());
+export function isCountryActive(countryCode: string): boolean {
+  const normalized = (countryCode || "").toUpperCase();
+  return AFRICAN_COUNTRIES.some((c) => c.code.toUpperCase() === normalized);
 }
 
 /**
@@ -51,7 +51,7 @@ export function getCountryByCode(code: string): Country | undefined {
 /**
  * Nombre de boutiques actives pour un pays donné.
  */
-export function getShopCountByCountry(countryCode: string, shops: Shop[] = SHOPS_DATA): number {
+export function getShopCountByCountry(countryCode: string, shops: Shop[] = []): number {
   const normalized = (countryCode || "CD").toUpperCase();
   return shops.filter((s) => (s.countryCode || "CD").toUpperCase() === normalized).length;
 }

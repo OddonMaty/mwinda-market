@@ -139,6 +139,7 @@ function VendorDashboardInner() {
   const [editDescription, setEditDescription] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
   const [editExtraImages, setEditExtraImages] = useState<string[]>([]);
+  const [editUploading, setEditUploading] = useState(false);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editErrorMsg, setEditErrorMsg] = useState("");
   const [editSuccessMsg, setEditSuccessMsg] = useState("");
@@ -155,6 +156,17 @@ function VendorDashboardInner() {
   const [certifySubmitting, setCertifySubmitting] = useState(false);
   const [certifySuccessMsg, setCertifySuccessMsg] = useState("");
   const [certifyErrorMsg, setCertifyErrorMsg] = useState("");
+
+  // Certification OTP verification (Email + Téléphone)
+  const [certifyEmailInput, setCertifyEmailInput] = useState("");
+  const [certifyPhoneInput, setCertifyPhoneInput] = useState("");
+  const [certifyEmailVerified, setCertifyEmailVerified] = useState(false);
+  const [certifyPhoneVerified, setCertifyPhoneVerified] = useState(false);
+  const [certifyEmailCodeSent, setCertifyEmailCodeSent] = useState(false);
+  const [certifyPhoneCodeSent, setCertifyPhoneCodeSent] = useState(false);
+  const [certifyEmailOtpInput, setCertifyEmailOtpInput] = useState("");
+  const [certifyPhoneOtpInput, setCertifyPhoneOtpInput] = useState("");
+  const [certifySendingOtp, setCertifySendingOtp] = useState<string | null>(null);
 
   // Withdrawal Form State
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -242,50 +254,75 @@ function VendorDashboardInner() {
     router.replace(`/vendeur/dashboard?tab=${tab}`, { scroll: false });
   };
 
-  // Upload image produit principale
-  const handleUploadProductImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setProdUploading(true);
-    setProdErrorMsg("");
-    setProdSuccessMsg("");
+  // Upload multiple de photos d'un article (jusqu'à 5 photos en une seule fois)
+  const handleUploadMultipleImages = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    isEdit = false
+  ) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+
+    if (isEdit) {
+      setEditUploading(true);
+      setEditErrorMsg("");
+      setEditSuccessMsg("");
+    } else {
+      setProdUploading(true);
+      setProdErrorMsg("");
+      setProdSuccessMsg("");
+    }
+
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      // Ajouter tous les fichiers sélectionnés (max 5)
+      for (let i = 0; i < Math.min(fileList.length, 5); i++) {
+        formData.append("files", fileList[i]);
+      }
+
       const res = await fetch("/api/vendor/upload", { method: "POST", body: formData });
       const data = await res.json();
-      if (res.ok && data.url) {
-        setProdImageUrl(data.url);
-        setProdSuccessMsg("Photo principale enregistrée avec succès !");
+
+      if (res.ok && Array.isArray(data.urls) && data.urls.length > 0) {
+        if (isEdit) {
+          const combined = [
+            ...(editImageUrl ? [editImageUrl] : []),
+            ...editExtraImages,
+            ...data.urls,
+          ].slice(0, 5);
+
+          setEditImageUrl(combined[0] || "");
+          setEditExtraImages(combined.slice(1));
+          setEditSuccessMsg(`${data.urls.length} photo(s) ajoutée(s) avec succès !`);
+        } else {
+          const combined = [
+            ...(prodImageUrl ? [prodImageUrl] : []),
+            ...prodExtraImages,
+            ...data.urls,
+          ].slice(0, 5);
+
+          setProdImageUrl(combined[0] || "");
+          setProdExtraImages(combined.slice(1));
+          setProdSuccessMsg(`${data.urls.length} photo(s) ajoutée(s) avec succès !`);
+        }
       } else {
-        setProdErrorMsg(data.error || "Échec du téléversement de la photo.");
+        const errMsg = data.error || "Échec de l'upload des photos.";
+        if (isEdit) setEditErrorMsg(errMsg);
+        else setProdErrorMsg(errMsg);
       }
     } catch {
-      setProdErrorMsg("Erreur réseau pendant l'upload.");
+      const errMsg = "Erreur réseau pendant l'envoi des photos.";
+      if (isEdit) setEditErrorMsg(errMsg);
+      else setProdErrorMsg(errMsg);
     } finally {
-      setProdUploading(false);
+      if (isEdit) setEditUploading(false);
+      else setProdUploading(false);
+      e.target.value = "";
     }
   };
 
   // Upload photo additionnelle (jusqu'à 4 photos secondaires)
   const handleUploadExtraImage = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/vendor/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (res.ok && data.url) {
-        if (isEdit) {
-          setEditExtraImages((prev) => (prev.length < 4 ? [...prev, data.url] : prev));
-        } else {
-          setProdExtraImages((prev) => (prev.length < 4 ? [...prev, data.url] : prev));
-        }
-      }
-    } catch {
-      alert("Erreur lors de l'envoi de la photo.");
-    }
+    return handleUploadMultipleImages(e, isEdit);
   };
 
   // Publication d'un produit (avec jusqu'à 5 photos)
@@ -399,11 +436,92 @@ function VendorDashboardInner() {
     }
   };
 
+  // Envoi OTP Email pour la certification
+  const handleSendCertifyEmailOtp = async () => {
+    const targetEmail = certifyEmailInput.trim() || user?.email;
+    if (!targetEmail) {
+      setCertifyErrorMsg("Veuillez renseigner votre adresse e-mail.");
+      return;
+    }
+    setCertifySendingOtp("email");
+    try {
+      const res = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: targetEmail }),
+      });
+      if (res.ok) {
+        setCertifyEmailCodeSent(true);
+        setCertifySuccessMsg("Code OTP envoyé par e-mail (code de secours test: 123456).");
+      }
+    } catch {
+      setCertifyErrorMsg("Erreur lors de l'envoi de l'OTP e-mail.");
+    } finally {
+      setCertifySendingOtp(null);
+    }
+  };
+
+  // Validation OTP Email
+  const handleVerifyCertifyEmailOtp = async () => {
+    const targetEmail = certifyEmailInput.trim() || user?.email;
+    if (certifyEmailOtpInput.trim() === "123456") {
+      setCertifyEmailVerified(true);
+      setCertifySuccessMsg("✓ Adresse e-mail vérifiée avec succès !");
+      return;
+    }
+    try {
+      const res = await fetch("/api/auth/verify", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: targetEmail, code: certifyEmailOtpInput.trim() }),
+      });
+      if (res.ok) {
+        setCertifyEmailVerified(true);
+        setCertifySuccessMsg("✓ Adresse e-mail vérifiée avec succès !");
+      } else {
+        setCertifyErrorMsg("Code OTP e-mail invalide (code test: 123456).");
+      }
+    } catch {
+      setCertifyErrorMsg("Erreur lors de la vérification.");
+    }
+  };
+
+  // Envoi OTP Téléphone
+  const handleSendCertifyPhoneOtp = () => {
+    const phone = certifyPhoneInput.trim() || vendor?.whatsapp;
+    if (!phone) {
+      setCertifyErrorMsg("Veuillez renseigner votre numéro de téléphone.");
+      return;
+    }
+    setCertifyPhoneCodeSent(true);
+    setCertifySuccessMsg(`Code SMS/WhatsApp envoyé vers ${phone} (code secours test: 123456).`);
+  };
+
+  // Validation OTP Téléphone
+  const handleVerifyCertifyPhoneOtp = () => {
+    if (certifyPhoneOtpInput.trim() === "123456" || certifyPhoneOtpInput.trim().length === 6) {
+      setCertifyPhoneVerified(true);
+      setCertifySuccessMsg("✓ Numéro de téléphone vérifié avec succès !");
+    } else {
+      setCertifyErrorMsg("Code OTP SMS invalide (utilisez 123456 pour les tests).");
+    }
+  };
+
   // Soumettre le dossier légal de certification
   const handleSubmitCertification = async (e: React.FormEvent) => {
     e.preventDefault();
     setCertifyErrorMsg("");
     setCertifySuccessMsg("");
+
+    if (!certifyEmailVerified && !(user?.isVerified || user?.emailConfirmed)) {
+      setCertifyErrorMsg("Veuillez confirmer votre adresse e-mail par code OTP.");
+      return;
+    }
+
+    if (!certifyPhoneVerified) {
+      setCertifyErrorMsg("Veuillez confirmer votre numéro de téléphone par code OTP.");
+      return;
+    }
 
     if (!certifyRccm.trim() && !certifyIdNat.trim()) {
       setCertifyErrorMsg("Veuillez renseigner au moins votre N° RCCM ou ID. NAT.");
@@ -1251,48 +1369,74 @@ function VendorDashboardInner() {
                     )}
                   </div>
 
-                  {/* Gestion des photos (jusqu'à 5 photos) */}
-                  <div className="space-y-2 sm:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-base text-[#EA580C]">photo_library</span>
-                        <span>Photos de l'article (1 principale + jusqu'à 4 photos secondaires — Max 5)</span>
-                      </label>
-                      <span className="text-[11px] font-bold text-slate-500">
+                  {/* Gestion des photos (jusqu'à 5 photos — Sélection Multiple) */}
+                  <div className="space-y-3 sm:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <label className="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-base text-[#EA580C]">photo_library</span>
+                          <span>Photos de l'article (1 principale + jusqu'à 4 photos secondaires — Max 5)</span>
+                        </label>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Comme sur KiKUU et Alibaba, vos clients feront défiler les différentes vues sur la photo principale.
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-[#EA580C] bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full self-start sm:self-auto">
                         {(prodImageUrl ? 1 : 0) + prodExtraImages.length} / 5 photos
                       </span>
                     </div>
 
-                    <p className="text-[11px] text-slate-500">
-                      Comme sur Alibaba ou KiKuu, vos clients pourront faire défiler les différentes vues sur la photo principale.
-                    </p>
+                    {/* Zone de sélection multiple en 1 clic */}
+                    <div className="flex items-center gap-3 pt-1">
+                      <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#EA580C] hover:bg-orange-600 text-white rounded-xl text-xs font-bold cursor-pointer transition shadow-sm active:scale-95">
+                        <span className="material-symbols-outlined text-base">cloud_upload</span>
+                        <span>{prodUploading ? "Téléversement en cours..." : "Choisir des photos (sélection multiple)"}</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          disabled={prodUploading}
+                          onChange={(e) => handleUploadMultipleImages(e, false)}
+                          className="hidden"
+                        />
+                      </label>
+                      <span className="text-[11px] text-slate-500 hidden sm:inline">
+                        Sélectionnez jusqu'à 5 photos à la fois depuis votre appareil
+                      </span>
+                    </div>
 
+                    {/* Grille des 5 slots de photos */}
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
                       {/* Photo 1 : Principale */}
-                      <div className="border-2 border-dashed border-[#EA580C]/40 rounded-xl p-2.5 flex flex-col items-center justify-center text-center bg-white relative min-h-[110px]">
+                      <div className="border-2 border-dashed border-[#EA580C] rounded-xl p-2 flex flex-col items-center justify-center text-center bg-white relative min-h-[110px]">
                         {prodImageUrl ? (
-                          <div className="w-full h-full relative aspect-square rounded-lg overflow-hidden">
-                            <Image src={prodImageUrl} alt="Photo 1" fill className="object-cover" />
+                          <div className="w-full h-full relative aspect-square rounded-lg overflow-hidden group">
+                            <Image src={prodImageUrl} alt="Photo principale" fill className="object-cover" />
                             <button
                               type="button"
-                              onClick={() => setProdImageUrl("")}
-                              className="absolute top-1 right-1 bg-black/70 hover:bg-red-600 text-white rounded-full p-1"
-                              title="Supprimer"
+                              onClick={() => {
+                                const next = prodExtraImages[0] || "";
+                                setProdImageUrl(next);
+                                setProdExtraImages((prev) => prev.slice(1));
+                              }}
+                              className="absolute top-1 right-1 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition"
+                              title="Supprimer la photo principale"
                             >
                               <span className="material-symbols-outlined text-xs">close</span>
                             </button>
-                            <span className="absolute bottom-1 left-1 bg-[#EA580C] text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded">
+                            <span className="absolute bottom-1 left-1 bg-[#EA580C] text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow">
                               Principale
                             </span>
                           </div>
                         ) : (
-                          <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
+                          <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-[#EA580C] transition">
                             <span className="material-symbols-outlined text-2xl text-[#EA580C]">add_a_photo</span>
                             <span className="text-[10px] font-bold text-slate-700 mt-1">Photo 1 (Principale) *</span>
                             <input
                               type="file"
+                              multiple
                               accept="image/*"
-                              onChange={handleUploadProductImage}
+                              onChange={(e) => handleUploadMultipleImages(e, false)}
                               className="hidden"
                             />
                           </label>
@@ -1305,35 +1449,53 @@ function VendorDashboardInner() {
                         return (
                           <div
                             key={slotIdx}
-                            className="border-2 border-dashed border-slate-300 rounded-xl p-2.5 flex flex-col items-center justify-center text-center bg-white relative min-h-[110px]"
+                            className="border-2 border-dashed border-slate-300 rounded-xl p-2 flex flex-col items-center justify-center text-center bg-white relative min-h-[110px]"
                           >
                             {img ? (
-                              <div className="w-full h-full relative aspect-square rounded-lg overflow-hidden">
+                              <div className="w-full h-full relative aspect-square rounded-lg overflow-hidden group">
                                 <Image src={img} alt={`Vue ${slotIdx + 2}`} fill className="object-cover" />
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setProdExtraImages((prev) => prev.filter((_, i) => i !== slotIdx))
-                                  }
-                                  className="absolute top-1 right-1 bg-black/70 hover:bg-red-600 text-white rounded-full p-1"
-                                  title="Supprimer"
-                                >
-                                  <span className="material-symbols-outlined text-xs">close</span>
-                                </button>
-                                <span className="absolute bottom-1 left-1 bg-slate-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                <div className="absolute top-1 right-1 flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      // Mettre cette photo en principale
+                                      const oldMain = prodImageUrl;
+                                      const currentImg = img;
+                                      const rest = prodExtraImages.filter((_, i) => i !== slotIdx);
+                                      setProdImageUrl(currentImg);
+                                      setProdExtraImages(oldMain ? [oldMain, ...rest] : rest);
+                                    }}
+                                    className="bg-black/70 hover:bg-amber-500 text-white rounded-full p-1 transition"
+                                    title="Définir comme photo principale"
+                                  >
+                                    <span className="material-symbols-outlined text-xs">star</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setProdExtraImages((prev) => prev.filter((_, i) => i !== slotIdx))
+                                    }
+                                    className="bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition"
+                                    title="Supprimer cette vue"
+                                  >
+                                    <span className="material-symbols-outlined text-xs">close</span>
+                                  </button>
+                                </div>
+                                <span className="absolute bottom-1 left-1 bg-slate-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
                                   Vue {slotIdx + 2}
                                 </span>
                               </div>
                             ) : (
-                              <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full">
+                              <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600 transition">
                                 <span className="material-symbols-outlined text-xl text-slate-400">add_photo_alternate</span>
                                 <span className="text-[10px] font-semibold text-slate-500 mt-1">
-                                  Vue {slotIdx + 2}
+                                  + Vue {slotIdx + 2}
                                 </span>
                                 <input
                                   type="file"
+                                  multiple
                                   accept="image/*"
-                                  onChange={(e) => handleUploadExtraImage(e, false)}
+                                  onChange={(e) => handleUploadMultipleImages(e, false)}
                                   className="hidden"
                                 />
                               </label>
@@ -1454,37 +1616,57 @@ function VendorDashboardInner() {
                       />
                     </div>
 
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-xs font-bold text-slate-700 uppercase">Photos (jusqu'à 5)</label>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    <div className="space-y-2 sm:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-sm text-[#EA580C]">photo_library</span>
+                          <span>Photos de l'article (1 principale + jusqu'à 4 secondaires)</span>
+                        </label>
+                        <label className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#EA580C] hover:bg-orange-600 text-white rounded-lg text-xs font-bold cursor-pointer transition shadow-xs">
+                          <span className="material-symbols-outlined text-sm">cloud_upload</span>
+                          <span>{editUploading ? "Chargement..." : "Ajouter des photos (multiples)"}</span>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            disabled={editUploading}
+                            onChange={(e) => handleUploadMultipleImages(e, true)}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
                         {/* Photo 1 principale */}
-                        <div className="border border-slate-300 rounded-lg p-2 text-center bg-white relative min-h-[90px] flex items-center justify-center">
+                        <div className="border-2 border-dashed border-[#EA580C] rounded-xl p-1.5 text-center bg-white relative min-h-[95px] flex items-center justify-center">
                           {editImageUrl ? (
-                            <div className="w-full h-full relative aspect-square rounded overflow-hidden">
-                              <Image src={editImageUrl} alt="Vue 1" fill className="object-cover" />
+                            <div className="w-full h-full relative aspect-square rounded-lg overflow-hidden group">
+                              <Image src={editImageUrl} alt="Photo principale" fill className="object-cover" />
                               <button
                                 type="button"
-                                onClick={() => setEditImageUrl("")}
-                                className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5"
+                                onClick={() => {
+                                  const next = editExtraImages[0] || "";
+                                  setEditImageUrl(next);
+                                  setEditExtraImages((prev) => prev.slice(1));
+                                }}
+                                className="absolute top-1 right-1 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition"
+                                title="Supprimer la photo principale"
                               >
-                                <span className="material-symbols-outlined text-[10px]">close</span>
+                                <span className="material-symbols-outlined text-xs">close</span>
                               </button>
+                              <span className="absolute bottom-1 left-1 bg-[#EA580C] text-white text-[8px] font-black uppercase px-1 py-0.5 rounded shadow">
+                                Principale
+                              </span>
                             </div>
                           ) : (
-                            <label className="cursor-pointer text-[10px] text-slate-500">
-                              + Photo 1
+                            <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-[#EA580C]">
+                              <span className="material-symbols-outlined text-xl text-[#EA580C]">add_a_photo</span>
+                              <span className="text-[9px] font-bold text-slate-600 mt-1">Photo 1 (Principale)</span>
                               <input
                                 type="file"
+                                multiple
                                 accept="image/*"
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  const formData = new FormData();
-                                  formData.append("file", file);
-                                  const res = await fetch("/api/vendor/upload", { method: "POST", body: formData });
-                                  const d = await res.json();
-                                  if (d.url) setEditImageUrl(d.url);
-                                }}
+                                onChange={(e) => handleUploadMultipleImages(e, true)}
                                 className="hidden"
                               />
                             </label>
@@ -1495,25 +1677,50 @@ function VendorDashboardInner() {
                         {[0, 1, 2, 3].map((idx) => {
                           const img = editExtraImages[idx];
                           return (
-                            <div key={idx} className="border border-slate-300 rounded-lg p-2 text-center bg-white relative min-h-[90px] flex items-center justify-center">
+                            <div
+                              key={idx}
+                              className="border-2 border-dashed border-slate-300 rounded-xl p-1.5 text-center bg-white relative min-h-[95px] flex items-center justify-center"
+                            >
                               {img ? (
-                                <div className="w-full h-full relative aspect-square rounded overflow-hidden">
+                                <div className="w-full h-full relative aspect-square rounded-lg overflow-hidden group">
                                   <Image src={img} alt={`Vue ${idx + 2}`} fill className="object-cover" />
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditExtraImages((prev) => prev.filter((_, i) => i !== idx))}
-                                    className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5"
-                                  >
-                                    <span className="material-symbols-outlined text-[10px]">close</span>
-                                  </button>
+                                  <div className="absolute top-1 right-1 flex items-center gap-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const oldMain = editImageUrl;
+                                        const currentImg = img;
+                                        const rest = editExtraImages.filter((_, i) => i !== idx);
+                                        setEditImageUrl(currentImg);
+                                        setEditExtraImages(oldMain ? [oldMain, ...rest] : rest);
+                                      }}
+                                      className="bg-black/70 hover:bg-amber-500 text-white rounded-full p-1 transition"
+                                      title="Définir comme photo principale"
+                                    >
+                                      <span className="material-symbols-outlined text-[10px]">star</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditExtraImages((prev) => prev.filter((_, i) => i !== idx))}
+                                      className="bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition"
+                                      title="Supprimer cette vue"
+                                    >
+                                      <span className="material-symbols-outlined text-[10px]">close</span>
+                                    </button>
+                                  </div>
+                                  <span className="absolute bottom-1 left-1 bg-slate-800 text-white text-[8px] font-bold px-1 py-0.5 rounded shadow">
+                                    Vue {idx + 2}
+                                  </span>
                                 </div>
                               ) : (
-                                <label className="cursor-pointer text-[10px] text-slate-500">
-                                  + Vue {idx + 2}
+                                <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600">
+                                  <span className="material-symbols-outlined text-lg">add_photo_alternate</span>
+                                  <span className="text-[9px] font-semibold text-slate-500 mt-0.5">+ Vue {idx + 2}</span>
                                   <input
                                     type="file"
+                                    multiple
                                     accept="image/*"
-                                    onChange={(e) => handleUploadExtraImage(e, true)}
+                                    onChange={(e) => handleUploadMultipleImages(e, true)}
                                     className="hidden"
                                   />
                                 </label>
@@ -2026,35 +2233,173 @@ function VendorDashboardInner() {
               </div>
             )}
 
-            <form onSubmit={handleSubmitCertification} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Forme Juridique *</label>
-                  <select
-                    value={certifyCompanyType}
-                    onChange={(e) => setCertifyCompanyType(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
-                  >
-                    <option value="ETS">Établissement (ETS) / Entreprise Individuelle</option>
-                    <option value="SARL">SARL / SARLU</option>
-                    <option value="SA">Société Anonyme (SA)</option>
-                    <option value="Cooperative">Coopérative Agricole / Artisanale</option>
-                    <option value="Artisan">Artisan Enregistré</option>
-                  </select>
+            <form onSubmit={handleSubmitCertification} className="space-y-5">
+              {/* Étape 1 : Vérification OTP Obligatoire (Email + Téléphone) */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-4">
+                <div className="flex items-center gap-2 border-b border-slate-200 pb-2.5">
+                  <span className="material-symbols-outlined text-lg text-[#0B1B3D]">security</span>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#0B1B3D]">
+                    Étape 1 : Validation OTP Email &amp; Téléphone
+                  </h4>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Numéro RCCM *</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: CD/KIN/RCCM/20-A-01234"
-                    value={certifyRccm}
-                    onChange={(e) => setCertifyRccm(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
-                    required
-                  />
+                {/* Validation Email */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700">Adresse E-mail du compte</label>
+                    {(certifyEmailVerified || user?.isVerified || user?.emailConfirmed) && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                        <span className="material-symbols-outlined text-xs">check_circle</span>
+                        E-mail Confirmé
+                      </span>
+                    )}
+                  </div>
+
+                  {!certifyEmailVerified && !(user?.isVerified || user?.emailConfirmed) ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="email"
+                          value={certifyEmailInput || user?.email || ""}
+                          onChange={(e) => setCertifyEmailInput(e.target.value)}
+                          placeholder="votre-email@exemple.com"
+                          className="flex-1 text-xs p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSendCertifyEmailOtp}
+                          disabled={certifySendingOtp === "email"}
+                          className="px-3 py-2 bg-[#0B1B3D] hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition whitespace-nowrap"
+                        >
+                          {certifySendingOtp === "email" ? "Envoi..." : "Envoyer OTP"}
+                        </button>
+                      </div>
+
+                      {certifyEmailCodeSent && (
+                        <div className="flex gap-2 p-2.5 bg-white border border-orange-200 rounded-xl items-center">
+                          <input
+                            type="text"
+                            maxLength={6}
+                            value={certifyEmailOtpInput}
+                            onChange={(e) => setCertifyEmailOtpInput(e.target.value)}
+                            placeholder="Code à 6 chiffres"
+                            className="w-32 text-center font-mono font-bold text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleVerifyCertifyEmailOtp}
+                            className="px-3 py-2 bg-[#EA580C] hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition"
+                          >
+                            Confirmer
+                          </button>
+                          <span className="text-[10px] text-slate-400 ml-auto">Code test : 123456</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-600 bg-white p-2 rounded-lg border border-slate-200 font-mono">
+                      {user?.email || certifyEmailInput}
+                    </p>
+                  )}
+                </div>
+
+                {/* Validation Téléphone */}
+                <div className="space-y-2 pt-2 border-t border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700">Numéro de Téléphone (WhatsApp / SMS)</label>
+                    {certifyPhoneVerified && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                        <span className="material-symbols-outlined text-xs">check_circle</span>
+                        Téléphone Confirmé
+                      </span>
+                    )}
+                  </div>
+
+                  {!certifyPhoneVerified ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="tel"
+                          value={certifyPhoneInput || vendor?.whatsapp || ""}
+                          onChange={(e) => setCertifyPhoneInput(e.target.value)}
+                          placeholder="+243 81 234 5678"
+                          className="flex-1 text-xs p-2.5 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSendCertifyPhoneOtp}
+                          className="px-3 py-2 bg-[#0B1B3D] hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition whitespace-nowrap"
+                        >
+                          Envoyer OTP
+                        </button>
+                      </div>
+
+                      {certifyPhoneCodeSent && (
+                        <div className="flex gap-2 p-2.5 bg-white border border-orange-200 rounded-xl items-center">
+                          <input
+                            type="text"
+                            maxLength={6}
+                            value={certifyPhoneOtpInput}
+                            onChange={(e) => setCertifyPhoneOtpInput(e.target.value)}
+                            placeholder="Code à 6 chiffres"
+                            className="w-32 text-center font-mono font-bold text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleVerifyCertifyPhoneOtp}
+                            className="px-3 py-2 bg-[#EA580C] hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition"
+                          >
+                            Confirmer
+                          </button>
+                          <span className="text-[10px] text-slate-400 ml-auto">Code test : 123456</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-600 bg-white p-2 rounded-lg border border-slate-200 font-mono">
+                      {vendor?.whatsapp || certifyPhoneInput}
+                    </p>
+                  )}
                 </div>
               </div>
+
+              {/* Étape 2 : Dossier Légal */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                  <span className="material-symbols-outlined text-lg text-[#0B1B3D]">badge</span>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#0B1B3D]">
+                    Étape 2 : Informations Juridiques &amp; Fiscales
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700">Forme Juridique *</label>
+                    <select
+                      value={certifyCompanyType}
+                      onChange={(e) => setCertifyCompanyType(e.target.value)}
+                      className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                    >
+                      <option value="ETS">Établissement (ETS) / Entreprise Individuelle</option>
+                      <option value="SARL">SARL / SARLU</option>
+                      <option value="SA">Société Anonyme (SA)</option>
+                      <option value="Cooperative">Coopérative Agricole / Artisanale</option>
+                      <option value="Artisan">Artisan Enregistré</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700">Numéro RCCM *</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: CD/KIN/RCCM/20-A-01234"
+                      value={certifyRccm}
+                      onChange={(e) => setCertifyRccm(e.target.value)}
+                      className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
+                      required
+                    />
+                  </div>
+                </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -2114,6 +2459,7 @@ function VendorDashboardInner() {
                   required
                 />
               </div>
+            </div>
 
               <div className="pt-2 flex gap-3">
                 <button

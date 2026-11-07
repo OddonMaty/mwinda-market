@@ -118,7 +118,7 @@ export async function approveSellerApplication(applicationId: string) {
     else if (notesLower.includes("pro")) plan = "pro";
   }
 
-  // 4. Upsert de la boutique Vendeur (évite toute violation de contrainte unique)
+  // 4. Upsert de la boutique Vendeur (ouverture validée, certification à faire par le vendeur)
   await prisma.vendor.upsert({
     where: { userId: user.id },
     update: {
@@ -128,7 +128,7 @@ export async function approveSellerApplication(applicationId: string) {
       city: app.location || "Kinshasa",
       plan,
       isActive: true,
-      isVerified: true,
+      isVerified: false, // Non certifiée au départ : la certification légale se fait ensuite par le vendeur
     },
     create: {
       userId: user.id,
@@ -138,7 +138,7 @@ export async function approveSellerApplication(applicationId: string) {
       city: app.location || "Kinshasa",
       plan,
       isActive: true,
-      isVerified: true,
+      isVerified: false, // Non certifiée au départ : la certification légale se fait ensuite par le vendeur
     },
   });
 

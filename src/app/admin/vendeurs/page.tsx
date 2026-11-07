@@ -57,7 +57,7 @@ export default async function AdminVendeurs() {
                     <div className="flex items-center gap-2">
                       <h3 className="text-base font-bold text-primary">{app.shopName}</h3>
                       <span className="bg-amber-100 text-amber-800 text-[11px] font-bold px-2 py-0.5 rounded">
-                        En attente de certification
+                        Demande d'ouverture
                       </span>
                     </div>
                     <p className="text-xs text-on-surface-variant mt-0.5">
@@ -71,8 +71,8 @@ export default async function AdminVendeurs() {
                         type="submit"
                         className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-1.5"
                       >
-                        <span className="material-symbols-outlined text-sm">verified</span>
-                        Valider & Certifier la Boutique
+                        <span className="material-symbols-outlined text-sm">check_circle</span>
+                        Valider la Boutique
                       </button>
                     </form>
                     <form action={async () => { "use server"; await rejectSellerApplication(app.id); }}>
@@ -157,10 +157,17 @@ export default async function AdminVendeurs() {
                     {v._count.products} article(s) en vente
                   </td>
                   <td className="p-3.5">
-                    <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">
-                      <span className="material-symbols-outlined text-[13px]">verified</span>
-                      Certifiée Mwinda
-                    </span>
+                    {v.isVerified ? (
+                      <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                        <span className="material-symbols-outlined text-[13px]">verified</span>
+                        Certifiée Mwinda
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-medium">
+                        <span className="material-symbols-outlined text-[13px]">storefront</span>
+                        Ouverte (Non certifiée)
+                      </span>
+                    )}
                   </td>
                   <td className="p-3.5 text-xs text-on-surface-variant">
                     {new Date(v.createdAt).toLocaleDateString("fr-FR")}

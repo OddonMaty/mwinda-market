@@ -220,12 +220,39 @@ export default function ProductDetailPage({ params }: PageProps) {
       <main className="w-full max-w-[1280px] mx-auto px-4 lg:px-6 py-4 sm:py-6 space-y-6 flex-1">
         <Breadcrumb items={breadcrumbItems} />
 
-        {/* ─── STRUCTURE ALIBABA EN 3 ZONES SUR DESKTOP ────────────────────── */}
+        {/* ─── STRUCTURE ALIBABA / KIKUU SUR DESKTOP ────────────────────── */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* ZONE 1 (Gauche, 5 colonnes) : Galerie Photo */}
-          <div className="lg:col-span-5 space-y-3">
-            {/* Image principale carrée */}
-            <div className="relative aspect-square w-full bg-white rounded-lg border border-[#E2E8F0] overflow-hidden shadow-2xs group">
+          {/* ZONE 1 (Gauche, 5 colonnes) : Galerie Photo avec miniatures à gauche (style KiKUU) */}
+          <div className="lg:col-span-5 flex flex-col-reverse sm:flex-row gap-3">
+            {/* Colonne des miniatures à gauche (verticale sur desktop, horizontale sur mobile) */}
+            {images.length > 1 && (
+              <div className="flex sm:flex-col gap-2.5 overflow-x-auto sm:overflow-y-auto max-h-[520px] pb-1 sm:pb-0 shrink-0 scrollbar-none">
+                {images.slice(0, 5).map((imgUrl, idx) => (
+                  <button
+                    key={imgUrl + idx}
+                    type="button"
+                    onMouseEnter={() => setSelectedImageIndex(idx)}
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className={`relative w-16 h-16 sm:w-[72px] sm:h-[72px] shrink-0 rounded-lg overflow-hidden border-2 bg-white transition-all cursor-pointer ${
+                      selectedImageIndex === idx
+                        ? "border-[#EA580C] shadow-md ring-2 ring-[#EA580C]/30 scale-[1.02]"
+                        : "border-[#E2E8F0] opacity-75 hover:opacity-100 hover:border-slate-400"
+                    }`}
+                  >
+                    <Image
+                      src={imgUrl}
+                      alt={`${product.title} - vue ${idx + 1}`}
+                      fill
+                      sizes="80px"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Grande Image Principale à droite des miniatures */}
+            <div className="flex-1 relative aspect-square sm:aspect-[4/5] min-h-[340px] sm:min-h-[460px] w-full bg-white rounded-xl border border-[#E2E8F0] overflow-hidden shadow-2xs group">
               <Image
                 src={images[selectedImageIndex]}
                 alt={product.title}
@@ -271,33 +298,6 @@ export default function ProductDetailPage({ params }: PageProps) {
                 <span>Zoom</span>
               </div>
             </div>
-
-            {/* Miniatures cliquables (jusqu'à 5 photos comme Alibaba / KiKuu) */}
-            {images.length > 1 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                {images.slice(0, 5).map((imgUrl, idx) => (
-                  <button
-                    key={imgUrl + idx}
-                    type="button"
-                    onMouseEnter={() => setSelectedImageIndex(idx)}
-                    onClick={() => setSelectedImageIndex(idx)}
-                    className={`relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-lg overflow-hidden border-2 bg-white transition-all ${
-                      selectedImageIndex === idx
-                        ? "border-[#EA580C] shadow-sm ring-2 ring-[#EA580C]/20 scale-105"
-                        : "border-[#E2E8F0] opacity-75 hover:opacity-100 hover:border-slate-400"
-                    }`}
-                  >
-                    <Image
-                      src={imgUrl}
-                      alt={`${product.title} - vue ${idx + 1}`}
-                      fill
-                      sizes="80px"
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* ZONE 2 (Centre, 4 colonnes) : Bloc d'Achat & Informations Produit */}
