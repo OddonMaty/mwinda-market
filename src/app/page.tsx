@@ -14,12 +14,33 @@ import { toProductCard } from "@/lib/marketData";
 import { getActiveCategories, countProductsInCategory } from "@/config/categories";
 import { getMaxRealDiscount } from "@/lib/discounts";
 import { HeroCarousel } from "@/components/HeroCarousel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowRight,
+  ChevronRight,
+  CheckCircle2,
+  ShieldCheck,
+  Truck,
+  CreditCard,
+  Store,
+  Layers,
+  Sparkles,
+  ShoppingBag,
+  Search,
+  PackageCheck,
+  Star,
+  Check,
+  X,
+  Flame,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Palettes de couleurs pour les cartes boutiques
 const SHOP_COLORS = [
-  "bg-[#0B1B3D] text-white",
-  "bg-[#0284C7] text-white",
-  "bg-[#EA580C] text-white",
+  "bg-brand-navy text-white",
+  "bg-brand-blue text-white",
+  "bg-brand-orange text-white",
   "bg-slate-700 text-white",
 ];
 
@@ -47,7 +68,7 @@ export default function HomePage() {
   // Remise maximale réelle calculée à partir des produits du catalogue
   const maxRealDiscount = useMemo(() => getMaxRealDiscount(allProducts), [allProducts]);
 
-  // 4 Tuiles promo colorées sous la zone principale (images locales réelles)
+  // 4 Tuiles promo colorées sous la zone principale
   const promoTiles = useMemo(
     () => [
       {
@@ -88,35 +109,31 @@ export default function HomePage() {
       .slice(0, 4);
   }, [allProducts]);
 
-  // Algorithme d'affichage et priorisation selon l'abonnement du vendeur :
-  // Forfaits supérieurs (Grossiste / Élite / Pro) mis en avant dans le catalogue
+  // Algorithme d'affichage et priorisation selon l'abonnement du vendeur
   const sortedCatalogProducts = useMemo(() => {
     return [...allProducts].sort((a, b) => {
-      // Priorité 1 : Boutique certifiée / vérifiée (forfaits pro, élite, grossiste)
       const aVerified = a.shopVerified ? 1 : 0;
       const bVerified = b.shopVerified ? 1 : 0;
       if (bVerified !== aVerified) return bVerified - aVerified;
 
-      // Priorité 2 : Note et avis
       const aScore = (a.rating || 0) * (a.reviewCount || 0);
       const bScore = (b.rating || 0) * (b.reviewCount || 0);
       return bScore - aScore;
     });
   }, [allProducts]);
 
-  // Produits populaires globaux (15 produits ordonnés selon le rang d'abonnement vendeur)
+  // Produits populaires globaux
   const featuredProducts: Product[] = useMemo(() => {
     return sortedCatalogProducts.slice(0, 15).map((p) => toProductCard(p));
   }, [sortedCatalogProducts]);
 
-  // Boutiques populaires : ne montre QUE des boutiques ayant au moins 1 produit réel
+  // Boutiques populaires
   const popularShops = useMemo(() => {
     const prominentShopIds = ["solaris-rdc", "kazi-tech", "brazza-wax-couture", "abidjan-elegance-deco"];
     const selected = prominentShopIds
       .map((id) => catalogShops.find((s) => s.id === id))
       .filter((s): s is NonNullable<typeof s> => Boolean(s && s.productCount > 0));
 
-    // Fallback avec d'autres boutiques ayant au moins 1 produit si nécessaire
     const pool =
       selected.length >= 4
         ? selected.slice(0, 4)
@@ -164,18 +181,18 @@ export default function HomePage() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] selection:bg-[#EA580C] selection:text-white">
-      {/* Toast Notification */}
+    <div className="min-h-screen flex flex-col bg-background selection:bg-brand-orange selection:text-white">
+      {/* Toast Notification épurée */}
       {notificationMessage && (
-        <div className="fixed bottom-5 right-5 z-[999] bg-[#0B1B3D] text-white px-4 py-3 rounded-lg shadow-xl border border-slate-700 flex items-center gap-3 animate-in slide-in-from-bottom duration-200">
-          <span className="material-symbols-outlined text-emerald-400">check_circle</span>
+        <div className="fixed bottom-5 right-5 z-[999] bg-brand-navy text-white px-4 py-3 rounded-xl shadow-xl border border-white/10 flex items-center gap-3 animate-in slide-in-from-bottom duration-200">
+          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
           <span className="text-xs sm:text-sm font-medium">{notificationMessage}</span>
           <button
             type="button"
             onClick={() => setNotificationMessage(null)}
-            className="text-slate-400 hover:text-white ml-2"
+            className="text-white/60 hover:text-white ml-2 transition-colors"
           >
-            <span className="material-symbols-outlined text-sm">close</span>
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -183,84 +200,79 @@ export default function HomePage() {
       {/* Header */}
       <Header />
 
-      {/* Main Canvas — Même largeur et marges latérales unifiées max-w-[1280px] mx-auto px-4 lg:px-6 */}
-      <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 lg:px-6 py-5 sm:py-6 space-y-10">
-        {/* ─── 1. ZONE PRINCIPALE EN 3 COLONNES (Style Kikuu/Alibaba) ──────── */}
+      {/* Main Canvas unifié */}
+      <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 lg:px-6 py-6 space-y-12">
+        {/* ─── 1. ZONE PRINCIPALE EN 3 COLONNES (Style Kikuu/Alibaba épuré) ── */}
         <section className="flex flex-col lg:flex-row gap-4 items-stretch">
-          {/* Colonne gauche (~256px) : Catégories verticales */}
-          <aside className="hidden lg:flex w-64 shrink-0 bg-white rounded-lg border border-[#E2E8F0] p-2 flex-col justify-between shadow-2xs">
+          {/* Colonne gauche (Catégories verticales épurées) */}
+          <aside className="hidden lg:flex w-64 shrink-0 bg-white rounded-xl border border-border/70 p-2.5 flex-col justify-between shadow-card">
             <div className="space-y-0.5">
+              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/40 mb-1">
+                Catégories
+              </div>
               {activeCategories.map((cat) => (
                 <Link
                   key={cat.slug}
                   href={`/produits?category=${cat.slug}`}
-                  className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-slate-50 text-slate-700 hover:text-[#0B1B3D] transition group text-xs font-semibold"
+                  className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700 hover:text-brand-navy transition-colors group text-xs font-medium"
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-1">
-                    <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-[#0284C7] transition-colors shrink-0">
+                    <span className="material-symbols-outlined text-base text-slate-400 group-hover:text-brand-blue transition-colors shrink-0">
                       {cat.icon}
                     </span>
-                    <span className="line-clamp-2 leading-tight">{t(`home.${cat.labelKey}`)}</span>
+                    <span className="line-clamp-1">{t(`home.${cat.labelKey}`)}</span>
                   </div>
-                  <span className="material-symbols-outlined text-sm text-slate-300 group-hover:text-slate-600 transition-colors shrink-0">
-                    chevron_right
-                  </span>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 transition-colors shrink-0" />
                 </Link>
               ))}
             </div>
 
-            <div className="pt-2 border-t border-[#E2E8F0] mt-1">
+            <div className="pt-2 border-t border-border/50 mt-1">
               <Link
                 href="/produits"
-                className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-slate-50 text-slate-700 hover:text-[#0284C7] transition text-xs font-bold group"
+                className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-700 hover:text-brand-blue transition-colors text-xs font-semibold group"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-[#0284C7] shrink-0">
-                    grid_view
-                  </span>
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-slate-400 group-hover:text-brand-blue shrink-0" />
                   <span>{t("home.all_catalog")}</span>
                 </div>
-                <span className="material-symbols-outlined text-sm text-slate-300 group-hover:text-[#0284C7] shrink-0">
-                  chevron_right
-                </span>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-brand-blue shrink-0" />
               </Link>
             </div>
           </aside>
 
-          {/* Colonne centrale (flex-1) : Bannière héros hauteur ~360px */}
-          <div className="flex-1 min-w-0 relative rounded-lg overflow-hidden bg-[#0B1B3D] text-white shadow-sm border border-[#E2E8F0] flex flex-col justify-between min-h-[340px] lg:min-h-[360px]">
-            <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-6 sm:p-8 flex-1">
-              <div className="md:col-span-7 space-y-3.5">
-                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] animate-pulse" />
+          {/* Colonne centrale : Bannière Héros épurée */}
+          <div className="flex-1 min-w-0 relative rounded-2xl overflow-hidden bg-brand-navy text-white shadow-card border border-border/60 flex flex-col justify-between min-h-[340px] lg:min-h-[380px]">
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-6 sm:p-8 lg:p-10 flex-1">
+              <div className="md:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-xs border border-white/15">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse" />
                   <span className="text-[10px] font-bold tracking-wide uppercase text-orange-200">
                     {t("home.hero_tag")}
                   </span>
                 </div>
 
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-black leading-tight text-white font-display">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-tight text-white tracking-tight">
                   {maxRealDiscount > 0
                     ? `${t("home.hero_title_prefix") || "Grande Vente"} — ${t("home.hero_up_to") || "Jusqu'à"} -${maxRealDiscount}%`
                     : t("home.hero_title")}
                 </h1>
 
-                <p className="text-xs sm:text-sm text-slate-200 max-w-lg leading-relaxed line-clamp-3 sm:line-clamp-none">
+                <p className="text-xs sm:text-sm text-slate-300 max-w-lg leading-relaxed line-clamp-3 sm:line-clamp-none">
                   {t("home.hero_subtitle")}
                 </p>
 
-                <div className="pt-1 flex flex-wrap items-center gap-2.5 sm:gap-3">
+                <div className="pt-2 flex flex-wrap items-center gap-3">
                   <a
                     href="#produits"
-                    className="px-5 py-2.5 bg-[#EA580C] text-white font-bold text-xs rounded-lg shadow hover:bg-[#c2410c] transition-all flex items-center gap-1.5 transform active:scale-95 group"
+                    className="px-5 py-2.5 bg-brand-orange text-white font-semibold text-xs rounded-lg shadow-sm hover:bg-orange-600 transition-all flex items-center gap-2 active:scale-95 group"
                   >
                     <span>{t("home.hero_cta_buy")}</span>
-                    <span className="material-symbols-outlined text-base group-hover:translate-x-0.5 transition-transform">
-                      arrow_forward
-                    </span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                   </a>
                   <a
                     href="#boutiques"
-                    className="px-4 py-2.5 border border-white/40 text-white rounded-lg font-semibold text-xs hover:bg-white/10 transition-colors"
+                    className="px-4 py-2.5 border border-white/30 text-white rounded-lg font-medium text-xs hover:bg-white/10 transition-colors"
                   >
                     {t("home.hero_cta_shops")}
                   </a>
@@ -273,46 +285,45 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Colonne droite (~260px) : Bienvenue Mwinda Market */}
-          <aside className="hidden lg:flex w-64 shrink-0 bg-white rounded-lg border border-[#E2E8F0] p-4 flex-col justify-between shadow-2xs">
+          {/* Colonne droite : Espace Confiance & Connexion */}
+          <aside className="hidden lg:flex w-64 shrink-0 bg-white rounded-xl border border-border/70 p-4 flex-col justify-between shadow-card">
             <div>
-              <div className="flex items-center gap-3 pb-3 border-b border-[#E2E8F0]">
-                <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+              <div className="flex items-center gap-3 pb-3 border-b border-border/60">
+                <div className="w-9 h-9 shrink-0 flex items-center justify-center">
                   <Image
                     src="/images/logo-mwinda.png"
                     alt="Mwinda Market"
-                    width={40}
-                    height={40}
-                    className="w-10 h-10 object-contain"
+                    width={36}
+                    height={36}
+                    className="w-9 h-9 object-contain"
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-xs font-bold text-[#0B1B3D] font-display line-clamp-2 leading-snug">
+                  <h3 className="text-xs font-bold text-brand-navy line-clamp-1">
                     {t("home.welcome_title")}
                   </h3>
-                  <p className="text-[11px] text-slate-500 leading-tight line-clamp-2 mt-0.5">
+                  <p className="text-[11px] text-muted-foreground leading-tight line-clamp-2 mt-0.5">
                     {t("home.welcome_desc")}
                   </p>
                 </div>
               </div>
 
-              {/* Boutons Connexion / Inscription ou Mon Compte si connecté */}
+              {/* Statut connexion */}
               {user ? (
                 <div className="my-3.5 space-y-2">
-                  <div className="p-2.5 bg-slate-50 border border-[#E2E8F0] rounded-md flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">verified_user</span>
+                  <div className="p-2.5 bg-slate-50 border border-border/70 rounded-lg flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-brand-blue shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] text-slate-500 uppercase font-bold">Connecté</p>
-                      <p className="text-xs font-bold text-[#0B1B3D] truncate">
+                      <p className="text-[10px] text-muted-foreground uppercase font-semibold">Connecté</p>
+                      <p className="text-xs font-semibold text-brand-navy truncate">
                         {user.fullName || user.phone || user.email}
                       </p>
                     </div>
                   </div>
                   <Link
                     href="/mon-compte"
-                    className="w-full py-2 px-3 bg-[#EA580C] text-white text-xs font-bold rounded-md hover:bg-[#c2410c] transition flex items-center justify-center gap-1.5 shadow-xs"
+                    className="w-full py-2 px-3 bg-brand-orange text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                   >
-                    <span className="material-symbols-outlined text-sm">dashboard</span>
                     <span>Accéder à Mon Compte</span>
                   </Link>
                 </div>
@@ -320,104 +331,94 @@ export default function HomePage() {
                 <div className="grid grid-cols-2 gap-2 my-3.5">
                   <Link
                     href="/connexion"
-                    className="w-full py-2 px-2 bg-[#0B1B3D] text-white text-xs font-bold rounded-md hover:bg-slate-800 transition text-center truncate shadow-xs"
+                    className="w-full py-2 px-2 bg-brand-navy text-white text-xs font-semibold rounded-lg hover:bg-brand-navy/90 transition-colors text-center truncate shadow-xs"
                   >
                     {t("home.welcome_login")}
                   </Link>
                   <Link
                     href="/connexion"
-                    className="w-full py-2 px-2 border border-[#0B1B3D] text-[#0B1B3D] text-xs font-bold rounded-md hover:bg-slate-50 transition text-center truncate"
+                    className="w-full py-2 px-2 border border-border text-foreground text-xs font-semibold rounded-lg hover:bg-muted transition-colors text-center truncate"
                   >
                     {t("home.welcome_register")}
                   </Link>
                 </div>
               )}
 
-              {/* 4 Points de confiance avec icônes */}
-              <div className="space-y-2.5 pt-2 border-t border-[#E2E8F0]">
-                <div className="flex items-center gap-2 text-xs text-slate-700">
-                  <span className="material-symbols-outlined text-base text-emerald-600 shrink-0">
-                    verified_user
-                  </span>
+              {/* 4 Points de confiance avec Lucide icons */}
+              <div className="space-y-2.5 pt-2 border-t border-border/60">
+                <div className="flex items-center gap-2.5 text-xs text-slate-700">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span className="font-medium text-[11px]">{t("home.trust_secure_pay")}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-700">
-                  <span className="material-symbols-outlined text-base text-[#0284C7] shrink-0">
-                    shield
-                  </span>
+                <div className="flex items-center gap-2.5 text-xs text-slate-700">
+                  <CreditCard className="w-4 h-4 text-brand-blue shrink-0" />
                   <span className="font-medium text-[11px]">{t("home.trust_escrow")}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-700">
-                  <span className="material-symbols-outlined text-base text-[#EA580C] shrink-0">
-                    local_shipping
-                  </span>
+                <div className="flex items-center gap-2.5 text-xs text-slate-700">
+                  <Truck className="w-4 h-4 text-brand-orange shrink-0" />
                   <span className="font-medium text-[11px]">{t("home.trust_delivery")}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-700">
-                  <span className="material-symbols-outlined text-base text-amber-500 shrink-0">
-                    verified
-                  </span>
+                <div className="flex items-center gap-2.5 text-xs text-slate-700">
+                  <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
                   <span className="font-medium text-[11px]">{t("home.trust_certified")}</span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-[#E2E8F0] mt-3">
+            <div className="pt-3 border-t border-border/60 mt-3">
               <Link
                 href="/devenir-vendeur"
-                className="text-[11px] font-semibold text-[#0284C7] hover:underline flex items-center justify-between"
+                className="text-[11px] font-semibold text-brand-blue hover:underline flex items-center justify-between"
               >
                 <span>{t("home.seller_tag")}</span>
-                <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </aside>
         </section>
 
-        {/* ─── Grille mobile/tablette compacte des catégories (<1024px) ───── */}
+        {/* ─── Grille mobile des catégories (<1024px) ──────────────────────── */}
         <section className="lg:hidden">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {activeCategories.map((cat) => (
               <Link
                 key={cat.slug}
                 href={`/produits?category=${cat.slug}`}
-                className="flex items-center gap-2.5 p-3 rounded-lg bg-white border border-[#E2E8F0] text-slate-700 hover:text-[#0B1B3D] hover:border-[#0284C7] transition"
+                className="flex items-center gap-2.5 p-3 rounded-xl bg-white border border-border/70 text-slate-700 hover:text-brand-navy hover:border-brand-blue transition-colors shadow-xs"
               >
-                <span className="material-symbols-outlined text-xl text-[#0284C7] shrink-0">
+                <span className="material-symbols-outlined text-lg text-brand-blue shrink-0">
                   {cat.icon}
                 </span>
-                <span className="text-xs font-semibold line-clamp-2 leading-tight">{t(`home.${cat.labelKey}`)}</span>
+                <span className="text-xs font-semibold line-clamp-1">{t(`home.${cat.labelKey}`)}</span>
               </Link>
             ))}
           </div>
         </section>
 
-        {/* ─── 2. QUATRE TUILES PROMO COLORÉES (Catalogue Local) ──────────── */}
+        {/* ─── 2. QUATRE TUILES PROMO ÉPURÉES ──────────────────────────────── */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {promoTiles.map((tile) => (
             <Link
               key={tile.slug}
               href={`/produits?category=${tile.slug}`}
-              className="group relative rounded-lg border border-[#E2E8F0] bg-white p-3.5 hover:shadow-md hover:border-[#0284C7] transition-all flex items-center justify-between overflow-hidden"
+              className="group relative rounded-xl border border-border/70 bg-white p-3.5 hover:shadow-card-hover hover:border-slate-300 transition-all duration-200 flex items-center justify-between overflow-hidden"
             >
               <div className="space-y-1 min-w-0 flex-1 pr-2">
-                <h3 className="text-xs sm:text-sm font-bold text-[#0B1B3D] group-hover:text-[#0284C7] transition-colors line-clamp-2 leading-snug">
+                <h3 className="text-xs sm:text-sm font-bold text-foreground group-hover:text-brand-blue transition-colors line-clamp-1">
                   {tile.name}
                 </h3>
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#EA580C] group-hover:underline">
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-orange group-hover:underline">
                   {t("home.promo_tile_view")}
-                  <span className="material-symbols-outlined text-xs group-hover:translate-x-0.5 transition-transform">
-                    chevron_right
-                  </span>
+                  <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                 </span>
               </div>
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-md overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-slate-50 shrink-0 border border-border/60">
                 <Image
                   src={tile.image}
                   alt={tile.name}
                   fill
                   sizes="80px"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
             </Link>
@@ -425,88 +426,78 @@ export default function HomePage() {
         </section>
 
         {/* ─── 3. DEUX PANNEAUX : BOUTIQUES CERTIFIÉES & MEILLEURES PROMOTIONS ─ */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-          {/* Panneau 1 : Boutiques certifiées Mwinda (fond marine) */}
-          <div className="bg-[#0B1B3D] text-white rounded-lg p-4 sm:p-5 flex flex-col justify-between shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3.5">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* Panneau 1 : Boutiques certifiées Mwinda */}
+          <div className="bg-brand-navy text-white rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-card border border-white/10">
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/10 mb-4">
               <div className="flex items-center gap-2">
-                <span
-                  className="material-symbols-outlined text-lg text-sky-400"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  verified
-                </span>
-                <h3 className="text-sm sm:text-base font-bold font-display tracking-tight text-white">
+                <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0" />
+                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
                   {t("home.certified_panel_title")}
                 </h3>
               </div>
               <Link
                 href="/boutiques"
-                className="text-[11px] font-semibold text-slate-300 hover:text-white flex items-center gap-0.5 transition"
+                className="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-0.5 transition-colors"
               >
                 <span>{t("home.view_all")}</span>
-                <span className="material-symbols-outlined text-xs">chevron_right</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {certifiedShowcaseProducts.length > 0 ? (
                 certifiedShowcaseProducts.map((p) => (
                   <Link
                     key={p.id}
                     href={`/produits/${p.id}`}
-                    className="group bg-white rounded-md p-2 text-slate-900 flex flex-col hover:shadow transition border border-white/20"
+                    className="group bg-white rounded-xl p-2.5 text-slate-900 flex flex-col hover:shadow-md transition-all duration-200 border border-white/20"
                   >
-                    <div className="relative aspect-square rounded overflow-hidden bg-slate-100 mb-1.5">
+                    <div className="relative aspect-square rounded-lg overflow-hidden bg-slate-50 mb-2">
                       <Image
                         src={p.image}
                         alt={p.title}
                         fill
                         sizes="120px"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
-                    <p className="text-[11px] font-medium text-slate-800 line-clamp-1 group-hover:text-[#0284C7] transition-colors">
+                    <p className="text-[11px] font-medium text-slate-700 line-clamp-1 group-hover:text-brand-blue transition-colors">
                       {p.title}
                     </p>
-                    <p className="text-xs font-bold text-[#0B1B3D] mt-0.5">
+                    <p className="text-xs font-bold text-brand-navy mt-1">
                       {p.usdPrice} $
                     </p>
                   </Link>
                 ))
               ) : (
                 <div className="col-span-2 sm:col-span-4 py-8 text-center text-xs text-slate-300">
-                  <span className="material-symbols-outlined text-2xl text-sky-400/60 block mb-1">verified</span>
+                  <CheckCircle2 className="w-6 h-6 text-sky-400/60 mx-auto mb-1.5" />
                   Boutiques certifiées bientôt disponibles
                 </div>
               )}
             </div>
           </div>
 
-          {/* Panneau 2 : Meilleures promotions (fond orange vif Mwinda) */}
-          <div className="bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white rounded-xl p-4 sm:p-5 flex flex-col justify-between shadow-md border border-orange-400/30">
-            <div className="flex items-center justify-between pb-3 border-b border-white/20 mb-3.5">
+          {/* Panneau 2 : Meilleures promotions */}
+          <div className="bg-gradient-to-br from-brand-orange to-orange-700 text-white rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-card border border-orange-400/20">
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/20 mb-4">
               <div className="flex items-center gap-2">
-                <span
-                  className="material-symbols-outlined text-lg text-white"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  local_offer
-                </span>
-                <h3 className="text-sm sm:text-base font-bold font-display tracking-tight text-white">
+                <Flame className="w-4 h-4 text-white shrink-0" />
+                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
                   {t("home.promo_panel_title")}
                 </h3>
               </div>
               <Link
                 href="/produits"
-                className="text-[11px] font-semibold text-orange-100 hover:text-white flex items-center gap-0.5 transition"
+                className="text-xs font-medium text-orange-100 hover:text-white flex items-center gap-0.5 transition-colors"
               >
                 <span>{t("home.view_all")}</span>
-                <span className="material-symbols-outlined text-xs">chevron_right</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {discountShowcaseProducts.length > 0 ? (
                 discountShowcaseProducts.map((p) => {
                   const disc = p.originalUsdPrice
@@ -516,27 +507,27 @@ export default function HomePage() {
                     <Link
                       key={p.id}
                       href={`/produits/${p.id}`}
-                      className="group bg-white rounded-md p-2 text-slate-900 flex flex-col hover:shadow transition border border-white/20"
+                      className="group bg-white rounded-xl p-2.5 text-slate-900 flex flex-col hover:shadow-md transition-all duration-200 border border-white/20"
                     >
-                      <div className="relative aspect-square rounded overflow-hidden bg-slate-100 mb-1.5">
+                      <div className="relative aspect-square rounded-lg overflow-hidden bg-slate-50 mb-2">
                         <Image
                           src={p.image}
                           alt={p.title}
                           fill
                           sizes="120px"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         {disc > 0 && (
-                          <span className="absolute top-1 left-1 bg-[#EA580C] text-white text-[9px] font-bold px-1 py-0.5 rounded leading-none">
+                          <span className="absolute top-1.5 left-1.5 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shadow-xs">
                             -{disc}%
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] font-medium text-slate-800 line-clamp-1 group-hover:text-[#0284C7] transition-colors">
+                      <p className="text-[11px] font-medium text-slate-700 line-clamp-1 group-hover:text-brand-blue transition-colors">
                         {p.title}
                       </p>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-xs font-bold text-[#EA580C]">{p.usdPrice} $</span>
+                      <div className="flex items-baseline gap-1 mt-1">
+                        <span className="text-xs font-bold text-brand-orange">{p.usdPrice} $</span>
                         {p.originalUsdPrice && (
                           <span className="text-[10px] text-slate-400 line-through">
                             {p.originalUsdPrice} $
@@ -548,7 +539,7 @@ export default function HomePage() {
                 })
               ) : (
                 <div className="col-span-2 sm:col-span-4 py-8 text-center text-xs text-orange-100">
-                  <span className="material-symbols-outlined text-2xl text-white/70 block mb-1">local_offer</span>
+                  <Flame className="w-6 h-6 text-white/70 mx-auto mb-1.5" />
                   Promotions exclusives à venir très bientôt
                 </div>
               )}
@@ -557,22 +548,22 @@ export default function HomePage() {
         </section>
 
         {/* ─── 4. CATÉGORIES PHARES AVEC COMPTEURS RÉELS ──────────────────── */}
-        <section className="space-y-3.5" id="categories">
+        <section className="space-y-4" id="categories">
           <div className="flex items-end justify-between">
             <div>
-              <span className="text-xs uppercase tracking-wider text-[#0284C7] font-bold">
+              <span className="text-xs uppercase tracking-wider text-brand-blue font-bold">
                 {t("home.categories_tag")}
               </span>
-              <h2 className="text-lg sm:text-xl font-bold text-[#0B1B3D] font-display">
+              <h2 className="text-lg sm:text-xl font-bold text-foreground">
                 {t("home.categories_title")}
               </h2>
             </div>
             <Link
               href="/produits"
-              className="text-xs font-semibold text-[#0284C7] hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-brand-blue hover:underline flex items-center gap-1"
             >
               <span>{t("home.all_catalog")}</span>
-              <span className="material-symbols-outlined text-sm">chevron_right</span>
+              <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
@@ -583,56 +574,56 @@ export default function HomePage() {
                 <Link
                   key={cat.slug}
                   href={`/produits?category=${cat.slug}`}
-                  className="group bg-white p-3.5 rounded-lg border border-[#E2E8F0] hover:border-[#0284C7] hover:shadow-sm transition-all text-center flex flex-col items-center"
+                  className="group bg-card p-4 rounded-xl border border-border/70 hover:border-slate-300 hover:shadow-card-hover transition-all duration-200 text-center flex flex-col items-center"
                 >
-                  <div className="w-11 h-11 rounded-full bg-slate-100 text-[#0B1B3D] group-hover:bg-sky-50 group-hover:text-[#0284C7] flex items-center justify-center mb-2 group-hover:scale-105 transition-all">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 text-brand-navy group-hover:bg-brand-blue/10 group-hover:text-brand-blue flex items-center justify-center mb-2.5 transition-colors">
                     <span className="material-symbols-outlined text-2xl">{cat.icon}</span>
                   </div>
-                  <h3 className="text-xs font-bold text-[#0B1B3D] group-hover:text-[#0284C7] line-clamp-1 transition-colors">
+                  <h3 className="text-xs font-semibold text-foreground group-hover:text-brand-blue line-clamp-1 transition-colors">
                     {t(`home.${cat.labelKey}`) || cat.defaultLabel}
                   </h3>
-                  <span className="text-[11px] text-slate-500 mt-1 font-medium">
+                  <span className="text-[11px] text-muted-foreground mt-1 font-medium">
                     {count} {count > 1 ? t("shops.articles_count") : t("shops.article_count_singular")}
                   </span>
                 </Link>
               );
             })}
 
-            {/* Carte "Tout le catalogue" avec le total réel de produits */}
+            {/* Carte "Tout le catalogue" avec le total réel */}
             <Link
               href="/produits"
-              className="group bg-slate-50 p-3.5 rounded-lg border border-[#E2E8F0] hover:border-[#0284C7] hover:bg-white hover:shadow-sm transition-all text-center flex flex-col items-center justify-center"
+              className="group bg-slate-50/80 p-4 rounded-xl border border-border/70 hover:border-slate-300 hover:bg-white hover:shadow-card-hover transition-all duration-200 text-center flex flex-col items-center justify-center"
             >
-              <div className="w-11 h-11 rounded-full bg-slate-200 text-slate-700 group-hover:bg-[#0284C7] group-hover:text-white flex items-center justify-center mb-2 group-hover:rotate-90 transition-all">
-                <span className="material-symbols-outlined text-2xl">grid_view</span>
+              <div className="w-12 h-12 rounded-full bg-slate-200/80 text-slate-700 group-hover:bg-brand-navy group-hover:text-white flex items-center justify-center mb-2.5 transition-colors">
+                <Layers className="w-5 h-5" />
               </div>
-              <h3 className="text-xs font-bold text-[#0B1B3D] group-hover:text-[#0284C7] line-clamp-1 transition-colors">
+              <h3 className="text-xs font-semibold text-foreground group-hover:text-brand-navy line-clamp-1 transition-colors">
                 {t("home.all_catalog")}
               </h3>
-              <span className="text-[11px] text-slate-500 mt-1 font-medium">
+              <span className="text-[11px] text-muted-foreground mt-1 font-medium">
                 {totalCatalogCount} {t("shops.articles_count")}
               </span>
             </Link>
           </div>
         </section>
 
-        {/* ─── 5. BOUTIQUES POPULAIRES (Compteurs réels, masqués si 0) ─────── */}
-        <section className="space-y-3.5" id="boutiques">
+        {/* ─── 5. BOUTIQUES POPULAIRES (Compteurs réels) ───────────────────── */}
+        <section className="space-y-4" id="boutiques">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-xs uppercase tracking-wider text-[#0284C7] font-bold">
+              <span className="text-xs uppercase tracking-wider text-brand-blue font-bold">
                 {t("home.shops_tag")}
               </span>
-              <h2 className="text-lg sm:text-xl font-bold text-[#0B1B3D] font-display">
+              <h2 className="text-lg sm:text-xl font-bold text-foreground">
                 {t("home.shops_title")}
               </h2>
             </div>
             <Link
               href="/boutiques"
-              className="text-xs font-semibold text-[#0284C7] hover:underline flex items-center gap-1"
+              className="text-xs font-semibold text-brand-blue hover:underline flex items-center gap-1"
             >
               <span>{t("home.shops_view_all")}</span>
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
@@ -643,7 +634,7 @@ export default function HomePage() {
                 return (
                   <div
                     key={shop.id}
-                    className="bg-white rounded-lg border border-[#E2E8F0] p-4 hover:shadow-md transition-shadow flex flex-col justify-between"
+                    className="bg-card rounded-xl border border-border/70 p-4 hover:shadow-card-hover hover:border-slate-300 transition-all duration-200 flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex items-start justify-between">
@@ -653,43 +644,32 @@ export default function HomePage() {
                           {shop.tag}
                         </div>
                         {shop.verified && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-[#0284C7] border border-sky-200">
-                            <span
-                              className="material-symbols-outlined text-xs"
-                              style={{ fontVariationSettings: "'FILL' 1" }}
-                            >
-                              verified
-                            </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 text-brand-blue border border-sky-200/60">
+                            <CheckCircle2 className="w-3 h-3 text-brand-blue" />
                             {t("home.certified_mwinda")}
                           </span>
                         )}
                       </div>
 
-                      <h3 className="text-sm font-bold text-[#0B1B3D] mt-3 font-display truncate">
+                      <h3 className="text-sm font-bold text-foreground mt-3 truncate">
                         {shop.name}
                       </h3>
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
-                        <span className="material-symbols-outlined text-xs text-[#0284C7] shrink-0">location_on</span>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
                         {shop.location}
                       </p>
 
                       <div className="flex items-center gap-2 my-2.5 text-xs">
-                        <span className="flex items-center text-amber-500 font-bold">
-                          <span
-                            className="material-symbols-outlined text-sm mr-0.5"
-                            style={{ fontVariationSettings: "'FILL' 1" }}
-                          >
-                            star
-                          </span>
+                        <span className="flex items-center text-amber-500 font-semibold">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 mr-1" />
                           {shop.rating}
-                          <span className="text-[11px] text-slate-400 font-normal ml-1">
+                          <span className="text-[11px] text-muted-foreground font-normal ml-1">
                             ({shop.reviewCount})
                           </span>
                         </span>
                         {shop.productsCount && (
                           <>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-slate-600 font-medium text-[11px]">{shop.productsCount}</span>
+                            <span className="text-border">•</span>
+                            <span className="text-muted-foreground font-medium text-[11px]">{shop.productsCount}</span>
                           </>
                         )}
                       </div>
@@ -697,7 +677,7 @@ export default function HomePage() {
 
                     <Link
                       href={`/boutiques/${shop.id}`}
-                      className="w-full py-2 rounded-md border border-[#0284C7] text-[#0284C7] hover:bg-sky-50 font-bold text-xs text-center transition block mt-1"
+                      className="w-full py-2 rounded-lg border border-border text-foreground hover:bg-slate-50 font-semibold text-xs text-center transition-colors block mt-2"
                     >
                       {t("home.view_shop")}
                     </Link>
@@ -705,48 +685,49 @@ export default function HomePage() {
                 );
               })
             ) : (
-              <div className="col-span-full bg-white rounded-xl border border-slate-200 p-8 text-center">
-                <span className="material-symbols-outlined text-3xl text-sky-400 mb-2 block">storefront</span>
-                <p className="text-sm font-bold text-slate-800">Nouvelles boutiques en cours d'ouverture</p>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              <div className="col-span-full bg-card rounded-xl border border-border/70 p-8 text-center">
+                <Store className="w-8 h-8 text-brand-blue mx-auto mb-2" />
+                <p className="text-sm font-bold text-foreground">Nouvelles boutiques en cours d'ouverture</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
                   Rejoignez les premiers marchands vérifiés de la plateforme pour exposer vos produits.
                 </p>
                 <Link
                   href="/devenir-vendeur"
-                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-[#0284C7] text-white rounded-lg text-xs font-bold hover:bg-sky-700 transition"
+                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-brand-blue text-white rounded-lg text-xs font-semibold hover:bg-sky-700 transition-colors shadow-xs"
                 >
                   <span>Créer ma boutique</span>
-                  <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             )}
           </div>
         </section>
 
-        {/* ─── 6. PRODUITS POPULAIRES (Grille dense 2 col / 3 / 4 / 5 xl) ───── */}
+        {/* ─── 6. PRODUITS POPULAIRES (Grille 2 à 5 colonnes épurée) ───────── */}
         <section className="space-y-4" id="produits">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="text-xs uppercase tracking-wider text-[#EA580C] font-bold">
+              <span className="text-xs uppercase tracking-wider text-brand-orange font-bold">
                 {t("home.products_tag")}
               </span>
-              <h2 className="text-lg sm:text-xl font-bold text-[#0B1B3D] font-display">
+              <h2 className="text-lg sm:text-xl font-bold text-foreground">
                 {t("home.products_title")}
               </h2>
             </div>
 
-            {/* Filtres par onglets */}
+            {/* Filtres par onglets épurés (shadcn pill tabs) */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
               {filterTabs.map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveFilter(tab.key)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150",
                     activeFilter === tab.key
-                      ? "bg-[#0B1B3D] text-white shadow-xs"
+                      ? "bg-brand-navy text-white shadow-xs"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
+                  )}
                 >
                   {tab.label}
                 </button>
@@ -754,7 +735,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Grille dense : 2 col mobile, 3 tablette, 4 lg, 5 xl */}
+          {/* Grille : 2 col mobile, 3 tablette, 4 lg, 5 xl */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
             {filteredProducts.length > 0 ? (
               filteredProducts.map((product) => (
@@ -765,19 +746,19 @@ export default function HomePage() {
                 />
               ))
             ) : (
-              <div className="col-span-full py-12 text-center bg-white rounded-xl border border-slate-200 p-8 shadow-xs">
-                <span className="material-symbols-outlined text-4xl text-slate-300 mb-2 block">inventory_2</span>
-                <h3 className="text-base font-bold text-slate-800">Catalogue en cours d'actualisation</h3>
-                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+              <div className="col-span-full py-12 text-center bg-card rounded-xl border border-border/70 p-8 shadow-xs">
+                <ShoppingBag className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <h3 className="text-base font-bold text-foreground">Catalogue en cours d'actualisation</h3>
+                <p className="text-xs text-muted-foreground max-w-md mx-auto mt-1">
                   Les vendeurs ajoutent de nouveaux articles. Vous pouvez également ouvrir votre propre boutique pour commencer à vendre dès aujourd'hui.
                 </p>
                 <div className="mt-4 flex items-center justify-center gap-3">
                   <Link
                     href="/devenir-vendeur"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#EA580C] text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition shadow-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-brand-orange text-white rounded-lg text-xs font-semibold hover:bg-orange-600 transition-colors shadow-xs"
                   >
                     <span>Ouvrir une boutique</span>
-                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
@@ -785,122 +766,122 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ─── 7. COMMENT COMMANDER SUR MWINDA MARKET (5 étapes) ──────────── */}
-        <section className="bg-white rounded-lg border border-[#E2E8F0] p-6 sm:p-8 md:p-10 shadow-2xs space-y-8">
+        {/* ─── 7. COMMENT COMMANDER SUR MWINDA MARKET (5 étapes épurées) ───── */}
+        <section className="bg-card rounded-2xl border border-border/70 p-6 sm:p-8 md:p-10 shadow-card space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-1.5">
-            <span className="text-xs uppercase tracking-wider text-[#0284C7] font-bold">
+            <span className="text-xs uppercase tracking-wider text-brand-blue font-bold">
               {t("home.how_tag")}
             </span>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#0B1B3D] font-display">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">
               {t("home.how_title")}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {t("home.how_subtitle")}
             </p>
           </div>
 
           <div className="relative grid grid-cols-1 md:grid-cols-5 gap-6 pt-2">
-            <div className="hidden md:block absolute top-12 left-10 right-10 h-0.5 bg-slate-200 z-0" />
+            <div className="hidden md:block absolute top-10 left-12 right-12 h-0.5 bg-slate-200 z-0" />
 
             {/* Étape 1 */}
             <div className="relative z-10 flex flex-col items-center text-center space-y-2 group">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#0B1B3D] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-xl sm:text-2xl">search</span>
+              <div className="w-12 h-12 rounded-xl bg-brand-navy text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
+                <Search className="w-5 h-5" />
               </div>
-              <span className="text-[11px] font-bold text-[#0284C7] uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-brand-blue uppercase tracking-wider">
                 {t("home.step1_tag")}
               </span>
-              <h4 className="text-xs sm:text-sm font-bold text-[#0B1B3D] font-display">
+              <h4 className="text-xs sm:text-sm font-bold text-foreground">
                 {t("home.step1_title")}
               </h4>
-              <p className="text-xs text-slate-500 max-w-xs">
+              <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                 {t("home.step1_desc")}
               </p>
             </div>
 
             {/* Étape 2 */}
             <div className="relative z-10 flex flex-col items-center text-center space-y-2 group">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white border-2 border-[#0284C7] text-[#0284C7] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-xl sm:text-2xl">shopping_cart_checkout</span>
+              <div className="w-12 h-12 rounded-xl bg-white border-2 border-brand-blue text-brand-blue flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
+                <ShoppingBag className="w-5 h-5" />
               </div>
-              <span className="text-[11px] font-bold text-[#0284C7] uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-brand-blue uppercase tracking-wider">
                 {t("home.step2_tag")}
               </span>
-              <h4 className="text-xs sm:text-sm font-bold text-[#0B1B3D] font-display">
+              <h4 className="text-xs sm:text-sm font-bold text-foreground">
                 {t("home.step2_title")}
               </h4>
-              <p className="text-xs text-slate-500 max-w-xs">
+              <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                 {t("home.step2_desc")}
               </p>
             </div>
 
             {/* Étape 3 */}
             <div className="relative z-10 flex flex-col items-center text-center space-y-2 group">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#EA580C] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-xl sm:text-2xl">point_of_sale</span>
+              <div className="w-12 h-12 rounded-xl bg-brand-orange text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
+                <CreditCard className="w-5 h-5" />
               </div>
-              <span className="text-[11px] font-bold text-[#EA580C] uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-brand-orange uppercase tracking-wider">
                 {t("home.step3_tag")}
               </span>
-              <h4 className="text-xs sm:text-sm font-bold text-[#0B1B3D] font-display">
+              <h4 className="text-xs sm:text-sm font-bold text-foreground">
                 {t("home.step3_title")}
               </h4>
-              <p className="text-xs text-slate-500 max-w-xs">
+              <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                 {t("home.step3_desc")}
               </p>
             </div>
 
             {/* Étape 4 */}
             <div className="relative z-10 flex flex-col items-center text-center space-y-2 group">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white border-2 border-[#0284C7] text-[#0284C7] flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-xl sm:text-2xl">local_shipping</span>
+              <div className="w-12 h-12 rounded-xl bg-white border-2 border-brand-blue text-brand-blue flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
+                <Truck className="w-5 h-5" />
               </div>
-              <span className="text-[11px] font-bold text-[#0284C7] uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-brand-blue uppercase tracking-wider">
                 {t("home.step4_tag")}
               </span>
-              <h4 className="text-xs sm:text-sm font-bold text-[#0B1B3D] font-display">
+              <h4 className="text-xs sm:text-sm font-bold text-foreground">
                 {t("home.step4_title")}
               </h4>
-              <p className="text-xs text-slate-500 max-w-xs">
+              <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                 {t("home.step4_desc")}
               </p>
             </div>
 
             {/* Étape 5 */}
             <div className="relative z-10 flex flex-col items-center text-center space-y-2 group">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#0B1B3D] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-xl sm:text-2xl">inventory_2</span>
+              <div className="w-12 h-12 rounded-xl bg-brand-navy text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
+                <PackageCheck className="w-5 h-5" />
               </div>
-              <span className="text-[11px] font-bold text-[#0284C7] uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-brand-blue uppercase tracking-wider">
                 {t("home.step5_tag")}
               </span>
-              <h4 className="text-xs sm:text-sm font-bold text-[#0B1B3D] font-display">
+              <h4 className="text-xs sm:text-sm font-bold text-foreground">
                 {t("home.step5_title")}
               </h4>
-              <p className="text-xs text-slate-500 max-w-xs">
+              <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                 {t("home.step5_desc")}
               </p>
             </div>
           </div>
         </section>
 
-        {/* ─── 8. CALLOUT : VOUS ÊTES COMMERÇANT OU IMPORTATEUR ? ──────────── */}
-        <section className="rounded-lg bg-slate-50 border border-[#E2E8F0] p-6 lg:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-2xs">
-          <div className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase bg-[#0284C7] text-white px-2 py-0.5 rounded tracking-wider">
+        {/* ─── 8. CALLOUT : ESPACE COMMERÇANT & IMPORTATEUR ─────────────────── */}
+        <section className="rounded-2xl bg-slate-50/80 border border-border/70 p-6 lg:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-xs">
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold uppercase bg-brand-blue text-white px-2.5 py-0.5 rounded-full tracking-wider">
               {t("home.seller_tag")}
             </span>
-            <h3 className="text-lg sm:text-2xl font-bold text-[#0B1B3D] font-display">
+            <h3 className="text-lg sm:text-2xl font-bold text-foreground">
               {t("home.seller_title")}
             </h3>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-xl leading-relaxed">
               {t("home.seller_desc")}
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0 w-full sm:w-auto">
             <Link
               href="/devenir-vendeur"
-              className="w-full sm:w-auto px-6 py-3 bg-[#0B1B3D] text-white rounded-lg text-xs sm:text-sm font-bold hover:bg-slate-800 transition shadow-xs text-center block"
+              className="w-full sm:w-auto px-6 py-3 bg-brand-navy text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-brand-navy/90 transition-colors shadow-xs text-center block"
             >
               {t("home.seller_btn")}
             </Link>

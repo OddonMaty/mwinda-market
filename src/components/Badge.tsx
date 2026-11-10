@@ -1,4 +1,6 @@
 import React from "react";
+import { Badge as ShadcnBadge } from "@/components/ui/badge";
+import { Sparkles, Zap, Globe, CheckCircle2, Flame, Award } from "lucide-react";
 
 export type BadgeVariant =
   | "discount"
@@ -19,71 +21,92 @@ export const Badge: React.FC<BadgeProps> = ({ variant, text, className = "" }) =
   switch (variant) {
     case "discount":
       return (
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-tertiary text-white ${className}`}
+        <ShadcnBadge
+          variant="accent"
+          size="sm"
+          className={`font-bold tracking-tight bg-accent text-accent-foreground shadow-sm ${className}`}
         >
           {text || "-20%"}
-        </span>
+        </ShadcnBadge>
       );
 
     case "express":
       return (
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-primary text-secondary-fixed-dim ${className}`}
+        <ShadcnBadge
+          variant="default"
+          size="sm"
+          className={`bg-brand-navy text-white font-medium flex items-center gap-1 shadow-xs ${className}`}
         >
-          {text || "Kinshasa Express"}
-        </span>
+          <Zap className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+          <span>{text || "Kinshasa Express"}</span>
+        </ShadcnBadge>
       );
 
     case "interprovincial":
       return (
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-secondary-fixed text-on-secondary-container ${className}`}
+        <ShadcnBadge
+          variant="secondary"
+          size="sm"
+          className={`font-medium flex items-center gap-1 ${className}`}
         >
-          {text || "Interprovincial"}
-        </span>
+          <Globe className="w-2.5 h-2.5 shrink-0" />
+          <span>{text || "Interprovincial"}</span>
+        </ShadcnBadge>
       );
 
     case "verified":
       return (
-        <span
-          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-secondary-fixed text-on-secondary-container ${className}`}
+        <ShadcnBadge
+          variant="success"
+          size="sm"
+          className={`flex items-center gap-1 ${className}`}
         >
-          <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>
-            verified
-          </span>
-          {text || "Certifié Mwinda"}
-        </span>
+          <CheckCircle2 className="w-2.5 h-2.5 shrink-0" />
+          <span>{text || "Vérifié"}</span>
+        </ShadcnBadge>
       );
 
     case "essential":
       return (
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-secondary text-white ${className}`}
+        <ShadcnBadge
+          variant="outline"
+          size="sm"
+          className={`bg-white/95 text-slate-700 font-medium border-slate-200/80 flex items-center gap-1 ${className}`}
         >
-          {text || "Essentiel"}
-        </span>
+          <Sparkles className="w-2.5 h-2.5 text-brand-blue shrink-0" />
+          <span>{text || "Essentiel"}</span>
+        </ShadcnBadge>
       );
 
     case "origin-rdc":
       return (
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-container-highest text-on-surface ${className}`}
+        <ShadcnBadge
+          variant="subtle"
+          size="sm"
+          className={`text-slate-800 font-medium flex items-center gap-1 ${className}`}
         >
-          {text || "Authentique RDC"}
-        </span>
+          <Award className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+          <span>{text || "Origine RDC"}</span>
+        </ShadcnBadge>
       );
 
     case "top-sale":
       return (
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-primary text-secondary-container ${className}`}
+        <ShadcnBadge
+          variant="accent"
+          size="sm"
+          className={`bg-rose-500 text-white font-semibold flex items-center gap-1 ${className}`}
         >
-          {text || "Top Vente"}
-        </span>
+          <Flame className="w-2.5 h-2.5 shrink-0" />
+          <span>{text || "Top Vente"}</span>
+        </ShadcnBadge>
       );
 
     default:
-      return null;
+      return (
+        <ShadcnBadge variant="outline" size="sm" className={className}>
+          {text}
+        </ShadcnBadge>
+      );
   }
 };

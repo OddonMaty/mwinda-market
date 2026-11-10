@@ -12,6 +12,25 @@ import { useT } from "@/i18n";
 import { CONTACT_CONFIG } from "@/config/contact";
 import { getActiveCategories } from "@/config/categories";
 import { useCatalog } from "@/context/CatalogContext";
+import {
+  Search,
+  ShoppingBag,
+  Bell,
+  Heart,
+  User,
+  ChevronDown,
+  Menu,
+  X,
+  Headphones,
+  Check,
+  CheckCircle2,
+  Store,
+  LogOut,
+  Sparkles,
+  Phone,
+  LayoutGrid,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   cartCount?: number;
@@ -36,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const catBtnRef = useRef<HTMLButtonElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  // Catégories actives (exclut celles ayant 0 produit) — source CatalogContext (live ou mock)
+  // Catégories actives (exclut celles ayant 0 produit)
   const activeCategories = React.useMemo(
     () => getActiveCategories(catalogProducts),
     [catalogProducts]
@@ -55,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   const hotline = CONTACT_CONFIG.phone;
   const hotlineRaw = CONTACT_CONFIG.phoneRaw;
 
-  // Close cat panel and notif on outside click
+  // Fermeture des menus au clic extérieur
   useEffect(() => {
     if (!catPanelOpen) return;
     const handler = (e: MouseEvent) => {
@@ -79,47 +98,59 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
   }, [notifOpen]);
 
   return (
-    <header className="sticky top-0 z-50 w-full overflow-x-clip">
+    <header className="sticky top-0 z-50 w-full overflow-x-clip bg-white/95 backdrop-blur-md">
       {/* ─────────────────────────────────────────────────────────
-          LEVEL 1 — Utility bar (desktop only, marine background)
+          LEVEL 1 — Utility bar (desktop only, marine sleek)
       ───────────────────────────────────────────────────────── */}
-      <div className="hidden lg:block w-full bg-primary text-white/90 text-[11px]">
+      <div className="hidden lg:block w-full bg-brand-navy text-white text-xs border-b border-white/10">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-6 flex items-center justify-between h-8 gap-4">
-          {/* Left: hotline */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="material-symbols-outlined text-sm text-tertiary">support_agent</span>
-            <span className="font-medium">{t("header.utility_hotline_prefix")}</span>
-            <a href={`tel:${hotlineRaw}`} className="font-bold hover:text-secondary-accent transition">
+          {/* Left: hotline / service client */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Headphones className="w-3.5 h-3.5 text-brand-orange" />
+            <span className="text-white/80">{t("header.utility_hotline_prefix")}</span>
+            <a
+              href={`tel:${hotlineRaw}`}
+              className="font-semibold text-white hover:text-brand-orange transition-colors"
+            >
               {hotline}
             </a>
           </div>
+
           {/* Right: quick links + selectors */}
-          <div className="flex items-center gap-4">
-            <Link href="/suivi" className="hover:text-secondary-accent transition whitespace-nowrap">
+          <div className="flex items-center gap-4 text-white/85">
+            <Link
+              href="/suivi"
+              className="hover:text-white transition-colors whitespace-nowrap"
+            >
               {t("header.utility_tracking")}
             </Link>
-            <Link href="/devenir-vendeur" className="hover:text-secondary-accent transition whitespace-nowrap">
-              {t("header.utility_sell")}
+            <Link
+              href="/devenir-vendeur"
+              className="hover:text-white transition-colors whitespace-nowrap flex items-center gap-1 font-medium"
+            >
+              <Store className="w-3.5 h-3.5 text-brand-blue" />
+              <span>{t("header.utility_sell")}</span>
             </Link>
-            <div className="w-px h-4 bg-white/20" />
+            <div className="w-px h-3.5 bg-white/20" />
             <CountrySelector variant="header" />
+
             {/* Language dropdown */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
-                className="flex items-center gap-1 hover:text-secondary-accent transition"
+                className="flex items-center gap-1.5 hover:text-white transition-colors py-1"
                 title={t("header.select_language")}
               >
                 <span>{currentLangObj.flag}</span>
-                <span className="font-semibold uppercase">{currentLangObj.code}</span>
-                <span className="material-symbols-outlined text-xs">expand_more</span>
+                <span className="font-semibold uppercase tracking-wider text-[11px]">{currentLangObj.code}</span>
+                <ChevronDown className="w-3 h-3 text-white/70" />
               </button>
               {langMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setLangMenuOpen(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-outline-variant rounded-xl shadow-modal z-40 py-1 overflow-hidden">
-                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-outline">
+                  <div className="absolute right-0 top-full mt-1.5 w-40 bg-white text-slate-800 border border-border rounded-xl shadow-lg z-40 py-1.5 overflow-hidden animate-in fade-in-50 zoom-in-95">
+                    <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/50">
                       {t("header.select_language")}
                     </div>
                     {availableLanguages.map((lCode) => {
@@ -130,20 +161,22 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                         <button
                           key={lObj.code}
                           type="button"
-                          onClick={() => { setLanguage(lObj.code as SupportedLanguage); setLangMenuOpen(false); }}
-                          className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between transition ${
+                          onClick={() => {
+                            setLanguage(lObj.code as SupportedLanguage);
+                            setLangMenuOpen(false);
+                          }}
+                          className={cn(
+                            "w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors",
                             isCurrent
-                              ? "bg-surface-container text-primary font-bold"
-                              : "text-on-surface hover:bg-surface-container-low"
-                          }`}
+                              ? "bg-brand-blue/10 text-brand-blue font-bold"
+                              : "hover:bg-muted text-foreground"
+                          )}
                         >
                           <span className="flex items-center gap-2">
                             <span>{lObj.flag}</span>
                             <span>{lObj.label}</span>
                           </span>
-                          {isCurrent && (
-                            <span className="material-symbols-outlined text-secondary text-sm">check</span>
-                          )}
+                          {isCurrent && <Check className="w-3.5 h-3.5 text-brand-blue" />}
                         </button>
                       );
                     })}
@@ -156,87 +189,76 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
       </div>
 
       {/* ─────────────────────────────────────────────────────────
-          LEVEL 2 — Main bar (white, logo + search + actions)
+          LEVEL 2 — Main bar (logo + search + actions)
       ───────────────────────────────────────────────────────── */}
-      <div className="w-full bg-white border-b border-outline-variant shadow-sm">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-6 flex items-center gap-3 md:gap-4 h-16 md:h-[72px]">
+      <div className="w-full border-b border-border/70">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-6 flex items-center gap-3 md:gap-6 h-16 md:h-18">
           {/* Mobile hamburger */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-1.5 rounded-lg lg:hidden hover:bg-surface-container text-on-surface shrink-0"
+            className="p-2 rounded-lg lg:hidden hover:bg-muted text-foreground shrink-0 transition-colors"
             aria-label="Menu"
           >
-            <span className="material-symbols-outlined text-2xl">menu</span>
+            <Menu className="w-5 h-5" />
           </button>
 
-          {/* Logo — horizontal officiel (M + Mwinda MARKET) */}
+          {/* Logo officiel Mwinda Market */}
           <Link href="/" className="flex items-center shrink-0 group" aria-label="Mwinda Market — Accueil">
-            {/* Mobile: monogramme seul pour économiser l'espace */}
             <Image
               src="/images/logo-mwinda.png"
               alt="Mwinda Market"
-              width={40}
-              height={40}
-              className="sm:hidden h-[40px] w-auto object-contain"
+              width={38}
+              height={38}
+              className="sm:hidden h-[38px] w-auto object-contain"
               priority
             />
-            {/* Desktop/tablette: logo horizontal complet */}
             <Image
               src="/images/logo-mwinda-h-light.png"
               alt="Mwinda Market"
-              width={195}
-              height={44}
-              className="hidden sm:block h-[44px] w-auto object-contain"
+              width={180}
+              height={40}
+              className="hidden sm:block h-[40px] w-auto object-contain transition-transform group-hover:scale-[1.01]"
               priority
             />
           </Link>
 
-
-          {/* Search bar — desktop & tablet */}
-          <div className="hidden md:flex flex-1 max-w-xl lg:max-w-2xl">
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
+          {/* Search bar épurée — desktop & tablette */}
+          <div className="hidden md:flex flex-1 max-w-xl lg:max-w-2xl mx-auto">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="relative flex items-center w-full group rounded-full border border-border/80 bg-slate-50/80 transition-all duration-200 focus-within:bg-white focus-within:border-brand-navy focus-within:ring-2 focus-within:ring-brand-navy/10 shadow-xs"
+            >
+              <Search className="w-4 h-4 ml-4 text-muted-foreground group-focus-within:text-brand-navy shrink-0 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("header.search_placeholder")}
-                className="w-full pl-4 pr-[120px] lg:pr-[130px] py-2.5 bg-white border-2 border-tertiary rounded-lg text-sm text-on-surface focus:outline-none focus:border-tertiary transition placeholder:text-outline"
+                className="w-full pl-3 pr-28 py-2.5 bg-transparent text-sm text-foreground focus:outline-none placeholder:text-muted-foreground"
               />
               <button
                 type="submit"
-                className="absolute right-0 top-0 bottom-0 px-5 bg-tertiary text-white rounded-r-lg text-sm font-bold hover:bg-tertiary-hover transition flex items-center gap-1.5"
+                className="absolute right-1 top-1 bottom-1 px-4 bg-brand-orange text-white rounded-full text-xs font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1.5 shadow-xs"
               >
-                <span className="material-symbols-outlined text-base">search</span>
                 <span>{t("header.search_btn")}</span>
               </button>
             </form>
           </div>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-1 md:gap-2 shrink-0 ml-auto md:ml-0">
+          {/* Actions à droite */}
+          <div className="flex items-center gap-1.5 md:gap-2 shrink-0 ml-auto md:ml-0">
             {/* Mobile search toggle */}
             <button
               type="button"
               onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition md:hidden"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors md:hidden"
               aria-label={t("header.search_btn") || "Recherche"}
             >
-              <span className="material-symbols-outlined text-xl">
-                {mobileSearchOpen ? "close" : "search"}
-              </span>
+              {mobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
             </button>
 
-            {/* Favorites — desktop only */}
-            <button
-              type="button"
-              className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition hidden lg:flex items-center"
-              title={t("header.favorites")}
-            >
-              <span className="material-symbols-outlined text-[22px]">favorite_border</span>
-            </button>
-
-            {/* Notifications — opérationnel mobile & desktop */}
+            {/* Notifications épurées */}
             <div className="relative" ref={notifRef}>
               <button
                 type="button"
@@ -244,159 +266,138 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                   setNotifOpen(!notifOpen);
                   if (!notifRead) setNotifRead(true);
                 }}
-                className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition relative flex items-center"
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors relative flex items-center justify-center"
                 title={t("header.notifications") || "Notifications"}
                 aria-label="Centre de notifications"
               >
-                <span className="material-symbols-outlined text-[22px]">
-                  {notifRead ? "notifications_none" : "notifications"}
-                </span>
+                <Bell className="w-5 h-5" />
                 {!notifRead && (
-                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#EA580C] rounded-full ring-2 ring-white animate-pulse" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-orange rounded-full ring-2 ring-white animate-pulse" />
                 )}
               </button>
 
               {/* Popover Notifications */}
               {notifOpen && (
-                <div className="absolute right-0 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 mt-2 w-72 sm:w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-fadeIn text-slate-800">
-                  <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                    <span className="font-bold text-xs text-[#0B1B3D] flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-base text-[#EA580C]">notifications</span>
+                <div className="absolute right-0 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 mt-2 w-76 sm:w-80 bg-white border border-border rounded-2xl shadow-xl z-50 overflow-hidden text-foreground animate-in fade-in-50 zoom-in-95">
+                  <div className="p-3.5 bg-slate-50 border-b border-border flex items-center justify-between">
+                    <span className="font-bold text-xs text-brand-navy flex items-center gap-1.5">
+                      <Bell className="w-3.5 h-3.5 text-brand-orange" />
                       <span>Notifications Mwinda</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => setNotifRead(true)}
-                      className="text-[10px] text-slate-500 hover:text-slate-800 font-semibold"
+                      className="text-[10px] text-muted-foreground hover:text-foreground font-medium"
                     >
                       Tout marquer comme lu
                     </button>
                   </div>
 
-                  <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
-                    {/* Notification vérification compte */}
-                    {(!user?.isVerified && !user?.emailConfirmed) && (
+                  <div className="divide-y divide-border/60 max-h-72 overflow-y-auto">
+                    {/* Alerte compte non vérifié */}
+                    {!user?.isVerified && !user?.emailConfirmed && (
                       <Link
                         href="/mon-compte"
                         onClick={() => setNotifOpen(false)}
-                        className="p-3 flex items-start gap-2.5 hover:bg-slate-50 transition block bg-amber-50/50"
+                        className="p-3.5 flex items-start gap-2.5 hover:bg-muted/50 transition-colors block bg-amber-50/40"
                       >
-                        <span className="material-symbols-outlined text-amber-600 text-lg shrink-0 mt-0.5">
-                          hourglass_empty
-                        </span>
+                        <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-xs font-bold text-[#0B1B3D]">Compte non vérifié</p>
-                          <p className="text-[11px] text-slate-600 mt-0.5">
-                            Validez votre email ou téléphone par code OTP pour obtenir le badge officiel Membre Vérifié.
+                          <p className="text-xs font-bold text-brand-navy">Compte à certifier</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Validez votre numéro par code OTP pour obtenir le badge membre vérifié.
                           </p>
                         </div>
                       </Link>
                     )}
 
-                    {/* Notification garantie Escrow */}
-                    <div className="p-3 flex items-start gap-2.5 hover:bg-slate-50 transition">
-                      <span className="material-symbols-outlined text-emerald-600 text-lg shrink-0 mt-0.5">
-                        verified_user
-                      </span>
+                    {/* Notification séquestre */}
+                    <div className="p-3.5 flex items-start gap-2.5 hover:bg-muted/50 transition-colors">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-xs font-bold text-[#0B1B3D]">Paiements protégés (Escrow)</p>
-                        <p className="text-[11px] text-slate-600 mt-0.5">
-                          Vos paiements Mobile Money et Cash sont bloqués en séquestre jusqu'à la confirmation de votre livraison.
+                        <p className="text-xs font-bold text-brand-navy">Paiements sécurisés (Escrow)</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          Fonds retenus jusqu'à la réception conforme de votre commande.
                         </p>
                       </div>
                     </div>
-
-                    {/* Notification Promotions */}
-                    <Link
-                      href="/produits"
-                      onClick={() => setNotifOpen(false)}
-                      className="p-3 flex items-start gap-2.5 hover:bg-slate-50 transition block"
-                    >
-                      <span className="material-symbols-outlined text-[#EA580C] text-lg shrink-0 mt-0.5">
-                        local_offer
-                      </span>
-                      <div>
-                        <p className="text-xs font-bold text-[#0B1B3D]">Offres & Promotions actives</p>
-                        <p className="text-[11px] text-slate-600 mt-0.5">
-                          Jusqu'à -30% sur les boutiques partenaires certifiées ce mois-ci.
-                        </p>
-                      </div>
-                    </Link>
                   </div>
 
-                  <div className="p-2.5 bg-slate-50 border-t border-slate-200 text-center">
+                  <div className="p-2.5 bg-slate-50 border-t border-border text-center">
                     <Link
                       href="/mon-compte"
                       onClick={() => setNotifOpen(false)}
-                      className="text-xs font-bold text-[#EA580C] hover:underline"
+                      className="text-xs font-semibold text-brand-orange hover:underline"
                     >
-                      Accéder à mon espace client &rarr;
+                      Accéder à mon espace &rarr;
                     </Link>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Cart — always visible */}
+            {/* Cart Button avec compteur pill */}
             <Link
               href="/panier"
-              className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition relative flex items-center"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors relative flex items-center justify-center"
               title={t("header.cart_title")}
             >
-              <span className="material-symbols-outlined text-[22px]">shopping_cart</span>
+              <ShoppingBag className="w-5 h-5" />
               {displayCartCount > 0 && (
-                <span suppressHydrationWarning className="absolute -top-1 -right-1 bg-tertiary text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white">
+                <span
+                  suppressHydrationWarning
+                  className="absolute -top-1 -right-1 bg-brand-orange text-white text-[10px] font-bold min-w-5 h-5 px-1 rounded-full flex items-center justify-center ring-2 ring-white shadow-xs"
+                >
                   {displayCartCount}
                 </span>
               )}
             </Link>
 
-            {/* Separator */}
-            <div className="h-6 w-px bg-outline-variant mx-1 hidden lg:block" />
+            <div className="h-5 w-px bg-border mx-1 hidden lg:block" />
 
-            {/* Login | Register | Profile — desktop */}
+            {/* Compte Utilisateur / Connexion (Desktop) */}
             {user ? (
-              <div className="hidden lg:flex items-center gap-2">
+              <div className="hidden lg:flex items-center gap-1.5">
                 <Link
                   href="/mon-compte"
-                  className="text-xs font-bold text-primary flex items-center gap-1.5 bg-surface-container px-3 py-1.5 rounded-full border border-outline-variant hover:border-secondary hover:bg-secondary/5 transition"
+                  className="text-xs font-semibold text-brand-navy flex items-center gap-1.5 bg-slate-100/80 hover:bg-slate-200/80 px-3 py-1.5 rounded-full border border-border/80 transition-all"
                 >
-                  <span className="material-symbols-outlined text-base text-secondary">account_circle</span>
-                  <span className="max-w-[120px] truncate">{user.fullName || user.phone || user.email}</span>
+                  <User className="w-3.5 h-3.5 text-brand-blue" />
+                  <span className="max-w-[110px] truncate">{user.fullName || user.phone || user.email}</span>
                 </Link>
                 {user.role === "vendor" && (
                   <Link
                     href="/vendeur/dashboard"
-                    className="p-1.5 text-secondary hover:bg-secondary/10 transition rounded-lg"
+                    className="p-1.5 text-brand-blue hover:bg-brand-blue/10 transition-colors rounded-lg"
                     title="Espace Vendeur"
                   >
-                    <span className="material-symbols-outlined text-lg">storefront</span>
+                    <Store className="w-4 h-4" />
                   </Link>
                 )}
                 <button
                   type="button"
                   onClick={() => signOut()}
-                  className="p-1.5 text-outline hover:text-error transition rounded-lg hover:bg-surface-container"
+                  className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-muted"
                   title="Déconnexion"
                 >
-                  <span className="material-symbols-outlined text-lg">logout</span>
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
               <Link
                 href="/connexion"
-                className="hidden lg:flex items-center gap-1.5 text-sm font-semibold text-on-surface hover:text-secondary transition whitespace-nowrap"
+                className="hidden lg:flex items-center gap-2 text-xs font-semibold text-foreground hover:text-brand-blue transition-colors px-3 py-1.5 rounded-lg hover:bg-muted"
               >
-                <span className="material-symbols-outlined text-[20px] text-secondary">person</span>
+                <User className="w-4 h-4 text-brand-blue" />
                 <span>{t("header.login_register")}</span>
               </Link>
             )}
           </div>
         </div>
 
-        {/* Mobile search expandable row */}
+        {/* Mobile Search Row (Expandable) */}
         {mobileSearchOpen && (
-          <div className="md:hidden px-4 pb-3 pt-1 border-t border-outline-variant/60">
+          <div className="md:hidden px-4 pb-3 pt-1 border-t border-border/60">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center">
               <input
                 type="text"
@@ -404,11 +405,11 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("header.search_placeholder")}
-                className="w-full pl-4 pr-28 py-2 border-2 border-tertiary rounded-lg text-sm text-on-surface focus:outline-none transition placeholder:text-outline"
+                className="w-full pl-3.5 pr-24 py-2 border border-border rounded-full text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand-navy/15 bg-slate-50"
               />
               <button
                 type="submit"
-                className="absolute right-0 top-0 bottom-0 px-4 bg-tertiary text-white rounded-r-lg text-sm font-bold"
+                className="absolute right-1 top-1 bottom-1 px-4 bg-brand-orange text-white rounded-full text-xs font-semibold"
               >
                 {t("header.search_btn")}
               </button>
@@ -416,23 +417,23 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
           </div>
         )}
 
-        {/* Mobile country/lang row */}
-        <div className="lg:hidden px-4 pb-2 pt-0 flex items-center justify-between gap-2 border-t border-outline-variant/30">
+        {/* Mobile Country & Lang Compact Row */}
+        <div className="lg:hidden px-4 py-1.5 flex items-center justify-between gap-2 border-t border-border/40 bg-slate-50/50">
           <CountrySelector variant="compact" />
           <div className="relative">
             <button
               type="button"
               onClick={() => setLangMenuOpen(!langMenuOpen)}
-              className="px-2 py-1 rounded border border-outline-variant bg-surface text-xs font-semibold text-primary flex items-center gap-1"
+              className="px-2.5 py-1 rounded-md border border-border bg-white text-xs font-semibold text-foreground flex items-center gap-1 shadow-xs"
             >
               <span>{currentLangObj.flag}</span>
-              <span className="uppercase">{currentLangObj.code}</span>
-              <span className="material-symbols-outlined text-xs text-outline">expand_more</span>
+              <span className="uppercase text-[10px]">{currentLangObj.code}</span>
+              <ChevronDown className="w-3 h-3 text-muted-foreground" />
             </button>
             {langMenuOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setLangMenuOpen(false)} />
-                <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-outline-variant rounded-xl shadow-modal z-40 py-1 overflow-hidden">
+                <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-border rounded-xl shadow-lg z-40 py-1 overflow-hidden">
                   {availableLanguages.map((lCode) => {
                     const lObj = SUPPORTED_LANGUAGES.find((item) => item.code === lCode);
                     if (!lObj) return null;
@@ -441,13 +442,20 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                       <button
                         key={lObj.code}
                         type="button"
-                        onClick={() => { setLanguage(lObj.code as SupportedLanguage); setLangMenuOpen(false); }}
-                        className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between ${
-                          isCurrent ? "bg-surface-container text-primary font-bold" : "text-on-surface hover:bg-surface-container-low"
-                        }`}
+                        onClick={() => {
+                          setLanguage(lObj.code as SupportedLanguage);
+                          setLangMenuOpen(false);
+                        }}
+                        className={cn(
+                          "w-full text-left px-3 py-1.5 text-xs flex items-center justify-between transition-colors",
+                          isCurrent ? "bg-muted font-bold text-brand-navy" : "text-foreground hover:bg-muted/50"
+                        )}
                       >
-                        <span className="flex items-center gap-2"><span>{lObj.flag}</span><span>{lObj.label}</span></span>
-                        {isCurrent && <span className="material-symbols-outlined text-secondary text-sm">check</span>}
+                        <span className="flex items-center gap-2">
+                          <span>{lObj.flag}</span>
+                          <span>{lObj.label}</span>
+                        </span>
+                        {isCurrent && <Check className="w-3.5 h-3.5 text-brand-blue" />}
                       </button>
                     );
                   })}
@@ -459,35 +467,39 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
       </div>
 
       {/* ─────────────────────────────────────────────────────────
-          LEVEL 3 — Navigation bar (desktop only, white)
+          LEVEL 3 — Navigation bar (desktop only)
       ───────────────────────────────────────────────────────── */}
-      <div className="hidden lg:block w-full bg-white border-b border-outline-variant">
-        <div className="max-w-[1280px] mx-auto px-4 lg:px-6 flex items-center gap-0 h-10">
-          {/* All Categories button */}
-          <div className="relative shrink-0">
+      <div className="hidden lg:block w-full bg-white border-b border-border/70">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-6 flex items-center gap-1 h-11">
+          {/* Menu Toutes les catégories */}
+          <div className="relative shrink-0 mr-2">
             <button
               ref={catBtnRef}
               type="button"
               onClick={() => setCatPanelOpen(!catPanelOpen)}
-              className="flex items-center gap-1.5 h-10 px-4 bg-primary text-white text-sm font-bold hover:bg-primary/90 transition whitespace-nowrap"
+              className="flex items-center gap-2 h-9 px-3.5 bg-brand-navy text-white text-xs font-semibold rounded-lg hover:bg-brand-navy/90 transition-all shadow-xs"
             >
-              <span className="material-symbols-outlined text-base">menu</span>
+              <LayoutGrid className="w-3.5 h-3.5" />
               <span>{t("header.all_categories")}</span>
-              <span className="material-symbols-outlined text-sm ml-1">expand_more</span>
+              <ChevronDown className="w-3.5 h-3.5 opacity-70 ml-0.5" />
             </button>
-            {/* Categories panel */}
+
+            {/* Panneau déroulant des catégories */}
             {catPanelOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setCatPanelOpen(false)} />
-                <div className="absolute left-0 top-full mt-0 w-56 bg-white border border-outline-variant rounded-b-xl shadow-modal z-40 py-1 overflow-hidden">
+                <div className="absolute left-0 top-full mt-1.5 w-60 bg-white border border-border rounded-xl shadow-xl z-40 py-2 overflow-hidden animate-in fade-in-50 zoom-in-95">
+                  <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/50 mb-1">
+                    Rayons & Catégories
+                  </div>
                   {activeCategories.map((cat) => (
                     <Link
                       key={cat.slug}
                       href={`/produits?category=${cat.slug}`}
                       onClick={() => setCatPanelOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container-low hover:text-secondary transition"
+                      className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-foreground hover:bg-slate-50 hover:text-brand-blue transition-colors"
                     >
-                      <span className="material-symbols-outlined text-base text-secondary">{cat.icon}</span>
+                      <span className="material-symbols-outlined text-base text-brand-blue opacity-80">{cat.icon}</span>
                       <span>{t(`header.${cat.labelKey}`) || cat.defaultLabel}</span>
                     </Link>
                   ))}
@@ -496,13 +508,13 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
             )}
           </div>
 
-          {/* Nav links */}
-          <nav className="flex items-center flex-1 overflow-hidden">
+          {/* Liens de navigation principaux */}
+          <nav className="flex items-center gap-1 flex-1">
             {[
-              { href: "/", label: t("header.home"), icon: "home" },
-              { href: "/produits", label: t("header.catalog"), icon: "category" },
-              { href: "/devenir-vendeur", label: t("header.become_seller"), icon: "badge" },
-              { href: "/suivi", label: t("header.order_tracking"), icon: "track_changes" },
+              { href: "/", label: t("header.home") },
+              { href: "/produits", label: t("header.catalog") },
+              { href: "/devenir-vendeur", label: t("header.become_seller") },
+              { href: "/suivi", label: t("header.order_tracking") },
             ].map((link) => {
               const isActive =
                 link.href === "/"
@@ -512,14 +524,14 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-1.5 px-3.5 xl:px-4 h-10 text-sm font-semibold transition whitespace-nowrap border-b-2 ${
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap",
                     isActive
-                      ? "text-secondary border-secondary bg-surface-container-low/60 font-bold"
-                      : "text-on-surface-variant hover:text-secondary hover:bg-surface-container-low border-transparent hover:border-secondary"
-                  }`}
+                      ? "bg-slate-100 text-brand-navy font-bold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-slate-50"
+                  )}
                 >
-                  <span className="material-symbols-outlined text-[16px]">{link.icon}</span>
-                  <span>{link.label}</span>
+                  {link.label}
                 </Link>
               );
             })}
@@ -531,39 +543,38 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
           MOBILE DRAWER
       ───────────────────────────────────────────────────────── */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-primary/60 backdrop-blur-sm">
-          <div className="w-4/5 max-w-xs h-full bg-white flex flex-col shadow-2xl">
-            {/* Drawer header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant shrink-0">
+        <div className="lg:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs animate-in fade-in">
+          <div className="w-4/5 max-w-xs h-full bg-white flex flex-col shadow-2xl animate-in slide-in-from-left duration-200">
+            {/* Header du drawer */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
               <div className="flex items-center gap-2">
                 <Image
                   src="/images/logo-mwinda.png"
                   alt="Mwinda Market"
-                  width={40}
-                  height={40}
-                  className="h-[40px] w-auto object-contain"
+                  width={34}
+                  height={34}
+                  className="h-[34px] w-auto object-contain"
                 />
-                <span className="font-bold text-primary font-display">Mwinda Market</span>
+                <span className="font-bold text-sm text-brand-navy">Mwinda Market</span>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1 rounded-full hover:bg-surface-container"
+                className="p-1.5 rounded-full hover:bg-muted text-muted-foreground"
               >
-                <span className="material-symbols-outlined">close</span>
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Drawer body — scrollable */}
+            {/* Corps défilable */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-              {/* Country selector */}
-              <div className="border-b border-outline-variant/60 pb-4">
+              <div className="border-b border-border/70 pb-4">
                 <CountrySelector variant="card" />
               </div>
 
-              {/* Language picker */}
-              <div className="border-b border-outline-variant/60 pb-4">
-                <span className="text-[10px] uppercase font-bold text-outline tracking-wider block mb-2">
+              {/* Sélection de langue */}
+              <div className="border-b border-border/70 pb-4">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-2">
                   {t("header.select_language")}
                 </span>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -576,9 +587,12 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                         key={lObj.code}
                         type="button"
                         onClick={() => setLanguage(lObj.code as SupportedLanguage)}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition ${
-                          isSelected ? "bg-secondary text-white border-secondary" : "bg-surface border-outline-variant text-on-surface"
-                        }`}
+                        className={cn(
+                          "px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 border transition-colors",
+                          isSelected
+                            ? "bg-brand-navy text-white border-brand-navy font-semibold"
+                            : "bg-white border-border text-foreground hover:bg-muted"
+                        )}
                       >
                         <span>{lObj.flag}</span>
                         <span>{lObj.label}</span>
@@ -588,14 +602,14 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                 </div>
               </div>
 
-              {/* Main nav */}
-              <nav className="space-y-0.5">
+              {/* Navigation principale */}
+              <nav className="space-y-1">
                 {[
-                  { href: "/", label: t("header.home"), icon: "home", accent: true },
-                  { href: "/produits", label: t("header.catalog"), icon: "category" },
-                  { href: "/devenir-vendeur", label: t("header.become_seller"), icon: "badge" },
-                  { href: "/suivi", label: t("header.order_tracking"), icon: "track_changes" },
-                  { href: "/assistance", label: t("header.utility_hotline_prefix"), icon: "support_agent" },
+                  { href: "/", label: t("header.home") },
+                  { href: "/produits", label: t("header.catalog") },
+                  { href: "/devenir-vendeur", label: t("header.become_seller") },
+                  { href: "/suivi", label: t("header.order_tracking") },
+                  { href: "/assistance", label: t("header.utility_hotline_prefix") },
                 ].map((link) => {
                   const isActive =
                     link.href === "/"
@@ -606,74 +620,75 @@ export const Header: React.FC<HeaderProps> = ({ cartCount }) => {
                       key={link.href}
                       href={link.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${
+                      className={cn(
+                        "flex items-center px-3 py-2.5 rounded-lg text-sm transition-colors",
                         isActive
-                          ? "bg-secondary/15 text-secondary font-bold"
-                          : link.accent
-                          ? "text-secondary font-bold bg-surface-container-low"
-                          : "text-on-surface hover:bg-surface-container font-medium"
-                      }`}
+                          ? "bg-brand-blue/10 text-brand-blue font-bold"
+                          : "text-foreground hover:bg-muted font-medium"
+                      )}
                     >
-                      <span className="material-symbols-outlined text-lg">{link.icon}</span>
                       <span>{link.label}</span>
                     </Link>
                   );
                 })}
+
                 {user && (
                   <Link
                     href="/mon-compte"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition text-on-surface hover:bg-surface-container font-medium"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-muted font-medium"
                   >
-                    <span className="material-symbols-outlined text-lg">account_circle</span>
+                    <User className="w-4 h-4 text-brand-blue" />
                     <span>Mon Compte</span>
                   </Link>
                 )}
+
                 {user?.role === "vendor" && (
                   <Link
                     href="/vendeur/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition text-secondary hover:bg-secondary/5 font-medium"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-brand-blue font-semibold hover:bg-brand-blue/5"
                   >
-                    <span className="material-symbols-outlined text-lg">dashboard</span>
+                    <Store className="w-4 h-4" />
                     <span>Espace Vendeur</span>
                   </Link>
                 )}
               </nav>
             </div>
 
-            {/* Drawer footer */}
-            <div className="px-5 py-4 border-t border-outline-variant shrink-0 space-y-3">
+            {/* Pied du drawer */}
+            <div className="px-5 py-4 border-t border-border shrink-0 space-y-3">
               {user ? (
-                <div className="space-y-2">
-                  <div className="p-3 bg-surface-container rounded-xl flex items-center justify-between border border-outline-variant">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-secondary">account_circle</span>
-                      <span className="text-xs font-bold text-primary truncate max-w-[150px]">
-                        {user.fullName || user.phone || user.email}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => { signOut(); setMobileMenuOpen(false); }}
-                      className="text-xs text-error font-semibold hover:underline"
-                    >
-                      Déconnexion
-                    </button>
+                <div className="p-3 bg-muted/60 rounded-xl flex items-center justify-between border border-border">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <User className="w-4 h-4 text-brand-blue shrink-0" />
+                    <span className="text-xs font-semibold text-brand-navy truncate">
+                      {user.fullName || user.phone || user.email}
+                    </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      signOut();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-xs text-destructive font-medium hover:underline shrink-0 ml-2"
+                  >
+                    Déconnexion
+                  </button>
                 </div>
               ) : (
                 <Link
                   href="/connexion"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-2.5 bg-primary text-white rounded-lg font-semibold text-center block text-sm shadow"
+                  className="w-full py-2.5 bg-brand-navy text-white rounded-lg font-semibold text-center block text-sm shadow-sm"
                 >
                   {t("header.login_register")}
                 </Link>
               )}
-              <div className="text-[11px] text-center text-on-surface-variant font-medium flex items-center justify-center gap-1">
-                <span className="material-symbols-outlined text-xs text-secondary">call</span>
-                {t("header.utility_hotline_prefix")} {hotline}
+              <div className="text-[11px] text-center text-muted-foreground flex items-center justify-center gap-1.5">
+                <Phone className="w-3 h-3 text-brand-blue" />
+                <span>{hotline}</span>
               </div>
             </div>
           </div>
