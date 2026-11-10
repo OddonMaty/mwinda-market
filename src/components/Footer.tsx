@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMarket } from "@/context/MarketContext";
 import { useT } from "@/i18n";
-import { getActiveCountries } from "@/lib/activeCountries";
 import { CONTACT_CONFIG } from "@/config/contact";
 import {
   Lock,
@@ -16,7 +15,6 @@ import {
   Smartphone,
   MessageSquare,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const REASSURANCE = [
   { icon: Lock, labelKey: "reassurance_secure_pay" as const },
@@ -30,10 +28,9 @@ const REASSURANCE = [
 const PAYMENT_BADGES = ["M-Pesa", "Airtel Money", "Orange Money", "Visa", "Mastercard"];
 
 export const Footer: React.FC = () => {
-  const { country, language, setCountry } = useMarket();
+  const { country } = useMarket();
   const { t } = useT();
 
-  const activeCountries = getActiveCountries();
   const year = new Date().getFullYear();
 
   return (
@@ -57,12 +54,12 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* ─── COLONNES PRINCIPALES ─────────────────────────────────── */}
+      {/* ─── 4 COLONNES PRINCIPALES HARMONIEUSES (SANS LISTE DES PAYS) ─── */}
       <div className="max-w-[1280px] mx-auto px-4 lg:px-6 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
 
           {/* Colonne 1 — À propos & Moyens de paiement */}
-          <div className="col-span-2 md:col-span-4 lg:col-span-1 space-y-4">
+          <div className="space-y-4">
             <Link href="/" className="inline-block" aria-label="Mwinda Market">
               <Image
                 src="/images/logo-mwinda-h-light.png"
@@ -99,7 +96,7 @@ export const Footer: React.FC = () => {
             <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
               {t("footer.col_buy")}
             </h4>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2.5 text-xs">
               {[
                 { href: "/assistance", label: t("footer.col_buy_how") },
                 { href: "/suivi", label: t("footer.col_buy_tracking") },
@@ -109,7 +106,7 @@ export const Footer: React.FC = () => {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-brand-blue transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -123,14 +120,16 @@ export const Footer: React.FC = () => {
             <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
               {t("footer.col_sell")}
             </h4>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2.5 text-xs">
               {[
                 { href: "/devenir-vendeur", label: t("footer.col_sell_become") },
+                { href: "/vendeur/dashboard", label: "Tableau de bord Vendeur" },
+                { href: "/assistance", label: "Guide de certification boutique" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-brand-blue transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -144,7 +143,7 @@ export const Footer: React.FC = () => {
             <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
               {t("footer.col_help")}
             </h4>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2.5 text-xs">
               {[
                 { href: "/assistance", label: t("footer.col_help_assistance") },
                 { href: "/conditions", label: t("footer.col_help_terms") },
@@ -154,7 +153,7 @@ export const Footer: React.FC = () => {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-brand-blue transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -163,39 +162,10 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Colonne 5 — Pays desservis */}
-          <div className="col-span-2 md:col-span-1 space-y-3">
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-              {t("footer.col_countries")}
-            </h4>
-            <ul className="grid grid-cols-2 md:grid-cols-1 gap-x-3 gap-y-1 text-xs">
-              {activeCountries.map((c) => {
-                const countryName = language === "en" ? c.name.en : c.name.fr;
-                return (
-                  <li key={c.code}>
-                    <button
-                      type="button"
-                      onClick={() => setCountry(c.code)}
-                      className={cn(
-                        "flex items-center gap-1.5 w-full text-left py-1 rounded transition-colors text-xs",
-                        c.code === country.code
-                          ? "text-brand-blue font-bold"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                      title={countryName}
-                    >
-                      <span className="shrink-0">{c.flag}</span>
-                      <span className="truncate">{countryName}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
         </div>
       </div>
 
-      {/* ─── BARRE INFÉRIEURE MARINE ───────────────────────────────── */}
+      {/* ─── BARRE INFÉRIEURE MARINE ÉPURÉE ────────────────────────── */}
       <div className="w-full bg-brand-navy text-white text-xs">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
           {/* Logo & copyright */}
