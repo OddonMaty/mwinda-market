@@ -241,48 +241,9 @@ export default function HomePage() {
             </div>
           </aside>
 
-          {/* Colonne centrale : Bannière Héros épurée */}
-          <div className="flex-1 min-w-0 relative rounded-2xl overflow-hidden bg-brand-navy text-white shadow-card border border-border/60 flex flex-col justify-between min-h-[340px] lg:min-h-[380px]">
-            <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-6 sm:p-8 lg:p-10 flex-1">
-              <div className="md:col-span-7 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-xs border border-white/15">
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse" />
-                  <span className="text-[10px] font-bold tracking-wide uppercase text-orange-200">
-                    {t("home.hero_tag")}
-                  </span>
-                </div>
-
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-tight text-white tracking-tight">
-                  {maxRealDiscount > 0
-                    ? `${t("home.hero_title_prefix") || "Grande Vente"} — ${t("home.hero_up_to") || "Jusqu'à"} -${maxRealDiscount}%`
-                    : t("home.hero_title")}
-                </h1>
-
-                <p className="text-xs sm:text-sm text-slate-300 max-w-lg leading-relaxed line-clamp-3 sm:line-clamp-none">
-                  {t("home.hero_subtitle")}
-                </p>
-
-                <div className="pt-2 flex flex-wrap items-center gap-3">
-                  <a
-                    href="#produits"
-                    className="px-5 py-2.5 bg-brand-orange text-white font-semibold text-xs rounded-lg shadow-sm hover:bg-orange-600 transition-all flex items-center gap-2 active:scale-95 group"
-                  >
-                    <span>{t("home.hero_cta_buy")}</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                  </a>
-                  <a
-                    href="#boutiques"
-                    className="px-4 py-2.5 border border-white/30 text-white rounded-lg font-medium text-xs hover:bg-white/10 transition-colors"
-                  >
-                    {t("home.hero_cta_shops")}
-                  </a>
-                </div>
-              </div>
-
-              <div className="hidden md:flex md:col-span-5 justify-center">
-                <HeroCarousel />
-              </div>
-            </div>
+          {/* Colonne centrale : Bannière Héros immersif (l'image des promotions prend tout le hero) */}
+          <div className="flex-1 min-w-0">
+            <HeroCarousel />
           </div>
 
           {/* Colonne droite : Espace Confiance & Connexion */}
@@ -425,126 +386,73 @@ export default function HomePage() {
           ))}
         </section>
 
-        {/* ─── 3. DEUX PANNEAUX : BOUTIQUES CERTIFIÉES & MEILLEURES PROMOTIONS ─ */}
+        {/* ─── 3. GRANDES BANNIÈRES PROMOTIONNELLES CAMPAGNE ────────────── */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* Panneau 1 : Boutiques certifiées Mwinda */}
-          <div className="bg-brand-navy text-white rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-card border border-white/10">
-            <div className="flex items-center justify-between pb-3.5 border-b border-white/10 mb-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0" />
-                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                  {t("home.certified_panel_title")}
-                </h3>
+          {/* Bannière 1 : Énergie Solaire & High-Tech */}
+          <Link
+            href="/produits?category=energie-solaire"
+            className="group relative rounded-2xl overflow-hidden shadow-card border border-border/70 min-h-[220px] sm:min-h-[260px] flex items-end p-6 sm:p-8"
+          >
+            <Image
+              src="/images/shops/solaris-rdc-banner.jpg"
+              alt="Offres Spéciales Énergie Solaire & High-Tech"
+              fill
+              sizes="(max-width: 1024px) 100vw, 600px"
+              className="object-cover object-center w-full h-full group-hover:scale-105 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/50 to-transparent" />
+            <div className="relative z-10 space-y-2 max-w-md text-white">
+              <span className="inline-flex items-center gap-1.5 bg-brand-orange text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
+                <Flame className="w-3 h-3 text-white" />
+                Jusqu'à -30% Réduction Immédiate
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight group-hover:text-orange-200 transition-colors">
+                Énergie Solaire & High-Tech
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed line-clamp-2">
+                Stations électriques, panneaux solaires et smartphones de pointe avec garantie constructeur.
+              </p>
+              <div className="pt-1">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white group-hover:underline">
+                  <span>Découvrir la sélection</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </span>
               </div>
-              <Link
-                href="/boutiques"
-                className="text-xs font-medium text-slate-300 hover:text-white flex items-center gap-0.5 transition-colors"
-              >
-                <span>{t("home.view_all")}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
             </div>
+          </Link>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {certifiedShowcaseProducts.length > 0 ? (
-                certifiedShowcaseProducts.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/produits/${p.id}`}
-                    className="group bg-white rounded-xl p-2.5 text-slate-900 flex flex-col hover:shadow-md transition-all duration-200 border border-white/20"
-                  >
-                    <div className="relative aspect-square rounded-lg overflow-hidden bg-slate-50 mb-2">
-                      <Image
-                        src={p.image}
-                        alt={p.title}
-                        fill
-                        sizes="120px"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    <p className="text-[11px] font-medium text-slate-700 line-clamp-1 group-hover:text-brand-blue transition-colors">
-                      {p.title}
-                    </p>
-                    <p className="text-xs font-bold text-brand-navy mt-1">
-                      {p.usdPrice} $
-                    </p>
-                  </Link>
-                ))
-              ) : (
-                <div className="col-span-2 sm:col-span-4 py-8 text-center text-xs text-slate-300">
-                  <CheckCircle2 className="w-6 h-6 text-sky-400/60 mx-auto mb-1.5" />
-                  Boutiques certifiées bientôt disponibles
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Panneau 2 : Meilleures promotions */}
-          <div className="bg-gradient-to-br from-brand-orange to-orange-700 text-white rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-card border border-orange-400/20">
-            <div className="flex items-center justify-between pb-3.5 border-b border-white/20 mb-4">
-              <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-white shrink-0" />
-                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                  {t("home.promo_panel_title")}
-                </h3>
+          {/* Bannière 2 : Mode Panafricaine & Décoration Artisanale */}
+          <Link
+            href="/produits?category=mode"
+            className="group relative rounded-2xl overflow-hidden shadow-card border border-border/70 min-h-[220px] sm:min-h-[260px] flex items-end p-6 sm:p-8"
+          >
+            <Image
+              src="/images/shops/brazza-wax-couture-banner.jpg"
+              alt="Collections Mode & Artisanat d'Afrique"
+              fill
+              sizes="(max-width: 1024px) 100vw, 600px"
+              className="object-cover object-center w-full h-full group-hover:scale-105 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/50 to-transparent" />
+            <div className="relative z-10 space-y-2 max-w-md text-white">
+              <span className="inline-flex items-center gap-1.5 bg-brand-blue text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
+                <Sparkles className="w-3 h-3 text-white" />
+                Nouveaux Arrivages Créateurs
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight group-hover:text-sky-200 transition-colors">
+                Mode Africaine & Déco Faite-Main
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed line-clamp-2">
+                Robes en wax premium, lin artisanal et luminaires confectionnés par des ateliers certifiés.
+              </p>
+              <div className="pt-1">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white group-hover:underline">
+                  <span>Voir les collections</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </span>
               </div>
-              <Link
-                href="/produits"
-                className="text-xs font-medium text-orange-100 hover:text-white flex items-center gap-0.5 transition-colors"
-              >
-                <span>{t("home.view_all")}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
             </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {discountShowcaseProducts.length > 0 ? (
-                discountShowcaseProducts.map((p) => {
-                  const disc = p.originalUsdPrice
-                    ? Math.round(((p.originalUsdPrice - p.usdPrice) / p.originalUsdPrice) * 100)
-                    : 0;
-                  return (
-                    <Link
-                      key={p.id}
-                      href={`/produits/${p.id}`}
-                      className="group bg-white rounded-xl p-2.5 text-slate-900 flex flex-col hover:shadow-md transition-all duration-200 border border-white/20"
-                    >
-                      <div className="relative aspect-square rounded-lg overflow-hidden bg-slate-50 mb-2">
-                        <Image
-                          src={p.image}
-                          alt={p.title}
-                          fill
-                          sizes="120px"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        {disc > 0 && (
-                          <span className="absolute top-1.5 left-1.5 bg-brand-orange text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shadow-xs">
-                            -{disc}%
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] font-medium text-slate-700 line-clamp-1 group-hover:text-brand-blue transition-colors">
-                        {p.title}
-                      </p>
-                      <div className="flex items-baseline gap-1 mt-1">
-                        <span className="text-xs font-bold text-brand-orange">{p.usdPrice} $</span>
-                        {p.originalUsdPrice && (
-                          <span className="text-[10px] text-slate-400 line-through">
-                            {p.originalUsdPrice} $
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  );
-                })
-              ) : (
-                <div className="col-span-2 sm:col-span-4 py-8 text-center text-xs text-orange-100">
-                  <Flame className="w-6 h-6 text-white/70 mx-auto mb-1.5" />
-                  Promotions exclusives à venir très bientôt
-                </div>
-              )}
-            </div>
-          </div>
+          </Link>
         </section>
 
         {/* ─── 4. CATÉGORIES PHARES AVEC COMPTEURS RÉELS ──────────────────── */}
