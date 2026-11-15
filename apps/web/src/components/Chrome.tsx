@@ -1,16 +1,18 @@
 import Link from 'next/link';
 import { NavButton } from './NavButton';
+import { SearchBar } from './SearchBar';
+import { collectionHref } from '../lib';
 
 type Active = 'home' | 'collection' | 'about' | 'contact' | 'faq' | '';
 
 /** Bouton de navigation (rendu identique à l'ancien site) ; sans `to` : page pas encore portée. */
 const Nav = NavButton;
 
-const MENU: { icon: string; title: string; items: string[] }[] = [
-  { icon: 'fa-mobile-alt', title: 'Gadgets Électroniques', items: ['Smartphone', 'Tablette', 'Audio', 'Montre connectée', 'Ordinateur', 'Appareil photo', 'Télévision'] },
-  { icon: 'fa-hard-hat', title: 'Matériaux de Construction', items: ['Ciment', 'Fer à béton', 'Peinture', 'Carrelage'] },
-  { icon: 'fa-tshirt', title: 'Vêtements et Chaussures', items: ['Chemises', 'Robes', 'Pantalons', 'Chaussures'] },
-  { icon: 'fa-print', title: 'Imprimantes', items: ['Imprimante Laser', "Imprimante Jet d'encre", 'Multifonction'] },
+const MENU: { dep: string; icon: string; title: string; items: string[] }[] = [
+  { dep: 'electronique', icon: 'fa-mobile-alt', title: 'Gadgets Électroniques', items: ['Smartphone', 'Tablette', 'Audio', 'Montre connectée', 'Ordinateur', 'Appareil photo', 'Télévision'] },
+  { dep: 'construction', icon: 'fa-hard-hat', title: 'Matériaux de Construction', items: ['Ciment', 'Fer à béton', 'Peinture', 'Carrelage'] },
+  { dep: 'vetements', icon: 'fa-tshirt', title: 'Vêtements et Chaussures', items: ['Chemises', 'Robes', 'Pantalons', 'Chaussures'] },
+  { dep: 'imprimantes', icon: 'fa-print', title: 'Imprimantes', items: ['Imprimante Laser', "Imprimante Jet d'encre", 'Multifonction'] },
 ];
 
 export function Header({ active }: { active: Active }) {
@@ -35,10 +37,7 @@ export function Header({ active }: { active: Active }) {
           <Link href="/" className="logo">
             <img src="/images/brand/logo.png" alt="Sao Tech Market" className="logo-img" />
           </Link>
-          <div className="search-bar">
-            <input type="text" id="searchInput" placeholder="Rechercher un produit, une marque, une catégorie…" />
-            <button type="button"><i className="fas fa-search" /></button>
-          </div>
+          <SearchBar />
           <div className="header-actions">
             <button type="button" className="header-btn"><i className="fas fa-store" /><span className="hidden-mobile">Vendeur</span></button>
             <button type="button" className="header-btn"><i className="fas fa-user" /><span className="hidden-mobile">Compte</span></button>
@@ -52,12 +51,12 @@ export function Header({ active }: { active: Active }) {
         <div className="container">
           <Nav to="/" className={`nav-item${is('home')}`}>Accueil</Nav>
           <div className="nav-dropdown mega-menu-wrapper">
-            <button type="button" className={`nav-item${is('collection')}`}>Nos produits <i className="fas fa-chevron-down" /></button>
+            <Nav to={collectionHref()} className={`nav-item${is('collection')}`}>Nos produits <i className="fas fa-chevron-down" /></Nav>
             <div className="mega-menu">
               {MENU.map((col) => (
                 <div className="mega-menu-column" key={col.title}>
-                  <button type="button" className="mega-menu-heading"><i className={`fas ${col.icon}`} /> {col.title}</button>
-                  {col.items.map((c) => <button type="button" key={c}>{c}</button>)}
+                  <Nav to={collectionHref(col.dep)} className="mega-menu-heading"><i className={`fas ${col.icon}`} /> {col.title}</Nav>
+                  {col.items.map((c) => <Nav to={collectionHref(col.dep, c)} key={c}>{c}</Nav>)}
                 </div>
               ))}
             </div>

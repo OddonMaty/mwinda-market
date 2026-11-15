@@ -29,3 +29,22 @@ export const departmentLabels: Record<string, string> = {
   vetements: 'Vêtements et Chaussures',
   imprimantes: 'Imprimantes',
 };
+
+export function normalizeSearchText(text: unknown): string {
+  return String(text ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+export function matchesSearch(p: Product, query: string): boolean {
+  if (!query) return true;
+  const q = normalizeSearchText(query);
+  return normalizeSearchText(p.name).includes(q) || normalizeSearchText(p.category).includes(q) || normalizeSearchText(p.description).includes(q);
+}
+
+export function collectionHref(department?: string, category?: string, q?: string): string {
+  const sp = new URLSearchParams();
+  if (q) sp.set('q', q);
+  if (department && department !== 'All') sp.set('dep', department);
+  if (category && category !== 'All') sp.set('cat', category);
+  const s = sp.toString();
+  return s ? `/collection?${s}` : '/collection';
+}

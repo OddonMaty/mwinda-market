@@ -1,7 +1,10 @@
+'use client';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import type { Product } from '../data/catalogue';
 import { formatPrice, isProductNew, productImageUrl } from '../lib';
 
-function Stars({ rating }: { rating: number }) {
+export function Stars({ rating }: { rating: number }) {
   return (
     <>
       {[0, 1, 2, 3, 4].map((i) => {
@@ -13,8 +16,11 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export function ProductCard({ product, now }: { product: Product; now: number }) {
+  const router = useRouter();
+  const [wish, setWish] = useState(false);
+  const open = () => router.push(`/produit/${product.id}`);
   return (
-    <div className="product-card">
+    <div className="product-card" onClick={open}>
       <div className="product-image">
         <img src={productImageUrl(product.image, 300, 300)} alt={product.name} />
         <div className="product-badges">
@@ -22,9 +28,9 @@ export function ProductCard({ product, now }: { product: Product; now: number })
           {product.tags.includes('bestseller') && <span className="product-badge">BEST-SELLER</span>}
         </div>
         <div className="product-actions-hover">
-          <button type="button"><i className="fas fa-heart" /></button>
-          <button type="button"><i className="fas fa-eye" /></button>
-          <button type="button"><i className="fas fa-shopping-cart" /></button>
+          <button type="button" className={wish ? 'active' : ''} style={wish ? { color: 'var(--primary)' } : undefined} onClick={(e) => { e.stopPropagation(); setWish(!wish); }}><i className="fas fa-heart" /></button>
+          <button type="button" onClick={(e) => { e.stopPropagation(); open(); }}><i className="fas fa-eye" /></button>
+          <button type="button" onClick={(e) => e.stopPropagation()}><i className="fas fa-shopping-cart" /></button>
         </div>
       </div>
       <div className="product-info">
