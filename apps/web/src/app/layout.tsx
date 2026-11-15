@@ -1,52 +1,31 @@
 import type { Metadata } from 'next';
-import { DM_Sans, Barlow_Condensed, DM_Mono } from 'next/font/google';
 import './globals.css';
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  variable: '--font-dm-sans',
-  weight: ['400', '500', '700'],
-  display: 'swap',
-});
-
-const barlowCondensed = Barlow_Condensed({
-  subsets: ['latin'],
-  variable: '--font-barlow-condensed',
-  weight: ['700', '800'],
-  display: 'swap',
-});
-
-const dmMono = DM_Mono({
-  subsets: ['latin'],
-  variable: '--font-dm-mono',
-  weight: ['400', '500'],
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'Sao Tech Market - Marketplace Électronique Premium en RDC',
   description:
-    "Découvrez des équipements électroniques premium avec livraison rapide, des prix compétitifs, partout en République Démocratique du Congo.",
+    "Découvrez des équipements électroniques premium avec livraison rapide, des prix compétitifs et 30 jours pour changer d'avis, partout en République Démocratique du Congo.",
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/images/brand/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/images/brand/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/images/brand/favicon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: { url: '/images/brand/favicon-180.png', sizes: '180x180' },
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${dmSans.variable} ${barlowCondensed.variable} ${dmMono.variable}`}>
+    <html lang="fr">
       <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <link
+          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap"
           rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
       </head>
-      <body className="min-h-screen flex flex-col">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
-

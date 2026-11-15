@@ -1,0 +1,127 @@
+import Link from 'next/link';
+import { NavButton } from './NavButton';
+
+type Active = 'home' | 'collection' | 'about' | 'contact' | 'faq' | '';
+
+/** Bouton de navigation (rendu identique à l'ancien site) ; sans `to` : page pas encore portée. */
+const Nav = NavButton;
+
+const MENU: { icon: string; title: string; items: string[] }[] = [
+  { icon: 'fa-mobile-alt', title: 'Gadgets Électroniques', items: ['Smartphone', 'Tablette', 'Audio', 'Montre connectée', 'Ordinateur', 'Appareil photo', 'Télévision'] },
+  { icon: 'fa-hard-hat', title: 'Matériaux de Construction', items: ['Ciment', 'Fer à béton', 'Peinture', 'Carrelage'] },
+  { icon: 'fa-tshirt', title: 'Vêtements et Chaussures', items: ['Chemises', 'Robes', 'Pantalons', 'Chaussures'] },
+  { icon: 'fa-print', title: 'Imprimantes', items: ['Imprimante Laser', "Imprimante Jet d'encre", 'Multifonction'] },
+];
+
+export function Header({ active }: { active: Active }) {
+  const is = (n: Active) => (active === n ? ' active' : '');
+  return (
+    <>
+      <div className="top-bar">
+        <div className="container">
+          <div className="top-bar-left">
+            <span><i className="fas fa-phone" /> +243 907 261 113</span>
+            <span className="hidden-mobile"><i className="fas fa-envelope" /> contact@saotechmarket.com</span>
+          </div>
+          <div className="top-bar-right">
+            <span className="hidden-mobile">Livraison gratuite à Bukavu et Uvira dès 280 000 FC d&apos;achat · Aussi à Goma et Baraka</span>
+            <span>FR / CDF</span>
+          </div>
+        </div>
+      </div>
+
+      <header className="header">
+        <div className="container header-content">
+          <Link href="/" className="logo">
+            <img src="/images/brand/logo.png" alt="Sao Tech Market" className="logo-img" />
+          </Link>
+          <div className="search-bar">
+            <input type="text" id="searchInput" placeholder="Rechercher un produit, une marque, une catégorie…" />
+            <button type="button"><i className="fas fa-search" /></button>
+          </div>
+          <div className="header-actions">
+            <button type="button" className="header-btn"><i className="fas fa-store" /><span className="hidden-mobile">Vendeur</span></button>
+            <button type="button" className="header-btn"><i className="fas fa-user" /><span className="hidden-mobile">Compte</span></button>
+            <button type="button" className="header-btn"><i className="fas fa-heart" /><span className="hidden-mobile">Favoris</span></button>
+            <button type="button" className="header-btn"><i className="fas fa-shopping-cart" /><span className="hidden-mobile">Panier</span><span className="cart-badge" id="cartBadge">0</span></button>
+          </div>
+        </div>
+      </header>
+
+      <nav className="navigation">
+        <div className="container">
+          <Nav to="/" className={`nav-item${is('home')}`}>Accueil</Nav>
+          <div className="nav-dropdown mega-menu-wrapper">
+            <button type="button" className={`nav-item${is('collection')}`}>Nos produits <i className="fas fa-chevron-down" /></button>
+            <div className="mega-menu">
+              {MENU.map((col) => (
+                <div className="mega-menu-column" key={col.title}>
+                  <button type="button" className="mega-menu-heading"><i className={`fas ${col.icon}`} /> {col.title}</button>
+                  {col.items.map((c) => <button type="button" key={c}>{c}</button>)}
+                </div>
+              ))}
+            </div>
+          </div>
+          <Nav className={`nav-item${is('about')}`}>À propos</Nav>
+          <Nav className={`nav-item${is('contact')}`}>Contact</Nav>
+          <Nav className={`nav-item${is('faq')}`}>FAQ</Nav>
+        </div>
+      </nav>
+    </>
+  );
+}
+
+const FOOTER_COLS: [string, string[]][] = [
+  ['Service Client', ['Contactez-nous', 'Aide & conseils', 'Livraison & Retours', 'Conditions générales']],
+  ['Informations', ['À propos de nous', 'Mon compte', 'Paiements & Retours', 'Voir les catalogues']],
+  ['À propos', ['Qui sommes-nous', 'Responsabilité sociale', 'Carrières', 'Politique de confidentialité']],
+];
+
+export function Footer() {
+  return (
+    <footer className="footer">
+      <div className="footer-newsletter">
+        <div className="container">
+          <div className="newsletter-footer">
+            <div><p>Restez informé — <span>Abonnez-vous à la newsletter</span></p></div>
+            <div className="newsletter-input">
+              <input type="email" placeholder="Votre adresse e-mail" />
+              <button type="button" className="btn btn-primary">S&apos;abonner</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="footer-content">
+        <div className="container">
+          <div className="footer-columns">
+            {FOOTER_COLS.map(([title, items]) => (
+              <div className="footer-column" key={title}>
+                <h4>{title}</h4>
+                <ul>{items.map((i) => <li key={i}><button type="button">{i}</button></li>)}</ul>
+              </div>
+            ))}
+            <div className="footer-column">
+              <h4>Contactez-nous</h4>
+              <ul className="contact-list">
+                <li><i className="fas fa-phone" /> +243 907 261 113</li>
+                <li><i className="fas fa-envelope" /> contact@saotechmarket.com</li>
+                <li><i className="fas fa-clock" /> Lun–Sam : 8h – 19h</li>
+              </ul>
+              <div className="social-links">
+                <button type="button"><i className="fab fa-facebook" /></button>
+                <button type="button"><i className="fab fa-instagram" /></button>
+                <button type="button"><i className="fab fa-twitter" /></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="footer-bottom">
+        <div className="container">
+          <p>&copy; 2026 Sao Tech Market. Tous droits réservés.</p>
+          <p>Plateforme créée par <a href="https://saotechagency.com" target="_blank" rel="noopener noreferrer" className="footer-credit-link">Sao Tech Agency</a></p>
+        </div>
+      </div>
+    </footer>
+  );
+}
