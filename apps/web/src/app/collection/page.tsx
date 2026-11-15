@@ -21,7 +21,11 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
 
   const inScope = dep !== 'All' ? products.filter((p) => p.department === dep) : products;
   const categories = ['All', ...new Set(inScope.map((p) => p.category).filter(Boolean))];
-  const pills = categories.map((c) => ({ label: c === 'All' ? 'Tous les produits' : c, href: collectionHref(dep, c), active: c === cat }));
+  const pills = categories.map((c) => ({
+    label: c === 'All' ? 'Tous les produits' : c,
+    href: collectionHref(dep, c),
+    active: c === cat,
+  }));
 
   let label: string;
   if (query) label = `Résultats pour « ${query} » (${list.length})`;
@@ -34,7 +38,15 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
   return (
     <>
       <Header active="collection" />
-      <CollectionView products={list} now={now} pills={pills} breadcrumbLabel={label} query={query} clearHref={collectionHref(dep, cat)} inStockCount={products.filter((p) => p.inStock).length} />
+      <CollectionView
+        products={list}
+        now={now}
+        pills={pills}
+        breadcrumbLabel={label}
+        query={query}
+        clearHref={collectionHref(dep, cat)}
+        inStockCount={products.filter((p) => p.inStock).length}
+      />
       <Footer />
     </>
   );

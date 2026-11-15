@@ -61,19 +61,19 @@ export function Header({ active }: { active: Active }) {
               ))}
             </div>
           </div>
-          <Nav className={`nav-item${is('about')}`}>À propos</Nav>
-          <Nav className={`nav-item${is('contact')}`}>Contact</Nav>
-          <Nav className={`nav-item${is('faq')}`}>FAQ</Nav>
+          <Nav to="/a-propos" className={`nav-item${is('about')}`}>À propos</Nav>
+          <Nav to="/contact" className={`nav-item${is('contact')}`}>Contact</Nav>
+          <Nav to="/faq" className={`nav-item${is('faq')}`}>FAQ</Nav>
         </div>
       </nav>
     </>
   );
 }
 
-const FOOTER_COLS: [string, string[]][] = [
-  ['Service Client', ['Contactez-nous', 'Aide & conseils', 'Livraison & Retours', 'Conditions générales']],
-  ['Informations', ['À propos de nous', 'Mon compte', 'Paiements & Retours', 'Voir les catalogues']],
-  ['À propos', ['Qui sommes-nous', 'Responsabilité sociale', 'Carrières', 'Politique de confidentialité']],
+const FOOTER_COLS: [string, [string, string?][]][] = [
+  ['Service Client', [['Contactez-nous', '/contact'], ['Aide & conseils', '/faq'], ['Livraison & Retours', '/livraison'], ['Conditions générales', '/conditions']]],
+  ['Informations', [['À propos de nous', '/a-propos'], ['Mon compte'], ['Paiements & Retours', '/paiements'], ['Voir les catalogues', '/collection']]],
+  ['À propos', [['Qui sommes-nous', '/a-propos'], ['Responsabilité sociale', '/responsabilite-sociale'], ['Carrières', '/carrieres'], ['Politique de confidentialité', '/confidentialite']]],
 ];
 
 export function Footer() {
@@ -96,7 +96,7 @@ export function Footer() {
             {FOOTER_COLS.map(([title, items]) => (
               <div className="footer-column" key={title}>
                 <h4>{title}</h4>
-                <ul>{items.map((i) => <li key={i}><button type="button">{i}</button></li>)}</ul>
+                <ul>{items.map(([label, to]) => <li key={label}><NavButton to={to}>{label}</NavButton></li>)}</ul>
               </div>
             ))}
             <div className="footer-column">
