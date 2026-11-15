@@ -1,9 +1,16 @@
 import { getConfig } from './config/env.js';
 import { buildApp } from './app.js';
+import { createPgDb } from './db/client.js';
+import { migrate } from './db/migrate.js';
+import { SmtpMailer, NoopMailer } from './mail/mailer.js';
+import { fileURLToPath } from 'node:url';
 
 async function main(): Promise<void> {
   const config = getConfig();
-  const app = await buildApp(config);
+  const db = createPgDb(config.DATABASE_URL);
+  if (config.NODE_ENV !== 'production') await migrate(db, fileURLToPath(new URL('../migrations', import.meta.url)));
+  const mailer = config.SMTP_URL ? new SmtpMailer(config.SMTP_URL, config.MAIL_FROM) : new NoopMailer();
+  const app = await buildApp(config, { db, mailer });
 
   try {
     const address = await app.listen({

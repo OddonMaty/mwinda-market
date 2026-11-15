@@ -8,12 +8,20 @@ export const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
   HOST: z.string().min(1).default('0.0.0.0'),
-  WEB_ORIGIN: z.string().url(),
+  /** Adresse(s) autorisée(s) du site web, séparées par des virgules. */
+  WEB_ORIGIN: z
+    .string()
+    .refine((v) => v.split(',').every((o) => z.string().url().safeParse(o.trim()).success), 'WEB_ORIGIN must be one or more URLs'),
+  SMTP_URL: z.string().optional(),
+  MAIL_FROM: z.string().default('Sao Tech Market <no-reply@saotechmarket.com>'),
   DATABASE_URL: z.string().min(1),
   API_SECRET: z.string().min(16, 'API_SECRET must be at least 16 characters long'),
 });
 
 export type EnvConfig = z.infer<typeof EnvSchema>;
+
+export const webOrigins = (c: Pick<EnvConfig, 'WEB_ORIGIN'>): string[] =>
+  c.WEB_ORIGIN.split(',').map((o) => o.trim().replace(/\/$/, ''));
 
 export function parseEnv(customEnv?: Record<string, string | undefined>): EnvConfig {
   const source = customEnv ?? process.env;

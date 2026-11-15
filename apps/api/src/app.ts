@@ -4,13 +4,26 @@ import fastifyHelmet from '@fastify/helmet';
 import fastifyRateLimit from '@fastify/rate-limit';
 import type { EnvConfig } from './config/env.js';
 import { healthRoutes } from './routes/health.js';
+import { authRoutes } from './routes/auth.js';
+import type { Db } from './db/client.js';
+import type { Mailer } from './mail/mailer.js';
+import { MemoryRateLimiter, type RateLimiter } from './lib/ratelimit.js';
+import { NoopMailer } from './mail/mailer.js';
+import { webOrigins } from './config/env.js';
 
-export async function buildApp(config: EnvConfig): Promise<FastifyInstance> {
+export interface AppDeps {
+  db?: Db;
+  mailer?: Mailer;
+  limiter?: RateLimiter;
+  now?: () => Date;
+}
+
+export async function buildApp(config: EnvConfig, deps: AppDeps = {}): Promise<FastifyInstance> {
   const isDev = config.NODE_ENV === 'development';
 
   const app = fastify({
     logger: {
-      level: isDev ? 'debug' : 'info',
+      level: config.NODE_ENV === 'test' ? 'silent' : isDev ? 'debug' : 'info',
       redact: {
         paths: [
           'req.headers.authorization',
@@ -35,7 +48,7 @@ export async function buildApp(config: EnvConfig): Promise<FastifyInstance> {
 
   // CORS limited to configured web origin
   await app.register(fastifyCors, {
-    origin: [config.WEB_ORIGIN],
+    origin: webOrigins(config),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
@@ -98,6 +111,11 @@ export async function buildApp(config: EnvConfig): Promise<FastifyInstance> {
 
   // Routes
   await app.register(healthRoutes);
+
+  if (deps.db) {
+    const authDeps = { db: deps.db, mailer: deps.mailer ?? new NoopMailer(), limiter: deps.limiter ?? new MemoryRateLimiter(), config, now: deps.now };
+    await app.register((instance) => authRoutes(instance, authDeps));
+  }
 
   return app;
 }
