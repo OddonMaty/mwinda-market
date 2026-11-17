@@ -1,21 +1,38 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { formatPrice } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
+import { e164, type Address } from './CheckoutArea';
 
 interface SessionRow { id: string; kind: string; createdAt: string; lastUsedAt: string; userAgent: string | null; ip: string | null; current: boolean }
 
+interface OrderRow { id: string; number: string; status: string; subtotalUsd: number; city: string; address: string; createdAt: string; items: { name: string; unitPriceUsd: number; quantity: number; color: string; size: string }[] }
+const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée' };
+const day = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 const fmt = (d: string) => new Date(d).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
 
 export function AccountArea() {
   const { user, ready, openLogin, logout, notify, refresh } = useAuth();
   const [sessions, setSessions] = useState<SessionRow[]>([]);
+  const [orders, setOrders] = useState<OrderRow[] | null>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [addrForm, setAddrForm] = useState(false);
 
   const loadSessions = useCallback(async () => {
     const r = await api<{ sessions: SessionRow[] }>('/me/sessions');
     if (r.ok) setSessions(r.data.sessions);
   }, []);
-  useEffect(() => { if (user) void loadSessions(); }, [user, loadSessions]);
+  const loadAddresses = useCallback(async () => {
+    const r = await api<{ addresses: Address[] }>('/me/addresses');
+    if (r.ok) setAddresses(r.data.addresses);
+  }, []);
+  useEffect(() => {
+    if (!user) return;
+    void loadSessions();
+    void loadAddresses();
+    void api<{ orders: OrderRow[] }>('/orders').then((r) => setOrders(r.ok ? r.data.orders : []));
+  }, [user, loadSessions, loadAddresses]);
 
   if (!ready) return <p className="empty-collection">Chargement…</p>;
 
@@ -48,6 +65,23 @@ export function AccountArea() {
     form.reset();
     await loadSessions();
     notify('Mot de passe modifié. Vos autres appareils ont été déconnectés.');
+  }
+
+  async function saveAddress(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const r = await api('/me/addresses', { method: 'POST', body: { label: String(f.get('label') ?? ''), city: f.get('city'), address: String(f.get('address')).trim(), phone: e164(f.get('phone')) } });
+    if (!r.ok) return notify(errorMessage(r.data.code));
+    setAddrForm(false);
+    await loadAddresses();
+    notify('Adresse enregistrée');
+  }
+
+  async function deleteAddress(id: string) {
+    const r = await api(`/me/addresses/${id}`, { method: 'DELETE' });
+    if (!r.ok) return notify(errorMessage(r.data.code));
+    await loadAddresses();
+    notify('Adresse supprimée');
   }
 
   async function revoke(id: string) {
@@ -104,8 +138,72 @@ export function AccountArea() {
       </div>
 
       <div className="seller-products-table-wrapper">
+        <div className="seller-dashboard-header" style={{ padding: '0 0 1rem', marginBottom: '1.5rem', borderBottom: 'none' }}>
+          <h2 style={{ fontSize: '1.3rem' }}>Mes adresses</h2>
+          <button type="button" className="btn btn-primary" onClick={() => setAddrForm(true)}><i className="fas fa-plus" /> Ajouter une adresse</button>
+        </div>
+        {addrForm && (
+          <div className="seller-product-form-wrapper">
+            <h2>Ajouter une adresse</h2>
+            <form onSubmit={saveAddress}>
+              <div className="form-row">
+                <input type="text" name="label" placeholder="Nom (ex. Maison, Bureau)" />
+                <select name="city" defaultValue="Bukavu"><option value="Bukavu">Bukavu</option><option value="Uvira">Uvira</option><option value="Goma">Goma</option><option value="Baraka">Baraka (territoire de Fizi)</option><option value="Autre">Autre ville</option></select>
+              </div>
+              <div className="form-group"><input type="tel" name="phone" placeholder="Téléphone (+243...) *" defaultValue={user.phone ?? ''} required /></div>
+              <div className="form-group"><textarea name="address" rows={3} placeholder="Adresse complète * (quartier, avenue, référence...)" required /></div>
+              <div className="seller-form-actions">
+                <button type="submit" className="btn btn-primary">Enregistrer</button>
+                <button type="button" className="btn btn-outline" onClick={() => setAddrForm(false)}>Annuler</button>
+              </div>
+            </form>
+          </div>
+        )}
+        {addresses.length === 0 ? (
+          <p className="empty-collection">Aucune adresse enregistrée. Ajoutez-en une pour aller plus vite à votre prochaine commande.</p>
+        ) : (
+          <div className="seller-stats" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            {addresses.map((a) => (
+              <div className="seller-stat-card" style={{ textAlign: 'left' }} key={a.id}>
+                <p style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{a.label} {a.isDefault && <span className="product-badge official-badge" style={{ position: 'static', fontSize: '0.6rem', verticalAlign: 'middle' }}>PAR DÉFAUT</span>}</p>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{a.address}</p>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{a.city} · {a.phone}</p>
+                <div className="seller-form-actions" style={{ marginTop: '0.75rem' }}>
+                  <button type="button" className="link-btn" onClick={() => void deleteAddress(a.id)}>Supprimer</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="seller-products-table-wrapper">
         <h2>Mes commandes</h2>
-        <p className="empty-collection">Vous n&apos;avez pas encore passé de commande. Vos achats apparaîtront ici.</p>
+        {orders === null ? <p className="empty-collection">Chargement de vos commandes…</p> : orders.length === 0 ? (
+          <p className="empty-collection">Vous n&apos;avez pas encore passé de commande. Vos achats apparaîtront ici.</p>
+        ) : orders.map((o) => (
+          <div className="seller-product-form-wrapper" style={{ marginBottom: '1.25rem' }} key={o.id}>
+            <div className="seller-dashboard-header" style={{ padding: '0 0 1rem', marginBottom: '1rem' }}>
+              <div>
+                <h2 style={{ fontSize: '1.1rem' }}>Commande {o.number}</h2>
+                <p style={{ fontSize: '0.85rem' }}>{day(o.createdAt)} · Livraison à {o.city}</p>
+              </div>
+              <span className="product-badge" style={{ position: 'static' }}>{STATUS[o.status] ?? o.status}</span>
+            </div>
+            <div className="seller-products-table-scroll">
+              <table className="seller-products-table">
+                <thead><tr><th>Article</th><th>Qté</th><th>Prix</th></tr></thead>
+                <tbody>
+                  {o.items.map((i, k) => (
+                    <tr key={k}><td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</td><td>{i.quantity}</td><td>{formatPrice(i.unitPriceUsd * i.quantity)}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ textAlign: 'right', marginTop: '0.75rem', fontWeight: 700 }}>Total : {formatPrice(o.subtotalUsd)}</p>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Livraison : {o.address}</p>
+          </div>
+        ))}
       </div>
     </>
   );

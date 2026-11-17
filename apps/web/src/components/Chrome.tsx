@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { NavButton } from './NavButton';
 import { SearchBar } from './SearchBar';
 import { AccountButton } from './AccountButton';
+import { CartButton } from './CartButton';
 import { collectionHref } from '../lib';
 
 type Active = 'home' | 'collection' | 'about' | 'contact' | 'faq' | '';
@@ -40,10 +41,10 @@ export function Header({ active }: { active: Active }) {
           </Link>
           <SearchBar />
           <div className="header-actions">
-            <button type="button" className="header-btn"><i className="fas fa-store" /><span className="hidden-mobile">Vendeur</span></button>
+            <NavButton to="/vendeur" className="header-btn"><i className="fas fa-store" /><span className="hidden-mobile">Vendeur</span></NavButton>
             <AccountButton />
             <button type="button" className="header-btn"><i className="fas fa-heart" /><span className="hidden-mobile">Favoris</span></button>
-            <button type="button" className="header-btn"><i className="fas fa-shopping-cart" /><span className="hidden-mobile">Panier</span><span className="cart-badge" id="cartBadge">0</span></button>
+            <CartButton />
           </div>
         </div>
       </header>

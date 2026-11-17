@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '../components/AuthProvider';
+import { CartProvider } from '../components/CartProvider';
 
 export const metadata: Metadata = {
   title: 'Sao Tech Market - Marketplace Électronique Premium en RDC',
@@ -26,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body><AuthProvider>{children}</AuthProvider></body>
+      <body><AuthProvider><CartProvider>{children}</CartProvider></AuthProvider></body>
     </html>
   );
 }

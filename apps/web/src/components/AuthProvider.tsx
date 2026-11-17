@@ -20,7 +20,7 @@ export interface SessionUser {
 interface Ctx {
   user: SessionUser | null;
   ready: boolean;
-  openLogin: (tab?: 'signin' | 'register') => void;
+  openLogin: (tab?: 'signin' | 'register', redirectTo?: string) => void;
   accountClick: () => void;
   logout: () => Promise<void>;
   notify: (message: string) => void;
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [tab, setTab] = useState<'signin' | 'register'>('signin');
   const [toasts, setToasts] = useState<{ id: number; text: string; out: boolean }[]>([]);
   const nextId = useRef(1);
+  const redirect = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -89,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3300);
   }, []);
 
-  const openLogin = useCallback((t: 'signin' | 'register' = 'signin') => { setTab(t); setOpen(true); }, []);
+  const openLogin = useCallback((t: 'signin' | 'register' = 'signin', redirectTo?: string) => { redirect.current = redirectTo ?? null; setTab(t); setOpen(true); }, []);
   const accountClick = useCallback(() => { if (user) router.push('/compte'); else openLogin('signin'); }, [user, router, openLogin]);
 
   const logout = useCallback(async () => {
@@ -107,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await refresh();
     setOpen(false);
     notify('Connexion réussie !');
+    if (redirect.current) { router.push(redirect.current); redirect.current = null; }
   }
 
   async function onRegister(e: React.FormEvent<HTMLFormElement>) {

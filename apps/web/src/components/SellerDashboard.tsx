@@ -1,0 +1,181 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { USD_TO_CDF, departmentLabels, formatPrice, productImageUrl } from '../lib';
+import { api, errorMessage, useAuth } from './AuthProvider';
+
+interface Shop { id: string; name: string; isOfficial: boolean; status: string }
+interface SProduct { id: number; name: string; description: string; priceUsd: number; originalPriceUsd: number | null; department: string; category: string; colors: string[]; sizes: string[]; inStock: boolean; images: string[] }
+interface SOrder { number: string; status: string; createdAt: string; customer: string; city: string; phone: string; totalUsd: number; items: { name: string; quantity: number; unitPriceUsd: number; color: string; size: string }[] }
+const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée' };
+const csv = (v: FormDataEntryValue | null): string[] => String(v ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+const toUsd = (fc: FormDataEntryValue | null): number => Math.round((Number(fc) / USD_TO_CDF) * 100) / 100;
+
+export function SellerDashboard() {
+  const router = useRouter();
+  const { user, ready, logout, notify } = useAuth();
+  const [shop, setShop] = useState<Shop | null>(null);
+  const [products, setProducts] = useState<SProduct[]>([]);
+  const [orders, setOrders] = useState<SOrder[]>([]);
+  const [form, setForm] = useState<{ open: boolean; editing: SProduct | null }>({ open: false, editing: null });
+  const [promo, setPromo] = useState(false);
+
+  const load = useCallback(async () => {
+    const s = await api<{ shop: Shop | null }>('/seller/shop');
+    if (!s.ok || !s.data.shop) { router.replace('/vendeur'); return; }
+    setShop(s.data.shop);
+    const [p, o] = await Promise.all([api<{ products: SProduct[] }>('/seller/products'), api<{ orders: SOrder[] }>('/seller/orders')]);
+    if (p.ok) setProducts(p.data.products);
+    if (o.ok) setOrders(o.data.orders);
+  }, [router]);
+
+  useEffect(() => {
+    if (!ready) return;
+    if (!user) { router.replace('/vendeur'); return; }
+    void load();
+  }, [ready, user, load, router]);
+
+  if (!ready || !user || !shop) return <p className="empty-collection">Chargement…</p>;
+
+  function openForm(p: SProduct | null) { setForm({ open: true, editing: p }); setPromo(!!p?.originalPriceUsd); }
+
+  async function save(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const body = {
+      name: String(f.get('name')).trim(), description: String(f.get('description')).trim(), department: f.get('department'), category: String(f.get('category')).trim(),
+      priceUsd: toUsd(f.get('price')), originalPriceUsd: promo && f.get('originalPrice') ? toUsd(f.get('originalPrice')) : null,
+      colors: csv(f.get('colors')), sizes: csv(f.get('sizes')), inStock: !!f.get('inStock'), images: [String(f.get('image') ?? '').trim(), ...csv(f.get('images'))].filter(Boolean),
+    };
+    const editing = form.editing;
+    const r = await api(editing ? `/seller/products/${editing.id}` : '/seller/products', { method: editing ? 'PUT' : 'POST', body });
+    if (!r.ok) return notify(r.data.code === 'validation_error' ? 'Vérifiez les champs : prix barré supérieur au prix, liens d’images en https, 5 photos maximum.' : errorMessage(r.data.code));
+    setForm({ open: false, editing: null });
+    await load();
+    notify(editing ? 'Produit modifié' : 'Produit publié');
+  }
+
+  async function remove(p: SProduct) {
+    if (!window.confirm(`Supprimer « ${p.name} » ?`)) return;
+    const r = await api(`/seller/products/${p.id}`, { method: 'DELETE' });
+    if (!r.ok) return notify(errorMessage(r.data.code));
+    await load();
+    notify('Produit supprimé');
+  }
+
+  const ex = form.editing;
+  const inStock = products.filter((p) => p.inStock).length;
+  return (
+    <>
+      <div className="seller-dashboard-header">
+        <div>
+          <h1>{shop.name} {shop.isOfficial && <span className="product-badge official-badge" style={{ position: 'static', verticalAlign: 'middle' }}>BOUTIQUE OFFICIELLE</span>}</h1>
+          <p>Espace vendeur — {user.firstName} {user.lastName} · {user.email}</p>
+        </div>
+        <div className="seller-dashboard-actions">
+          <button type="button" className="btn btn-primary" onClick={() => openForm(null)}><i className="fas fa-plus" /> Ajouter un produit</button>
+          <button type="button" className="btn btn-outline" onClick={() => void logout()}>Déconnexion</button>
+        </div>
+      </div>
+
+      <div className="seller-stats">
+        <div className="seller-stat-card"><span className="seller-stat-value">{products.length}</span><span className="seller-stat-label">Produits en ligne</span></div>
+        <div className="seller-stat-card"><span className="seller-stat-value">{inStock}</span><span className="seller-stat-label">En stock</span></div>
+        <div className="seller-stat-card"><span className="seller-stat-value">{formatPrice(products.reduce((s, p) => s + p.priceUsd, 0))}</span><span className="seller-stat-label">Valeur du catalogue</span></div>
+      </div>
+
+      {form.open && (
+        <div id="sellerProductFormWrapper" className="seller-product-form-wrapper" key={ex?.id ?? 'new'}>
+          <h2>{ex ? 'Modifier le produit' : 'Ajouter un produit'}</h2>
+          <form className="contact-form" onSubmit={save}>
+            <div className="form-row">
+              <input type="text" name="name" placeholder="Nom du produit *" defaultValue={ex?.name ?? ''} required />
+              <select name="department" required defaultValue={ex?.department ?? ''}>
+                <option value="" disabled>Choisir un rayon *</option>
+                {Object.entries(departmentLabels).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              </select>
+            </div>
+            <div className="form-row"><input type="text" name="category" placeholder="Catégorie * (ex. Smartphone, Chemises…)" defaultValue={ex?.category ?? ''} required /></div>
+            <input type="number" name="price" step="1" min="1" placeholder="Prix de vente (FC) *" defaultValue={ex ? Math.round(ex.priceUsd * USD_TO_CDF) : ''} required />
+            <label className="checkbox-label promo-checkbox"><input type="checkbox" checked={promo} onChange={(e) => setPromo(e.target.checked)} /><span>🔥 Mettre ce produit en promotion</span></label>
+            <div className="form-row" style={{ display: promo ? 'grid' : 'none' }}>
+              <input type="number" name="originalPrice" step="1" min="0" placeholder="Prix barré (FC) — plus élevé que le prix de vente" defaultValue={ex?.originalPriceUsd ? Math.round(ex.originalPriceUsd * USD_TO_CDF) : ''} />
+            </div>
+            <div className="form-group">
+              <label>Photo principale</label>
+              <input type="text" name="image" placeholder="Colle un lien d'image (https)..." defaultValue={ex?.images[0] ?? ''} />
+            </div>
+            <div className="form-group">
+              <label>Photos supplémentaires (4 maximum)</label>
+              <input type="text" name="images" placeholder="Plusieurs liens https séparés par des virgules..." defaultValue={ex?.images.slice(1).join(', ') ?? ''} />
+              <p className="seller-form-note" style={{ marginTop: '0.35rem' }}>L&apos;envoi de photos depuis votre appareil arrive bientôt : pour l&apos;instant, collez des liens d&apos;images.</p>
+            </div>
+            <div className="form-row">
+              <input type="text" name="colors" placeholder="Couleurs (séparées par des virgules)" defaultValue={ex?.colors.join(', ') ?? ''} />
+              <input type="text" name="sizes" placeholder="Capacités / tailles (séparées par des virgules)" defaultValue={ex?.sizes.join(', ') ?? ''} />
+            </div>
+            <textarea name="description" rows={4} placeholder="Description du produit *" defaultValue={ex?.description ?? ''} required />
+            <label className="checkbox-label"><input type="checkbox" name="inStock" defaultChecked={ex ? ex.inStock : true} /><span>Produit en stock</span></label>
+            <p className="seller-form-note">Le rayon détermine dans quelle colonne du menu « Nos produits » votre article apparaîtra sur le site.</p>
+            <div className="seller-form-actions">
+              <button type="submit" className="btn btn-primary">{ex ? 'Enregistrer les modifications' : 'Publier le produit'}</button>
+              <button type="button" className="btn btn-outline" onClick={() => setForm({ open: false, editing: null })}>Annuler</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="seller-products-table-wrapper">
+        <h2>Mes produits</h2>
+        {products.length === 0 ? (
+          <p className="empty-collection">Vous n&apos;avez pas encore ajouté de produit. Cliquez sur « Ajouter un produit » pour commencer à vendre.</p>
+        ) : (
+          <div className="seller-products-table-scroll">
+            <table className="seller-products-table">
+              <thead><tr><th></th><th>Nom</th><th>Rayon</th><th>Catégorie</th><th>Prix</th><th>Stock</th><th></th></tr></thead>
+              <tbody>
+                {products.map((p) => (
+                  <tr key={p.id}>
+                    <td><img src={productImageUrl(p.images[0], 60, 60)} alt={p.name} className="seller-product-thumb" /></td>
+                    <td>{p.name}</td>
+                    <td>{departmentLabels[p.department] ?? p.department}</td>
+                    <td>{p.category}</td>
+                    <td>{formatPrice(p.priceUsd)}</td>
+                    <td className={p.inStock ? 'in-stock' : 'out-of-stock'}>{p.inStock ? 'En stock' : 'Rupture'}</td>
+                    <td className="seller-product-row-actions">
+                      <button type="button" className="link-btn" onClick={() => openForm(p)}>Modifier</button>
+                      <button type="button" className="link-btn" onClick={() => void remove(p)}>Supprimer</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="seller-products-table-wrapper">
+        <h2>Commandes reçues</h2>
+        {orders.length === 0 ? <p className="empty-collection">Aucune commande pour le moment.</p> : orders.map((o) => (
+          <div className="seller-product-form-wrapper" style={{ marginBottom: '1.25rem' }} key={o.number}>
+            <div className="seller-dashboard-header" style={{ padding: '0 0 1rem', marginBottom: '1rem' }}>
+              <div>
+                <h2 style={{ fontSize: '1.1rem' }}>Commande {o.number}</h2>
+                <p style={{ fontSize: '0.85rem' }}>{new Date(o.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · {o.customer} · {o.city} · {o.phone}</p>
+              </div>
+              <span className="product-badge" style={{ position: 'static' }}>{STATUS[o.status] ?? o.status}</span>
+            </div>
+            <div className="seller-products-table-scroll">
+              <table className="seller-products-table">
+                <thead><tr><th>Article</th><th>Qté</th><th>Prix</th></tr></thead>
+                <tbody>{o.items.map((i, k) => <tr key={k}><td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</td><td>{i.quantity}</td><td>{formatPrice(i.unitPriceUsd * i.quantity)}</td></tr>)}</tbody>
+              </table>
+            </div>
+            <p style={{ textAlign: 'right', marginTop: '0.75rem', fontWeight: 700 }}>Total : {formatPrice(o.totalUsd)}</p>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}

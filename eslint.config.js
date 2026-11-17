@@ -8,6 +8,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/.next/**',
       '**/legacy/**',
+      'e2e/**',
       '**/design-reference/**',
       '**/coverage/**',
       '*.config.js',

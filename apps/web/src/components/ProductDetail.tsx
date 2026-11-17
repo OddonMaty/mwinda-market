@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import type { Product } from '../data/catalogue';
 import { formatPrice, productImageUrl } from '../lib';
+import { useCart } from './CartProvider';
 import { Countdown } from './Countdown';
 import { NavButton } from './NavButton';
 import { ProductCard, Stars } from './ProductCard';
@@ -11,6 +12,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
   const [color, setColor] = useState(product.colors[0] ?? '');
   const [size, setSize] = useState(product.sizes[0] ?? '');
   const [qty, setQty] = useState(1);
+  const cart = useCart();
   const [tab, setTab] = useState<'description' | 'shipping' | 'faq'>('description');
   const allImages = [product.image, ...(product.images ?? [])].filter(Boolean);
   const [main, setMain] = useState(product.image);
@@ -98,7 +100,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
               <span>{qty}</span>
               <button type="button" onClick={() => setQty(qty + 1)}><i className="fas fa-plus" /></button>
             </div>
-            <button type="button" className="btn btn-primary add-to-cart" onClick={() => setQty(1)}>
+            <button type="button" className="btn btn-primary add-to-cart" onClick={() => { cart.add(product, qty, { color, size }); setQty(1); }}>
               <i className="fas fa-shopping-cart" /> Ajouter au panier
             </button>
             <button type="button" className="btn btn-outline"><i className="fas fa-heart" /></button>
