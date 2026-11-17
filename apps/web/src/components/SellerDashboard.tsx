@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { USD_TO_CDF, departmentLabels, formatPrice, productImageUrl } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
+import { PhotoPicker } from './PhotoPicker';
 
 interface Shop { id: string; name: string; isOfficial: boolean; status: string }
 interface SProduct { id: number; name: string; description: string; priceUsd: number; originalPriceUsd: number | null; department: string; category: string; colors: string[]; sizes: string[]; inStock: boolean; images: string[] }
@@ -20,6 +21,7 @@ export function SellerDashboard() {
   const [orders, setOrders] = useState<SOrder[]>([]);
   const [form, setForm] = useState<{ open: boolean; editing: SProduct | null }>({ open: false, editing: null });
   const [promo, setPromo] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     const s = await api<{ shop: Shop | null }>('/seller/shop');
@@ -38,7 +40,7 @@ export function SellerDashboard() {
 
   if (!ready || !user || !shop) return <p className="empty-collection">Chargement…</p>;
 
-  function openForm(p: SProduct | null) { setForm({ open: true, editing: p }); setPromo(!!p?.originalPriceUsd); }
+  function openForm(p: SProduct | null) { setForm({ open: true, editing: p }); setPromo(!!p?.originalPriceUsd); setPhotos(p?.images ?? []); }
 
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -46,11 +48,11 @@ export function SellerDashboard() {
     const body = {
       name: String(f.get('name')).trim(), description: String(f.get('description')).trim(), department: f.get('department'), category: String(f.get('category')).trim(),
       priceUsd: toUsd(f.get('price')), originalPriceUsd: promo && f.get('originalPrice') ? toUsd(f.get('originalPrice')) : null,
-      colors: csv(f.get('colors')), sizes: csv(f.get('sizes')), inStock: !!f.get('inStock'), images: [String(f.get('image') ?? '').trim(), ...csv(f.get('images'))].filter(Boolean),
+      colors: csv(f.get('colors')), sizes: csv(f.get('sizes')), inStock: !!f.get('inStock'), images: photos,
     };
     const editing = form.editing;
     const r = await api(editing ? `/seller/products/${editing.id}` : '/seller/products', { method: editing ? 'PUT' : 'POST', body });
-    if (!r.ok) return notify(r.data.code === 'validation_error' ? 'Vérifiez les champs : prix barré supérieur au prix, liens d’images en https, 5 photos maximum.' : errorMessage(r.data.code));
+    if (!r.ok) return notify(r.data.code === 'validation_error' ? 'Vérifiez les champs : prix barré supérieur au prix, 5 photos maximum.' : errorMessage(r.data.code));
     setForm({ open: false, editing: null });
     await load();
     notify(editing ? 'Produit modifié' : 'Produit publié');
@@ -102,15 +104,7 @@ export function SellerDashboard() {
             <div className="form-row" style={{ display: promo ? 'grid' : 'none' }}>
               <input type="number" name="originalPrice" step="1" min="0" placeholder="Prix barré (FC) — plus élevé que le prix de vente" defaultValue={ex?.originalPriceUsd ? Math.round(ex.originalPriceUsd * USD_TO_CDF) : ''} />
             </div>
-            <div className="form-group">
-              <label>Photo principale</label>
-              <input type="text" name="image" placeholder="Colle un lien d'image (https)..." defaultValue={ex?.images[0] ?? ''} />
-            </div>
-            <div className="form-group">
-              <label>Photos supplémentaires (4 maximum)</label>
-              <input type="text" name="images" placeholder="Plusieurs liens https séparés par des virgules..." defaultValue={ex?.images.slice(1).join(', ') ?? ''} />
-              <p className="seller-form-note" style={{ marginTop: '0.35rem' }}>L&apos;envoi de photos depuis votre appareil arrive bientôt : pour l&apos;instant, collez des liens d&apos;images.</p>
-            </div>
+            <PhotoPicker photos={photos} onChange={setPhotos} />
             <div className="form-row">
               <input type="text" name="colors" placeholder="Couleurs (séparées par des virgules)" defaultValue={ex?.colors.join(', ') ?? ''} />
               <input type="text" name="sizes" placeholder="Capacités / tailles (séparées par des virgules)" defaultValue={ex?.sizes.join(', ') ?? ''} />

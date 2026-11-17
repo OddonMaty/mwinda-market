@@ -27,11 +27,27 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await sp.selectOption('[name=department]', 'electronique');
   await sp.fill('[name=category]', 'Audio');
   await sp.fill('[name=price]', '112000'); // 40 $
-  await sp.fill('[name=image]', 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300');
+  // Photo "de téléphone" : grande image (3000x2000) générée dans la page, envoyée via le sélecteur de fichiers.
+  await sp.evaluate(async () => {
+    const c = document.createElement('canvas'); c.width = 3000; c.height = 2000;
+    const g = c.getContext('2d'); const grad = g.createLinearGradient(0, 0, 3000, 2000); grad.addColorStop(0, '#0a7'); grad.addColorStop(1, '#fa0');
+    g.fillStyle = grad; g.fillRect(0, 0, 3000, 2000);
+    for (let i = 0; i < 4000; i++) { g.fillStyle = `hsl(${i % 360},70%,50%)`; g.fillRect((i * 37) % 3000, (i * 91) % 2000, 20, 20); } // du bruit pour une vraie taille de fichier
+    const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.95));
+    const dt = new DataTransfer(); dt.items.add(new File([blob], 'telephone.jpg', { type: 'image/jpeg' }));
+    const input = document.querySelector('input[type=file]'); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await sp.waitForSelector('img[alt="Photo 1"]');
+  const photoSrc = await sp.getAttribute('img[alt="Photo 1"]', 'src');
+  assert.match(photoSrc, /^\/api\/v1\/images\//);
   await sp.fill('textarea[name=description]', 'Un casque de test.');
   await sp.click('button:has-text("Publier le produit")');
   await sp.waitForSelector('td:has-text("Casque e2e")');
   await sp.waitForSelector('text=112 000 FC');
+  const size = await sp.evaluate(async (u) => { const r = await fetch(u); const b = await r.blob(); const bm = await createImageBitmap(b); return { bytes: b.size, w: bm.width, type: b.type }; }, photoSrc);
+  assert.equal(size.type, 'image/jpeg');
+  assert.ok(size.w <= 1200 && size.bytes < 1_300_000, `photo réduite avant envoi (${size.w}px, ${size.bytes} octets)`);
+  console.log('photo envoyée :', size);
 
   // ---- Le produit du vendeur apparaît dans le catalogue public (mise à jour en quelques secondes)
   const pub = await browser.newPage();
@@ -42,6 +58,7 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
     if (!found) await pub.waitForTimeout(2500);
   }
   assert.ok(found, 'le produit vendeur est visible dans le catalogue');
+  assert.ok(await pub.evaluate(() => { const i = document.querySelector('.product-card img'); return i && i.src.includes('/api/v1/images/'); }), 'la photo envoyée est affichée dans le catalogue');
   await pub.click('.product-card:has-text("Casque e2e")');
   await pub.waitForSelector('h1:has-text("Casque e2e")');
   await pub.close();

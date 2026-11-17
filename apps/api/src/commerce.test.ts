@@ -39,6 +39,9 @@ async function user(): Promise<string> {
 const SHIP = { shippingPhone: '+243907261113', shippingCity: 'Bukavu', shippingAddress: 'Avenue du Lac, Nyawera' };
 const PRODUCT = { name: 'Casque test', description: 'Un casque.', priceUsd: 40, department: 'electronique', category: 'Audio', colors: ['Noir'], sizes: [], inStock: true, images: ['https://example.com/a.jpg'] };
 
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+const png = (extra = 0) => Buffer.concat([PNG, Buffer.alloc(extra)]).toString('base64');
+
 describe('Boutiques, produits, commandes', () => {
   before(async () => {
     db = createPgliteDb(new PGlite());
@@ -175,5 +178,36 @@ describe('Boutiques, produits, commandes', () => {
     const id = (await call('POST', '/seller/products', { cookie: seller, body: PRODUCT })).json.id as number;
     await call('DELETE', `/seller/products/${id}`, { cookie: seller });
     assert.equal((await call('POST', '/orders', { cookie: buyer, body: { items: [{ id, quantity: 1 }], ...SHIP } })).status, 400);
+  });
+
+  it('photos : envoi depuis le téléphone, lecture publique, formats et taille contrôlés', async () => {
+    const c = await user();
+    assert.equal((await call('POST', '/seller/images', { cookie: c, body: { data: png() } })).status, 403); // pas de boutique
+    await call('POST', '/seller/shop', { cookie: c, body: { name: 'Boutique Photos' } });
+    const up = await call('POST', '/seller/images', { cookie: c, body: { data: png() } });
+    assert.equal(up.status, 201);
+    assert.match(up.json.url, /^\/api\/v1\/images\/[0-9A-Z]{26}$/);
+    const res = await app.inject({ method: 'GET', url: up.json.url.replace('/api', '') }); // lecture sans connexion
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.headers['content-type'], 'image/png');
+    assert.match(String(res.headers['cache-control']), /immutable/);
+    assert.deepEqual(res.rawPayload, PNG);
+    assert.equal((await call('POST', '/seller/images', { cookie: c, body: { data: Buffer.from('<script>alert(1)</script> pas une image').toString('base64') } })).status, 415);
+    assert.equal((await call('POST', '/seller/images', { cookie: c, body: { data: png(1_550_000) } })).status, 413);
+    assert.equal((await call('POST', '/seller/images', { body: { data: png() } })).status, 401);
+  });
+
+  it('photos : produit avec photos envoyées ; celles d\'une autre boutique sont refusées', async () => {
+    const a = await user();
+    const b = await user();
+    await call('POST', '/seller/shop', { cookie: a, body: { name: 'Boutique Alpha' } });
+    await call('POST', '/seller/shop', { cookie: b, body: { name: 'Boutique Beta' } });
+    const mine = (await call('POST', '/seller/images', { cookie: a, body: { data: png() } })).json.url as string;
+    const created = await call('POST', '/seller/products', { cookie: a, body: { ...PRODUCT, images: [mine, 'https://example.com/b.jpg'] } });
+    assert.equal(created.status, 201);
+    const shown = (await call('GET', `/products/${created.json.id}`)).json.product;
+    assert.deepEqual(shown.images, [mine, 'https://example.com/b.jpg']);
+    assert.equal((await call('POST', '/seller/products', { cookie: b, body: { ...PRODUCT, images: [mine] } })).status, 400);
+    assert.equal((await call('POST', '/seller/products', { cookie: a, body: { ...PRODUCT, images: ['/api/v1/images/01ZZZZZZZZZZZZZZZZZZZZZZZZ'] } })).status, 400);
   });
 });

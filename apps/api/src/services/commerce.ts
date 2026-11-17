@@ -10,6 +10,18 @@ export interface ProductInput {
   colors: string[]; sizes: string[]; inStock: boolean; images: string[];
 }
 
+const IMAGE_PATH = /^\/api\/v1\/images\/([0-9A-Za-z]{26})$/;
+const MAX_IMAGE_BYTES = 1_500_000;
+const MAX_IMAGES_PER_SHOP = 300;
+
+/** Type réel déduit des premiers octets : on ne fait pas confiance au type annoncé. */
+function sniff(b: Buffer): 'image/jpeg' | 'image/png' | 'image/webp' | null {
+  if (b.length > 12 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b.length > 12 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
+  if (b.length > 12 && b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP') return 'image/webp';
+  return null;
+}
+
 const slugify = (s: string): string =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'boutique';
 
@@ -161,6 +173,35 @@ export class CommerceService {
     return rows.map((r) => this.dto(r, imgs.get(r.id) ?? []));
   }
 
+  /** Les photos envoyées par le vendeur doivent appartenir à sa boutique ; les autres doivent être des liens https. */
+  private async checkImages(shopId: string, images: string[]) {
+    for (const url of images) {
+      const m = IMAGE_PATH.exec(url);
+      if (!m) continue;
+      const own = await this.db.query('SELECT 1 FROM uploaded_images WHERE id = $1 AND shop_id = $2', [m[1], shopId]);
+      if (!own[0]) throw new AppError(400, 'image_not_found', 'Photo introuvable : renvoyez-la.');
+    }
+  }
+
+  async uploadImage(userId: string, base64: string) {
+    const s = await this.requireShop(userId);
+    const bytes = Buffer.from(base64, 'base64');
+    if (bytes.length === 0 || bytes.length > MAX_IMAGE_BYTES) throw new AppError(413, 'image_too_large', 'Photo trop lourde (1,5 Mo maximum).');
+    const type = sniff(bytes);
+    if (!type) throw new AppError(415, 'image_type_unsupported', 'Format non pris en charge (JPEG, PNG ou WebP).');
+    const count = await this.db.query<{ n: string }>('SELECT count(*) AS n FROM uploaded_images WHERE shop_id = $1', [s.id]);
+    if (Number(count[0]?.n) >= MAX_IMAGES_PER_SHOP) throw new AppError(409, 'image_quota', 'Limite de photos atteinte pour cette boutique.');
+    const id = newId();
+    await this.db.query('INSERT INTO uploaded_images(id, shop_id, content_type, bytes, size) VALUES ($1,$2,$3,$4,$5)', [id, s.id, type, bytes, bytes.length]);
+    return { url: `/api/v1/images/${id}` };
+  }
+
+  async getImage(id: string) {
+    const r = await this.db.query<{ content_type: string; bytes: Buffer }>('SELECT content_type, bytes FROM uploaded_images WHERE id = $1', [id]);
+    if (!r[0]) throw new AppError(404, 'not_found', 'Photo introuvable.');
+    return { type: r[0].content_type, bytes: r[0].bytes };
+  }
+
   private async writeImages(t: Db, productId: string | number, images: string[]) {
     await t.query('DELETE FROM product_images WHERE product_id = $1', [productId]);
     for (const [i, url] of images.slice(0, 5).entries()) await t.query('INSERT INTO product_images(product_id, position, url) VALUES ($1,$2,$3)', [productId, i, url]);
@@ -168,6 +209,7 @@ export class CommerceService {
 
   async createProduct(userId: string, b: ProductInput) {
     const s = await this.requireShop(userId);
+    await this.checkImages(s.id, b.images);
     return this.db.transaction(async (t) => {
       const r = await t.query<{ id: string }>(
         `INSERT INTO products(shop_id,name,description,price_usd,original_price_usd,department,category,colors,sizes,in_stock)
@@ -180,6 +222,7 @@ export class CommerceService {
 
   async updateProduct(userId: string, id: number, b: ProductInput) {
     const s = await this.requireShop(userId);
+    await this.checkImages(s.id, b.images);
     return this.db.transaction(async (t) => {
       const r = await t.query(
         `UPDATE products SET name=$3, description=$4, price_usd=$5, original_price_usd=$6, department=$7, category=$8, colors=$9, sizes=$10, in_stock=$11, updated_at=now()

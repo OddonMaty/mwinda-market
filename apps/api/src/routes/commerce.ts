@@ -5,7 +5,8 @@ import type { CommerceService } from '../services/commerce.js';
 const phone = z.string().trim().regex(/^\+[1-9][0-9]{6,14}$/, 'phone_e164');
 const text = (max: number) => z.string().trim().min(1).max(max);
 const list = z.array(z.string().trim().min(1).max(60)).max(20).default([]);
-const imageUrl = z.string().trim().url().max(500).refine((u) => u.startsWith('https://'), 'https_required');
+const imageUrl = z.string().trim().max(500).refine((u) => /^\/api\/v1\/images\/[0-9A-Za-z]{26}$/.test(u) || (u.startsWith('https://') && z.string().url().safeParse(u).success), 'https_or_uploaded_required');
+const UploadBody = z.object({ data: z.string().min(16).max(2_100_000) });
 
 const OrderBody = z.object({
   items: z.array(z.object({ id: z.coerce.number().int().positive(), quantity: z.coerce.number().int().min(1).max(100), color: z.string().max(60).optional(), size: z.string().max(60).optional() })).min(1).max(50),
@@ -27,6 +28,11 @@ export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }:
   r.get('/products', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { products: await svc.listPublicProducts() }; });
   r.get('/products/:id', async (req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { product: await svc.getPublicProduct(Number(parse(IdParam, req.params).id)) }; });
 
+  r.get('/images/:id', async (req, reply) => {
+    const img = await svc.getImage(parse(IdParam, req.params).id);
+    return reply.header('content-type', img.type).header('cache-control', 'public, max-age=31536000, immutable').header('x-content-type-options', 'nosniff').send(img.bytes);
+  });
+
   const pre = { preHandler: authenticate };
   const user = (req: FastifyRequest) => req.auth!.user;
 
@@ -47,5 +53,6 @@ export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }:
   r.post('/seller/products', pre, async (req, reply) => reply.code(201).send(await svc.createProduct(user(req).id, parse(ProductBody, req.body))));
   r.put('/seller/products/:id', pre, async (req) => { await svc.updateProduct(user(req).id, Number(parse(IdParam, req.params).id), parse(ProductBody, req.body)); return { ok: true }; });
   r.delete('/seller/products/:id', pre, async (req) => { await svc.archiveProduct(user(req).id, Number(parse(IdParam, req.params).id)); return { ok: true }; });
+  r.post('/seller/images', { preHandler: authenticate, bodyLimit: 2_300_000 }, async (req, reply) => reply.code(201).send(await svc.uploadImage(user(req).id, parse(UploadBody, req.body).data)));
   r.get('/seller/orders', pre, async (req) => ({ orders: await svc.listShopOrders(user(req).id) }));
 }
