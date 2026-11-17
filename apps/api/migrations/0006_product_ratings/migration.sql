@@ -1,0 +1,22 @@
+-- Notes et nombre d'avis (affiches sur les cartes produit). 0 pour les nouveaux produits.
+ALTER TABLE products ADD COLUMN rating NUMERIC(2,1) NOT NULL DEFAULT 0 CHECK (rating BETWEEN 0 AND 5);
+ALTER TABLE products ADD COLUMN reviews INTEGER NOT NULL DEFAULT 0 CHECK (reviews >= 0);
+UPDATE products SET rating=4.5, reviews=128 WHERE id=1;
+UPDATE products SET rating=4.8, reviews=89 WHERE id=2;
+UPDATE products SET rating=4.3, reviews=67 WHERE id=3;
+UPDATE products SET rating=4.6, reviews=203 WHERE id=4;
+UPDATE products SET rating=4.7, reviews=156 WHERE id=5;
+UPDATE products SET rating=4.2, reviews=44 WHERE id=6;
+UPDATE products SET rating=4.9, reviews=78 WHERE id=7;
+UPDATE products SET rating=4.4, reviews=112 WHERE id=8;
+UPDATE products SET rating=4.6, reviews=52 WHERE id=9;
+UPDATE products SET rating=4.5, reviews=31 WHERE id=10;
+UPDATE products SET rating=4.4, reviews=28 WHERE id=11;
+UPDATE products SET rating=4.7, reviews=39 WHERE id=12;
+UPDATE products SET rating=4.5, reviews=58 WHERE id=13;
+UPDATE products SET rating=4.7, reviews=46 WHERE id=14;
+UPDATE products SET rating=4.4, reviews=71 WHERE id=15;
+UPDATE products SET rating=4.6, reviews=93 WHERE id=16;
+UPDATE products SET rating=4.5, reviews=34 WHERE id=17;
+UPDATE products SET rating=4.3, reviews=27 WHERE id=18;
+UPDATE products SET rating=4.6, reviews=51 WHERE id=19;

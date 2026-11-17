@@ -24,6 +24,9 @@ type Parse = <T extends z.ZodTypeAny>(schema: T, data: unknown) => z.infer<T>;
 interface Ctx { svc: CommerceService; authenticate: (req: FastifyRequest) => Promise<void>; parse: Parse }
 
 export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }: Ctx): void {
+  r.get('/products', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { products: await svc.listPublicProducts() }; });
+  r.get('/products/:id', async (req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { product: await svc.getPublicProduct(Number(parse(IdParam, req.params).id)) }; });
+
   const pre = { preHandler: authenticate };
   const user = (req: FastifyRequest) => req.auth!.user;
 

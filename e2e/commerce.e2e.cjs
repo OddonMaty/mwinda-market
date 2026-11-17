@@ -33,6 +33,19 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await sp.waitForSelector('td:has-text("Casque e2e")');
   await sp.waitForSelector('text=112 000 FC');
 
+  // ---- Le produit du vendeur apparaît dans le catalogue public (mise à jour en quelques secondes)
+  const pub = await browser.newPage();
+  let found = false;
+  for (let i = 0; i < 12 && !found; i++) {
+    await pub.goto(`${WEB}/collection?q=Casque+e2e`);
+    found = (await pub.locator('.product-card:has-text("Casque e2e")').count()) > 0;
+    if (!found) await pub.waitForTimeout(2500);
+  }
+  assert.ok(found, 'le produit vendeur est visible dans le catalogue');
+  await pub.click('.product-card:has-text("Casque e2e")');
+  await pub.waitForSelector('h1:has-text("Casque e2e")');
+  await pub.close();
+
   // ---- Acheteur : panier → commande
   const bp = await buyer.newPage();
   await bp.goto(`${WEB}/produit/1`);

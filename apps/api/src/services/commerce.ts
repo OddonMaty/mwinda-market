@@ -13,10 +13,32 @@ export interface ProductInput {
 const slugify = (s: string): string =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'boutique';
 
-interface ProductRow { id: string; shop_id: string; name: string; description: string; price_usd: string; original_price_usd: string | null; department: string; category: string; colors: string[]; sizes: string[]; in_stock: boolean; status: string; created_at: Date }
+interface ProductRow { rating?: string; reviews?: number; sku?: string | null; tags?: string[]; id: string; shop_id: string; name: string; description: string; price_usd: string; original_price_usd: string | null; department: string; category: string; colors: string[]; sizes: string[]; in_stock: boolean; status: string; created_at: Date }
 
 export class CommerceService {
   constructor(private db: Db) {}
+
+  // ---------- Catalogue public ----------
+  private publicDto(p: ProductRow, imgs: string[]) {
+    return {
+      id: Number(p.id), name: p.name, description: p.description, priceUsd: Number(p.price_usd), originalPriceUsd: p.original_price_usd ? Number(p.original_price_usd) : null,
+      department: p.department, category: p.category, sku: p.sku ?? '', colors: p.colors, sizes: p.sizes, tags: p.tags ?? [], inStock: p.in_stock,
+      rating: Number(p.rating ?? 0), reviews: p.reviews ?? 0, images: imgs, createdAt: p.created_at,
+    };
+  }
+
+  /** Produits visibles par les acheteurs : actifs, d'une boutique active. */
+  async listPublicProducts() {
+    const rows = await this.db.query<ProductRow>("SELECT p.* FROM products p JOIN shops s ON s.id = p.shop_id WHERE p.status = 'active' AND s.status = 'active' ORDER BY p.id");
+    const imgs = await this.images(rows.map((r) => r.id));
+    return rows.map((r) => this.publicDto(r, imgs.get(r.id) ?? []));
+  }
+
+  async getPublicProduct(id: number) {
+    const rows = await this.db.query<ProductRow>("SELECT p.* FROM products p JOIN shops s ON s.id = p.shop_id WHERE p.id = $1 AND p.status = 'active' AND s.status = 'active'", [id]);
+    if (!rows[0]) throw new AppError(404, 'not_found', 'Produit introuvable.');
+    return this.publicDto(rows[0], (await this.images([rows[0].id])).get(rows[0].id) ?? []);
+  }
 
   // ---------- Adresses ----------
   async listAddresses(userId: string) {

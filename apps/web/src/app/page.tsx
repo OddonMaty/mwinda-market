@@ -3,21 +3,25 @@ import { HeroSlider, type Slide } from '../components/HeroSlider';
 import { Countdown } from '../components/Countdown';
 import { NewProducts, HomeCatalog } from '../components/HomeCatalog';
 import { ProductCard } from '../components/ProductCard';
-import { products } from '../data/catalogue';
+import { getProducts } from '../data/source';
 import { formatPrice, isProductNew } from '../lib';
+import type { Product } from '../data/catalogue';
 
-export const revalidate = 3600;
+export const revalidate = 10;
 
-const price = (id: number) => `À partir de ${formatPrice(products.find((p) => p.id === id)?.price ?? 0)}`;
 const u = (id: string) => `https://images.unsplash.com/photo-${id}?w=1400&h=600&fit=crop&auto=format`;
 
-const SLIDES: Slide[] = [
+const slides = (products: Product[]): Slide[] => {
+  const price = (id: number) => `À partir de ${formatPrice(products.find((p) => p.id === id)?.price ?? 0)}`;
+  return [
   { tag: 'Nouveauté', title: ['Vinova SmartPhone', 'Pro 12'], text: '108MP de clarté. Vitesse 5G. Batterie toute la journée. Le seul téléphone dont vous avez besoin.', image: u('1511707171634-5f897ff02aa9'), priceLabel: price(1) },
   { tag: 'Meilleure vente', title: ['Audio Master', 'Pro XR'], text: "40 heures d'autonomie, réduction active du bruit, un son de qualité studio pour votre quotidien.", image: u('1505740420928-5e560c06d30e'), priceLabel: price(2) },
   { tag: 'Offre limitée', title: ['ProBook 15', 'Ultra'], text: 'Intel Core i9 · RTX 4070 · 32 Go de RAM. Conçu pour les créateurs qui ne font aucun compromis.', image: u('1496181133206-80ce9b88a853'), priceLabel: price(5) },
-];
+  ];
+};
 
-export default function HomePage() {
+export default async function HomePage() {
+  const products = await getProducts();
   const now = Date.now();
   const newProducts = products.filter((p) => isProductNew(p, now));
   const deals = products.filter((p) => p.originalPrice && p.originalPrice > p.price).sort((a, b) => (b.discount ?? 0) - (a.discount ?? 0)).slice(0, 8);
@@ -25,7 +29,7 @@ export default function HomePage() {
   return (
     <>
       <Header active="home" />
-      <HeroSlider slides={SLIDES} />
+      <HeroSlider slides={slides(products)} />
 
       <section className="usp-band">
         <div className="container">

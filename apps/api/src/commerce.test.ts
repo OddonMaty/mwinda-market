@@ -56,6 +56,27 @@ describe('Boutiques, produits, commandes', () => {
     assert.equal(Number(r[0]?.n), 19);
   });
 
+  it('catalogue public : sans connexion, produits actifs seulement, notes conservées', async () => {
+    const all = (await call('GET', '/products')).json.products;
+    assert.equal(all.length, 19);
+    const p1 = all.find((p: { id: number }) => p.id === 1);
+    assert.equal(p1.rating, 4.5);
+    assert.equal(p1.priceUsd, 650);
+    assert.equal((await call('GET', '/products/1')).json.product.name, 'Vinova SmartPhone Pro 12');
+    assert.equal((await call('GET', '/products/999999')).status, 404);
+  });
+
+  it('catalogue public : un produit vendeur apparaît puis disparaît une fois archivé', async () => {
+    const c = await user();
+    await call('POST', '/seller/shop', { cookie: c, body: { name: 'Boutique Vitrine' } });
+    const id = (await call('POST', '/seller/products', { cookie: c, body: PRODUCT })).json.id as number;
+    const shown = (await call('GET', '/products')).json.products.find((p: { id: number }) => p.id === id);
+    assert.equal(shown.rating, 0);
+    assert.equal(shown.images[0], 'https://example.com/a.jpg');
+    await call('DELETE', `/seller/products/${id}`, { cookie: c });
+    assert.equal((await call('GET', `/products/${id}`)).status, 404);
+  });
+
   it('commande : refusée sans connexion', async () => {
     assert.equal((await call('POST', '/orders', { body: { items: [{ id: 1, quantity: 1 }], ...SHIP } })).status, 401);
   });

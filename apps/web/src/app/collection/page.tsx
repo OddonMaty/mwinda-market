@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Header, Footer } from '../../components/Chrome';
 import { CollectionView } from '../../components/CollectionView';
-import { products } from '../../data/catalogue';
+import { getProducts } from '../../data/source';
 import { collectionHref, departmentLabels, matchesSearch } from '../../lib';
 
 export const metadata: Metadata = { title: 'Nos produits - Sao Tech Market' };
@@ -11,6 +11,7 @@ type SP = Promise<{ dep?: string; cat?: string; q?: string }>;
 
 export default async function CollectionPage({ searchParams }: { searchParams: SP }) {
   const { dep = 'All', cat = 'All', q = '' } = await searchParams;
+  const products = await getProducts();
   const query = q.trim();
   const now = Date.now();
 
