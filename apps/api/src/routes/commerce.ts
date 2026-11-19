@@ -13,7 +13,8 @@ const OrderBody = z.object({
   shippingPhone: phone, shippingCity: text(80), shippingAddress: text(500),
 });
 const AddressBody = z.object({ label: z.string().trim().max(60).optional(), city: text(80), address: text(500), phone });
-const ShopBody = z.object({ name: text(100), phone: phone.optional(), description: z.string().trim().max(1000).optional(), citySlug: z.string().max(100).optional() });
+const ShopBody = z.object({ name: text(100), phone: phone.optional(), description: z.string().trim().max(1000).optional(), citySlug: z.string().max(100).optional(), countryCode: z.string().length(2).toUpperCase().optional() });
+const ShopPatch = z.object({ name: text(100).optional(), phone: phone.optional(), description: z.string().trim().max(1000).optional() });
 const DEPARTMENTS = ['electronique', 'construction', 'vetements', 'imprimantes'] as const;
 const ProductBody = z.object({
   name: text(200), description: text(5000), priceUsd: z.number().positive().max(1_000_000), originalPriceUsd: z.number().positive().max(1_000_000).nullable().optional(),
@@ -46,9 +47,20 @@ export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }:
     return reply.code(201).send({ order });
   });
   r.get('/orders', pre, async (req) => ({ orders: await svc.listOrders(user(req).id) }));
+  const Number_ = z.object({ number: z.string().regex(/^STM-[0-9]{1,12}$/) });
+  r.post('/orders/:number/cancel', pre, async (req) => svc.buyerOrderAction(user(req).id, parse(Number_, req.params).number, 'cancel'));
+  r.post('/orders/:number/receive', pre, async (req) => svc.buyerOrderAction(user(req).id, parse(Number_, req.params).number, 'receive'));
+  r.get('/plans', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=600'); return { plans: await svc.listPlans() }; });
 
   r.get('/seller/shop', pre, async (req) => ({ shop: await svc.getShop(user(req).id) }));
   r.post('/seller/shop', pre, async (req, reply) => reply.code(201).send({ shop: await svc.createShop(user(req), parse(ShopBody, req.body)) }));
+  r.patch('/seller/shop', pre, async (req) => ({ shop: await svc.updateShop(user(req).id, parse(ShopPatch, req.body)) }));
+  r.post('/seller/plan', pre, async (req) => svc.requestPlan(user(req).id, parse(z.object({ plan: z.string().regex(/^[a-z][a-z0-9-]{1,19}$/) }), req.body).plan));
+  r.get('/seller/stats', pre, async (req) => ({ stats: await svc.shopStats(user(req).id) }));
+  r.post('/seller/orders/:number/:action', pre, async (req) => {
+    const p = parse(Number_.extend({ action: z.enum(['confirm', 'ship', 'cancel']) }), req.params);
+    return svc.shopOrderAction(user(req).id, p.number, ({ confirm: 'confirmed', ship: 'shipped', cancel: 'cancelled' } as const)[p.action]);
+  });
   r.get('/seller/products', pre, async (req) => ({ products: await svc.listMyProducts(user(req).id) }));
   r.post('/seller/products', pre, async (req, reply) => reply.code(201).send(await svc.createProduct(user(req).id, parse(ProductBody, req.body))));
   r.put('/seller/products/:id', pre, async (req) => { await svc.updateProduct(user(req).id, Number(parse(IdParam, req.params).id), parse(ProductBody, req.body)); return { ok: true }; });

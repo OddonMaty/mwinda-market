@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { id } = await params;
   const products = await getProducts();
   const p = products.find((x) => x.id === Number(id));
-  return { title: p ? `${p.name} - Sao Tech Market` : 'Produit - Sao Tech Market', description: p?.description };
+  return { title: p ? `${p.name} - Mwinda Market` : 'Produit - Mwinda Market', description: p?.description };
 }
 
 export default async function ProductPage({ params }: { params: Params }) {

@@ -5,7 +5,7 @@ import { getDictionary } from './i18n/index.js';
 describe('i18n Dictionary', () => {
   it('returns French dictionary by default', () => {
     const dict = getDictionary('fr');
-    assert.equal(dict.common.brand, 'Sao Tech Market');
+    assert.equal(dict.common.brand, 'Mwinda Market');
     assert.equal(dict.nav.home, 'Accueil');
     assert.equal(dict.departments.electronique, 'Gadgets Électroniques');
   });

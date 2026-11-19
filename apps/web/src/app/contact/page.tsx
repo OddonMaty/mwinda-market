@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Header, Footer } from '../../components/Chrome';
 import { ContactForm } from '../../components/ContactForm';
 
-export const metadata: Metadata = { title: 'Contact - Sao Tech Market' };
+export const metadata: Metadata = { title: 'Contact - Mwinda Market' };
 
 export default function ContactPage() {
   return (

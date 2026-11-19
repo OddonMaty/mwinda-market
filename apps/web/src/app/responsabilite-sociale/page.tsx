@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Header, Footer } from '../../components/Chrome';
 
-export const metadata: Metadata = { title: 'Responsabilité sociale - Sao Tech Market' };
+export const metadata: Metadata = { title: 'Responsabilité sociale - Mwinda Market' };
 
 export default function Page() {
   return (
@@ -9,23 +9,24 @@ export default function Page() {
       <Header active="" />
       <div className="page-header">
         <h1>Responsabilité sociale</h1>
-        <p>Notre engagement envers les communautés de Bukavu et d'Uvira</p>
+        <p>Notre engagement envers les communautés africaines</p>
       </div>
       <div className="container">
         <div className="info-page">
           <section>
             <h2>Notre engagement local</h2>
             <p>
-              Sao Tech Market est né à Bukavu et reste profondément ancré dans l'Est de la RDC. Une
-              partie de notre mission consiste à rendre la technologie accessible tout en soutenant
+              Mwinda Market est une place de marché africaine, lancée en République démocratique du
+              Congo. Une partie de notre mission consiste à rendre la technologie accessible tout en soutenant
               l'économie locale.
             </p>
           </section>
           <section>
             <h2>Emploi local</h2>
             <p>
-              Nos deux agences, à Bukavu et à Uvira, emploient exclusivement du personnel local pour
-              la logistique, la livraison et le service client.
+              Nous privilégions le recrutement local dans chaque ville où nous nous implantons, pour
+              la logistique, la livraison et le service client, et nous aidons les commerçants
+              locaux à vendre en ligne.
             </p>
           </section>
           <section>

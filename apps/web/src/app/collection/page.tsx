@@ -4,7 +4,7 @@ import { CollectionView } from '../../components/CollectionView';
 import { getProducts } from '../../data/source';
 import { collectionHref, departmentLabels, matchesSearch } from '../../lib';
 
-export const metadata: Metadata = { title: 'Nos produits - Sao Tech Market' };
+export const metadata: Metadata = { title: 'Nos produits - Mwinda Market' };
 export const dynamic = 'force-dynamic';
 
 type SP = Promise<{ dep?: string; cat?: string; q?: string }>;

@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { formatPrice } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { e164, type Address } from './CheckoutArea';
+import { useCountries } from './Geo';
 
 interface SessionRow { id: string; kind: string; createdAt: string; lastUsedAt: string; userAgent: string | null; ip: string | null; current: boolean }
 
-interface OrderRow { id: string; number: string; status: string; subtotalUsd: number; city: string; address: string; createdAt: string; items: { name: string; unitPriceUsd: number; quantity: number; color: string; size: string }[] }
+interface OrderRow { id: string; number: string; status: string; subtotalUsd: number; city: string; address: string; createdAt: string; canCancel: boolean; canConfirmReceipt: boolean; items: { name: string; unitPriceUsd: number; quantity: number; color: string; size: string; status: string; shop: string }[] }
 const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée' };
 const day = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 const fmt = (d: string) => new Date(d).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
@@ -18,6 +19,15 @@ export function AccountArea() {
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addrForm, setAddrForm] = useState(false);
+  const cities = useCountries().find((c) => c.code === (user?.countryCode ?? 'CD'))?.cities ?? [];
+  const loadOrders = useCallback(() => api<{ orders: OrderRow[] }>('/orders').then((r) => setOrders(r.ok ? r.data.orders : [])), []);
+  async function orderAction(number: string, action: 'cancel' | 'receive') {
+    if (action === 'cancel' && !window.confirm('Annuler cette commande ?')) return;
+    const r = await api(`/orders/${number}/${action}`, { method: 'POST' });
+    if (!r.ok) return notify(r.data.message ?? errorMessage(r.data.code));
+    notify(action === 'cancel' ? 'Commande annulée.' : 'Réception confirmée, merci !');
+    await loadOrders();
+  }
 
   const loadSessions = useCallback(async () => {
     const r = await api<{ sessions: SessionRow[] }>('/me/sessions');
@@ -31,8 +41,8 @@ export function AccountArea() {
     if (!user) return;
     void loadSessions();
     void loadAddresses();
-    void api<{ orders: OrderRow[] }>('/orders').then((r) => setOrders(r.ok ? r.data.orders : []));
-  }, [user, loadSessions, loadAddresses]);
+    void loadOrders();
+  }, [user, loadSessions, loadAddresses, loadOrders]);
 
   if (!ready) return <p className="empty-collection">Chargement…</p>;
 
@@ -99,6 +109,7 @@ export function AccountArea() {
           <p>{user.email}{user.phone ? ` · ${user.phone}` : ''}{user.emailVerified ? '' : ' · e-mail non vérifié'}</p>
         </div>
         <div className="seller-dashboard-actions">
+          {user.roles.length > 0 && <a href="/admin" className="btn btn-primary">Administration</a>}
           <button type="button" className="btn btn-outline" onClick={() => void logout()}>Déconnexion</button>
         </div>
       </div>
@@ -148,7 +159,8 @@ export function AccountArea() {
             <form onSubmit={saveAddress}>
               <div className="form-row">
                 <input type="text" name="label" placeholder="Nom (ex. Maison, Bureau)" />
-                <select name="city" defaultValue="Bukavu"><option value="Bukavu">Bukavu</option><option value="Uvira">Uvira</option><option value="Goma">Goma</option><option value="Baraka">Baraka (territoire de Fizi)</option><option value="Autre">Autre ville</option></select>
+                <input type="text" name="city" list="accountCities" placeholder="Ville *" required />
+                <datalist id="accountCities">{cities.map((c) => <option key={c.slug} value={c.name} />)}</datalist>
               </div>
               <div className="form-group"><input type="tel" name="phone" placeholder="Téléphone (+243...) *" defaultValue={user.phone ?? ''} required /></div>
               <div className="form-group"><textarea name="address" rows={3} placeholder="Adresse complète * (quartier, avenue, référence...)" required /></div>
@@ -192,16 +204,22 @@ export function AccountArea() {
             </div>
             <div className="seller-products-table-scroll">
               <table className="seller-products-table">
-                <thead><tr><th>Article</th><th>Qté</th><th>Prix</th></tr></thead>
+                <thead><tr><th>Article</th><th>Boutique</th><th>Qté</th><th>Prix</th><th>État</th></tr></thead>
                 <tbody>
                   {o.items.map((i, k) => (
-                    <tr key={k}><td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</td><td>{i.quantity}</td><td>{formatPrice(i.unitPriceUsd * i.quantity)}</td></tr>
+                    <tr key={k}><td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</td><td>{i.shop}</td><td>{i.quantity}</td><td>{formatPrice(i.unitPriceUsd * i.quantity)}</td><td>{STATUS[i.status] ?? i.status}</td></tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <p style={{ textAlign: 'right', marginTop: '0.75rem', fontWeight: 700 }}>Total : {formatPrice(o.subtotalUsd)}</p>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Livraison : {o.address}</p>
+            {(o.canCancel || o.canConfirmReceipt) && (
+              <div className="seller-form-actions" style={{ marginTop: '1rem' }}>
+                {o.canConfirmReceipt && <button type="button" className="btn btn-primary" onClick={() => void orderAction(o.number, 'receive')}>J&apos;ai reçu ma commande</button>}
+                {o.canCancel && <button type="button" className="btn btn-outline" onClick={() => void orderAction(o.number, 'cancel')}>Annuler la commande</button>}
+              </div>
+            )}
           </div>
         ))}
       </div>

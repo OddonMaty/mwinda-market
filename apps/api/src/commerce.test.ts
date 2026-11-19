@@ -16,7 +16,7 @@ let db: Db;
 let seq = 0;
 let ipSeq = 0;
 
-async function call(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, opts: { body?: unknown; cookie?: string } = {}) {
+async function call(method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, opts: { body?: unknown; cookie?: string } = {}) {
   const headers: Record<string, string> = {};
   if (opts.cookie) headers.cookie = opts.cookie;
   if (method !== 'GET') headers.origin = ORIGIN;
@@ -209,5 +209,116 @@ describe('Boutiques, produits, commandes', () => {
     assert.deepEqual(shown.images, [mine, 'https://example.com/b.jpg']);
     assert.equal((await call('POST', '/seller/products', { cookie: b, body: { ...PRODUCT, images: [mine] } })).status, 400);
     assert.equal((await call('POST', '/seller/products', { cookie: a, body: { ...PRODUCT, images: ['/api/v1/images/01ZZZZZZZZZZZZZZZZZZZZZZZZ'] } })).status, 400);
+  });
+
+  // ---------- Plateforme panafricaine, plans, suivi, administration ----------
+  async function admin(): Promise<{ cookie: string; id: string }> {
+    const c = await user();
+    const id = (await call('GET', '/auth/me', { cookie: c })).json.user.id as string;
+    await db.query("INSERT INTO admin_roles(user_id, role) VALUES ($1, 'superadmin')", [id]);
+    return { cookie: c, id };
+  }
+
+  it('pays : liste publique panafricaine avec villes', async () => {
+    const list = (await call('GET', '/countries')).json.countries as { code: string; cities: { slug: string }[] }[];
+    assert.ok(list.length >= 54);
+    assert.ok(list.find((c) => c.code === 'CD')!.cities.some((c) => c.slug === 'kinshasa'));
+    assert.ok(list.find((c) => c.code === 'KE')!.cities.some((c) => c.slug === 'nairobi'));
+  });
+
+  it('boutique : le vendeur choisit son pays et sa ville', async () => {
+    const c = await user();
+    const shop = (await call('POST', '/seller/shop', { cookie: c, body: { name: 'Nairobi Tech', countryCode: 'KE', citySlug: 'nairobi' } })).json.shop;
+    assert.equal(shop.countryCode, 'KE');
+    assert.equal(shop.city, 'Nairobi');
+    const bad = await call('POST', '/seller/shop', { cookie: await user(), body: { name: 'Pays inconnu', countryCode: 'FR' } });
+    assert.equal(bad.status, 400);
+  });
+
+  it('plans : 4 plans publics, le dernier à 45 $ par trimestre et 2 %', async () => {
+    const plans = (await call('GET', '/plans')).json.plans as { code: string; priceUsd: number; commissionBps: number }[];
+    assert.deepEqual(plans.map((p) => p.code), ['free', 'essentiel', 'pro', 'premium']);
+    assert.equal(plans[0]!.commissionBps, 500);
+    assert.deepEqual([plans[3]!.priceUsd, plans[3]!.commissionBps], [45, 200]);
+  });
+
+  it('plan gratuit : limite de produits et demande de plan payant validée par l\'administration', async () => {
+    const c = await user();
+    await call('POST', '/seller/shop', { cookie: c, body: { name: 'Limite Shop' } });
+    for (let i = 0; i < 10; i++) assert.equal((await call('POST', '/seller/products', { cookie: c, body: { ...PRODUCT, name: `P${i}` } })).status, 201);
+    const over = await call('POST', '/seller/products', { cookie: c, body: PRODUCT });
+    assert.equal(over.status, 403);
+    assert.equal(over.json.error.code, 'plan_limit');
+    assert.equal((await call('POST', '/seller/plan', { cookie: c, body: { plan: 'premium' } })).json.applied, false);
+    assert.equal((await call('GET', '/seller/shop', { cookie: c })).json.shop.pendingPlan, 'premium');
+    assert.equal((await call('GET', '/admin/plan-requests', { cookie: c })).status, 403); // un vendeur n'est pas admin
+    const a = await admin();
+    const req = (await call('GET', '/admin/plan-requests', { cookie: a.cookie })).json.requests.find((r: { shop: string }) => r.shop === 'Limite Shop');
+    assert.equal((await call('POST', `/admin/plan-requests/${req.id}/approve`, { cookie: a.cookie })).status, 200);
+    const shop = (await call('GET', '/seller/shop', { cookie: c })).json.shop;
+    assert.deepEqual([shop.plan, shop.commissionBps, shop.maxProducts], ['premium', 200, null]);
+    assert.equal((await call('POST', '/seller/products', { cookie: c, body: PRODUCT })).status, 201);
+  });
+
+  it('plan payant expiré : retour au plan gratuit', async () => {
+    const c = await user();
+    await call('POST', '/seller/shop', { cookie: c, body: { name: 'Expire Shop' } });
+    await db.query("UPDATE shops SET plan = 'pro', plan_expires_at = now() - interval '1 day' WHERE name = 'Expire Shop'");
+    const shop = (await call('GET', '/seller/shop', { cookie: c })).json.shop;
+    assert.deepEqual([shop.plan, shop.commissionBps], ['free', 500]);
+  });
+
+  it('commande : commission figée selon le plan, suivi vendeur puis réception acheteur', async () => {
+    const seller = await user();
+    await call('POST', '/seller/shop', { cookie: seller, body: { name: 'Suivi Shop' } });
+    await db.query("UPDATE shops SET plan = 'premium', plan_expires_at = now() + interval '3 months' WHERE name = 'Suivi Shop'");
+    const pid = (await call('POST', '/seller/products', { cookie: seller, body: { ...PRODUCT, priceUsd: 100 } })).json.id as number;
+    const buyer = await user();
+    const num = (await call('POST', '/orders', { cookie: buyer, body: { items: [{ id: pid, quantity: 2 }], ...SHIP } })).json.order.number as string;
+    const so = (await call('GET', '/seller/orders', { cookie: seller })).json.orders.find((o: { number: string }) => o.number === num);
+    assert.deepEqual([so.totalUsd, so.commissionUsd, so.netUsd], [200, 4, 196]);
+    assert.equal((await call('POST', `/seller/orders/${num}/ship`, { cookie: seller })).status, 409); // pas avant confirmation
+    assert.equal((await call('POST', `/seller/orders/${num}/confirm`, { cookie: seller })).json.status, 'confirmed');
+    assert.equal((await call('POST', `/orders/${num}/cancel`, { cookie: buyer })).status, 409); // confirmée : plus annulable par l'acheteur
+    assert.equal((await call('POST', `/seller/orders/${num}/ship`, { cookie: seller })).json.status, 'shipped');
+    assert.equal((await call('POST', `/orders/${num}/receive`, { cookie: await user() })).status, 404); // pas sa commande
+    assert.equal((await call('POST', `/orders/${num}/receive`, { cookie: buyer })).json.status, 'delivered');
+    const stats = (await call('GET', '/seller/stats', { cookie: seller })).json.stats;
+    assert.deepEqual([stats.salesUsd, stats.commissionUsd, stats.netUsd], [200, 4, 196]);
+    const mine = (await call('GET', '/orders', { cookie: buyer })).json.orders.find((o: { number: string }) => o.number === num);
+    assert.equal(mine.status, 'delivered');
+  });
+
+  it('commande : l\'acheteur annule tant que le vendeur n\'a pas confirmé', async () => {
+    const seller = await user();
+    await call('POST', '/seller/shop', { cookie: seller, body: { name: 'Annul Shop' } });
+    const pid = (await call('POST', '/seller/products', { cookie: seller, body: PRODUCT })).json.id as number;
+    const buyer = await user();
+    const num = (await call('POST', '/orders', { cookie: buyer, body: { items: [{ id: pid, quantity: 1 }], ...SHIP } })).json.order.number as string;
+    assert.equal((await call('POST', `/orders/${num}/cancel`, { cookie: buyer })).json.status, 'cancelled');
+    assert.equal((await call('POST', `/seller/orders/${num}/confirm`, { cookie: seller })).status, 409);
+  });
+
+  it('administration : accès refusé aux non-admins, statistiques, suspension, pages légales', async () => {
+    const plain = await user();
+    for (const u of ['/admin/stats', '/admin/users', '/admin/shops', '/admin/pages']) assert.equal((await call('GET', u, { cookie: plain })).status, 403, u);
+    assert.equal((await call('GET', '/admin/stats')).status, 401);
+    const a = await admin();
+    const stats = (await call('GET', '/admin/stats', { cookie: a.cookie })).json.stats;
+    assert.ok(stats.users >= 2 && stats.products >= 19);
+    const victim = await user();
+    const vid = (await call('GET', '/auth/me', { cookie: victim })).json.user.id as string;
+    assert.equal((await call('PATCH', `/admin/users/${vid}`, { cookie: a.cookie, body: { status: 'suspended' } })).status, 200);
+    assert.equal((await call('GET', '/auth/me', { cookie: victim })).status, 401);
+    assert.equal((await call('PATCH', `/admin/users/${a.id}`, { cookie: a.cookie, body: { status: 'suspended' } })).status, 400);
+    assert.equal((await call('GET', '/pages/conditions')).status, 404);
+    assert.equal((await call('PUT', '/admin/pages/conditions', { cookie: a.cookie, body: { title: 'Conditions', body: 'Texte.' } })).status, 200);
+    assert.equal((await call('GET', '/pages/conditions')).json.page.title, 'Conditions');
+    assert.equal((await call('PUT', '/admin/pages/nimporte', { cookie: a.cookie, body: { title: 'x', body: 'y' } })).status, 400);
+    assert.equal((await call('PUT', '/admin/plans/premium', { cookie: a.cookie, body: { name: 'Premium', priceUsd: 50, commissionBps: 200, maxProducts: null, features: [], sort: 3, active: true } })).status, 200);
+    assert.equal((await call('GET', '/plans')).json.plans.find((p: { code: string }) => p.code === 'premium').priceUsd, 50);
+    assert.equal((await call('POST', '/admin/cities', { cookie: a.cookie, body: { countryCode: 'CD', name: 'Kindu' } })).status, 200);
+    assert.equal((await call('PATCH', '/admin/countries/KE', { cookie: a.cookie, body: { active: false } })).status, 200);
+    assert.equal((await call('POST', '/seller/shop', { cookie: await user(), body: { name: 'Hors service', countryCode: 'KE' } })).status, 400);
   });
 });

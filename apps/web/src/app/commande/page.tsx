@@ -1,7 +1,7 @@
 import { Header, Footer } from '../../components/Chrome';
 import { CheckoutArea } from '../../components/CheckoutArea';
 
-export const metadata = { title: 'Finaliser ma commande - Sao Tech Market' };
+export const metadata = { title: 'Finaliser ma commande - Mwinda Market' };
 
 export default function CheckoutPage() {
   return (

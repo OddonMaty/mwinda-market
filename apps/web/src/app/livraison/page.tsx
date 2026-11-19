@@ -1,61 +1,30 @@
 import type { Metadata } from 'next';
 import { Header, Footer } from '../../components/Chrome';
+import { LegalPage } from '../../components/LegalPage';
+import { getLegalPage } from '../../data/source';
 import { NavButton } from '../../components/NavButton';
 
-export const metadata: Metadata = { title: 'Livraison & Retours - Sao Tech Market' };
+export const metadata: Metadata = { title: 'Livraison & Retours - Mwinda Market' };
 
-export default function Page() {
+function StaticPage() {
   return (
     <>
       <Header active="" />
       <div className="page-header">
         <h1>Livraison & Retours</h1>
-        <p>Tout ce qu'il faut savoir sur la réception et le retour de vos commandes en RDC</p>
+        <p>Tout ce qu'il faut savoir sur la réception et le retour de vos commandes en Afrique</p>
       </div>
       <div className="container">
         <div className="info-page">
           <section>
             <h2>Zones de livraison</h2>
             <p>
-              Nous livrons actuellement à <strong>Bukavu</strong>, <strong>Uvira</strong>,{' '}
-              <strong>Goma</strong> et <strong>Baraka</strong> (territoire de Fizi), ainsi que dans
-              les communes environnantes. Pour les autres villes de la RDC, la commande est
-              acheminée via notre partenaire transporteur jusqu'au point de retrait le plus proche.
+              Mwinda Market est une place de marché africaine : chaque boutique indique le pays et la
+              ville d'où elle expédie. Les frais et les délais de livraison dépendent de la boutique
+              et de votre ville ; ils vous sont confirmés par le vendeur lors de la validation de
+              votre commande. La plateforme démarre en République démocratique du Congo et
+              s'ouvre progressivement aux autres pays africains.
             </p>
-            <table className="info-table">
-              <tbody>
-                <tr>
-                  <th>Zone</th>
-                  <th>Délai estimé</th>
-                  <th>Frais</th>
-                </tr>
-                <tr>
-                  <td>Bukavu (centre-ville)</td>
-                  <td>24 à 48 heures</td>
-                  <td>Gratuit dès 280 000 FC d'achat</td>
-                </tr>
-                <tr>
-                  <td>Uvira</td>
-                  <td>2 à 4 jours</td>
-                  <td>14 000 FC</td>
-                </tr>
-                <tr>
-                  <td>Goma</td>
-                  <td>3 à 5 jours</td>
-                  <td>20 000 FC</td>
-                </tr>
-                <tr>
-                  <td>Baraka (territoire de Fizi)</td>
-                  <td>4 à 7 jours</td>
-                  <td>25 000 FC</td>
-                </tr>
-                <tr>
-                  <td>Autres villes (RDC)</td>
-                  <td>4 à 8 jours</td>
-                  <td>Calculé au moment de la commande</td>
-                </tr>
-              </tbody>
-            </table>
           </section>
           <section>
             <h2>Suivi de commande</h2>
@@ -76,7 +45,7 @@ export default function Page() {
               <li>
                 L'article doit être dans son état d'origine, avec l'emballage et les accessoires
               </li>
-              <li>Retours gratuits pour toute commande passée depuis Bukavu ou Uvira</li>
+              <li>Les conditions de retour (frais, délais) sont précisées par chaque boutique</li>
               <li>
                 Remboursement traité sous 5 à 7 jours ouvrables après réception de l'article
                 retourné
@@ -100,4 +69,11 @@ export default function Page() {
       <Footer />
     </>
   );
+}
+
+export const revalidate = 30;
+
+export default async function Page() {
+  const page = await getLegalPage('livraison');
+  return page ? <LegalPage page={page} /> : <StaticPage />;
 }

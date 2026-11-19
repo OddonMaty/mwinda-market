@@ -34,7 +34,7 @@ export default async function HomePage() {
       <section className="usp-band">
         <div className="container">
           <div className="usp-grid">
-            {[['fa-truck', 'Livraison partout en RDC', 'Le plus grand réseau logistique du pays'], ['fa-box', 'Livraison gratuite', 'Le prix affiché est le prix payé'], ['fa-undo', 'Retours sous 30 jours', 'Satisfait ou remboursé']].map(([icon, t, s]) => (
+            {[['fa-truck', 'Livraison dans votre ville', 'Des vendeurs locaux près de chez vous'], ['fa-box', 'Livraison gratuite', 'Le prix affiché est le prix payé'], ['fa-undo', 'Retours sous 30 jours', 'Satisfait ou remboursé']].map(([icon, t, s]) => (
               <div className="usp-item" key={t}>
                 <i className={`fas ${icon}`} />
                 <div><p className="usp-title">{t}</p><p className="usp-sub">{s}</p></div>

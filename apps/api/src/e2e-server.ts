@@ -24,5 +24,10 @@ app.get('/__mail/last', async (req) => {
   const to = (req.query as { to?: string }).to;
   return { mail: mailer.last(to) ?? null };
 });
+app.get('/__make-admin', async (req) => {
+  const email = (req.query as { email?: string }).email ?? '';
+  await db.query("INSERT INTO admin_roles(user_id, role) SELECT id, 'superadmin' FROM users WHERE email = $1 ON CONFLICT DO NOTHING", [email]);
+  return { ok: true };
+});
 await app.listen({ port: config.PORT, host: '127.0.0.1' });
 console.log(`e2e api on ${config.PORT}`);

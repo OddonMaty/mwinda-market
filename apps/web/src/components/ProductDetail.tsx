@@ -127,7 +127,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
             <p>Si vous n&apos;êtes pas entièrement satisfait, retournez tout article sous 30 jours pour un remboursement complet ou un échange.</p>
             <ul>
               <li>Les articles doivent être dans leur état d&apos;origine avec l&apos;emballage</li>
-              <li>Retours gratuits sur toutes les commandes en RDC</li>
+              <li>Retours selon les conditions de la boutique</li>
               <li>Remboursements traités sous 5 à 7 jours ouvrables</li>
               <li>Échanges disponibles pour les variantes de taille/couleur</li>
             </ul>

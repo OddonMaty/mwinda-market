@@ -4,7 +4,7 @@ import { FaqList } from '../../components/FaqList';
 import { NavButton } from '../../components/NavButton';
 import { faqs } from '../../data/catalogue';
 
-export const metadata: Metadata = { title: 'FAQ - Sao Tech Market' };
+export const metadata: Metadata = { title: 'FAQ - Mwinda Market' };
 
 export default function FaqPage() {
   return (

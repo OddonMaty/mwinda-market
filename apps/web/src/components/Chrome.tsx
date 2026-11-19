@@ -28,7 +28,7 @@ export function Header({ active }: { active: Active }) {
             <span className="hidden-mobile"><i className="fas fa-envelope" /> contact@saotechmarket.com</span>
           </div>
           <div className="top-bar-right">
-            <span className="hidden-mobile">Livraison gratuite à Bukavu et Uvira dès 280 000 FC d&apos;achat · Aussi à Goma et Baraka</span>
+            <span className="hidden-mobile">La place de marché africaine · Lancement en RDC, bientôt partout en Afrique</span>
             <span>FR / CDF</span>
           </div>
         </div>
@@ -37,7 +37,7 @@ export function Header({ active }: { active: Active }) {
       <header className="header">
         <div className="container header-content">
           <Link href="/" className="logo">
-            <img src="/images/brand/logo.png" alt="Sao Tech Market" className="logo-img" />
+            <img src="/images/brand/mwinda-h-light.png" alt="Mwinda Market" className="logo-img" />
           </Link>
           <SearchBar />
           <div className="header-actions">
@@ -73,8 +73,8 @@ export function Header({ active }: { active: Active }) {
 }
 
 const FOOTER_COLS: [string, [string, string?][]][] = [
-  ['Service Client', [['Contactez-nous', '/contact'], ['Aide & conseils', '/faq'], ['Livraison & Retours', '/livraison'], ['Conditions générales', '/conditions']]],
-  ['Informations', [['À propos de nous', '/a-propos'], ['Mon compte'], ['Paiements & Retours', '/paiements'], ['Voir les catalogues', '/collection']]],
+  ['Service Client', [['Contactez-nous', '/contact'], ['Aide & conseils', '/faq'], ['Livraison & Retours', '/livraison'], ['Conditions générales', '/conditions'], ['Conditions vendeur', '/conditions-vendeur'], ['Politique de remboursement', '/remboursement']]],
+  ['Informations', [['À propos de nous', '/a-propos'], ['Mon compte'], ['Paiements & Retours', '/paiements'], ['Tarifs vendeurs', '/tarifs'], ['Voir les catalogues', '/collection']]],
   ['À propos', [['Qui sommes-nous', '/a-propos'], ['Responsabilité sociale', '/responsabilite-sociale'], ['Carrières', '/carrieres'], ['Politique de confidentialité', '/confidentialite']]],
 ];
 
@@ -119,7 +119,7 @@ export function Footer() {
       </div>
       <div className="footer-bottom">
         <div className="container">
-          <p>&copy; 2026 Sao Tech Market. Tous droits réservés.</p>
+          <p>&copy; 2026 Mwinda Market. Tous droits réservés.</p>
           <p>Plateforme créée par <a href="https://saotechagency.com" target="_blank" rel="noopener noreferrer" className="footer-credit-link">Sao Tech Agency</a></p>
         </div>
       </div>

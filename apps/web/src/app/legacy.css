@@ -1,13 +1,13 @@
 :root {
-    --primary: #2B8C87;
-    --primary-dark: #22706C;
+    --primary: #E68723;
+    --primary-dark: #C96F12;
     --dark: #1E1E22;
     --light: #F5F5F5;
     --border: #E5E5E5;
     --text: #1E1E22;
     --text-muted: #666666;
     --white: #FFFFFF;
-    --success: #10B981;
+    --success: #E68723;
     --danger: #EF4444;
 }
 
@@ -85,7 +85,7 @@ body {
 }
 
 .logo-img {
-    height: 60px;
+    height: 52px;
     width: auto;
     display: block;
 }
@@ -441,7 +441,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 0;
-    border-right: 1px solid rgba(43, 140, 135, 0.4);
+    border-right: 1px solid rgba(230, 135, 35, 0.4);
 }
 
 .usp-item {
@@ -451,7 +451,7 @@ body {
     gap: 1rem;
     padding: 1rem 1.5rem;
     color: var(--white);
-    border-left: 1px solid rgba(43, 140, 135, 0.4);
+    border-left: 1px solid rgba(230, 135, 35, 0.4);
 }
 
 .usp-item:first-child {
@@ -2864,7 +2864,7 @@ body {
 
     .usp-item {
         border-left: none !important;
-        border-bottom: 1px solid rgba(43, 140, 135, 0.4);
+        border-bottom: 1px solid rgba(230, 135, 35, 0.4);
     }
 
     .usp-grid {

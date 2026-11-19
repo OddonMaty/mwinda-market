@@ -1,7 +1,7 @@
 import { Header, Footer } from '../../../components/Chrome';
 import { SellerDashboard } from '../../../components/SellerDashboard';
 
-export const metadata = { title: 'Tableau de bord vendeur - Sao Tech Market' };
+export const metadata = { title: 'Tableau de bord vendeur - Mwinda Market' };
 
 export default function SellerDashboardPage() {
   return (

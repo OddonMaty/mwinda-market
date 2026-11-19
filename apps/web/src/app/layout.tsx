@@ -4,9 +4,9 @@ import { AuthProvider } from '../components/AuthProvider';
 import { CartProvider } from '../components/CartProvider';
 
 export const metadata: Metadata = {
-  title: 'Sao Tech Market - Marketplace Électronique Premium en RDC',
+  title: 'Mwinda Market - La marketplace africaine',
   description:
-    "Découvrez des équipements électroniques premium avec livraison rapide, des prix compétitifs et 30 jours pour changer d'avis, partout en République Démocratique du Congo.",
+    "Découvrez des équipements électroniques premium avec livraison rapide, des prix compétitifs et 30 jours pour changer d'avis, partout en Afrique, avec un lancement en République démocratique du Congo.",
   icons: {
     icon: [
       { url: '/images/brand/favicon-32.png', sizes: '32x32', type: 'image/png' },

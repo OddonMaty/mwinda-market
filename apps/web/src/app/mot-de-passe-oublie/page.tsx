@@ -1,7 +1,7 @@
 import { Header, Footer } from '../../components/Chrome';
 import { ForgotPassword } from '../../components/AuthPages';
 
-export const metadata = { title: 'Mot de passe oublié - Sao Tech Market' };
+export const metadata = { title: 'Mot de passe oublié - Mwinda Market' };
 
 export default function Page() {
   return (

@@ -87,6 +87,7 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await bp.click('#signinForm button[type=submit]');
   await bp.waitForURL('**/commande');
   await bp.waitForSelector('text=Récapitulatif de votre commande');
+  await bp.fill('[name=shippingCity]', 'Bukavu');
   await bp.fill('[name=shippingAddress]', 'Avenue du Lac, Nyawera');
   await bp.click('form button[type=submit]');
   await bp.waitForURL('**/compte');
@@ -94,14 +95,79 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await bp.waitForSelector('text=Avenue du Lac, Nyawera'); // adresse enregistrée + livraison
   assert.equal((await bp.textContent('#cartBadge')).trim(), '0', 'panier vidé après la commande');
 
-  // ---- Vendeur : commande d'un produit de sa boutique
-  await bp.goto(`${WEB}/produit/1`);
-  const r = await bp.evaluate(async () => {
-    const res = await fetch('/api/v1/orders', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items: [{ id: 1, quantity: 1 }], shippingPhone: '+243907261113', shippingCity: 'Bukavu', shippingAddress: 'x' }) });
-    return res.status;
+  // ---- Acheteur commande le produit du vendeur (plan gratuit : commission 5 %)
+  const num = await bp.evaluate(async () => {
+    const list = (await (await fetch('/api/v1/products')).json()).products;
+    const id = list.find((p) => p.name === 'Casque e2e').id;
+    const res = await fetch('/api/v1/orders', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items: [{ id, quantity: 1 }], shippingPhone: '+243907261113', shippingCity: 'Bukavu', shippingAddress: 'Avenue du Lac' }) });
+    return (await res.json()).order.number;
   });
-  assert.equal(r, 201);
+  await bp.goto(`${WEB}/compte`);
+  await bp.waitForSelector(`text=Commande ${num}`);
+  assert.ok(await bp.isVisible('button:has-text("Annuler la commande")'));
+
+  // ---- Vendeur : confirme puis expédie, voit sa commission
+  await sp.goto(`${WEB}/vendeur/tableau`);
+  await sp.waitForSelector('text=Plan Gratuit · commission 5 %');
+  await sp.waitForSelector(`text=Commande ${num}`);
+  await sp.waitForSelector('text=commission 5 600 FC'); // 5 % de 112 000 FC
+  await sp.click('button:has-text("Confirmer la commande")');
+  await sp.waitForSelector('button:has-text("Marquer comme expédiée")');
+  await sp.click('button:has-text("Marquer comme expédiée")');
+  await sp.waitForSelector('text=Marquer comme expédiée', { state: 'detached' });
+
+  // ---- Acheteur : confirme la réception
+  await bp.goto(`${WEB}/compte`);
+  await bp.click('button:has-text("J\'ai reçu ma commande")');
+  await bp.waitForSelector('text=Réception confirmée');
+  await sp.reload();
+  await sp.waitForSelector('text=Gains nets (commandes livrées)');
+  await sp.waitForSelector('text=106 400 FC'); // 112 000 - 5 600
+
+  // ---- Tarifs : quatre plans, le dernier à 45 $ par trimestre
+  const tp = await seller.newPage();
+  await tp.goto(`${WEB}/tarifs`);
+  await tp.waitForSelector('text=Commission 2 %');
+  await tp.waitForSelector('text=126 000 FC');
+  await tp.click('.seller-product-form-wrapper:has-text("Premium") button:has-text("Choisir ce plan")');
+  await tp.waitForSelector('text=Demande en attente');
+
+  // ---- Administration : un compte non-admin est refusé, puis un admin gère tout
+  const ap0 = await buyer.newPage();
+  await ap0.goto(`${WEB}/admin`);
+  await ap0.waitForSelector('text=Accès réservé');
+  const adminCtx = await browser.newContext();
+  const ap = await adminCtx.newPage();
+  const aemail = `admin${stamp}@example.com`;
+  await ap.goto(`${WEB}/`);
+  const reg = await ap.evaluate(async (e) => (await fetch('/api/v1/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: e, password: 'Un-bon-mot-de-passe-42', firstName: 'Root', lastName: 'Admin', phone: '+243907261113', countryCode: 'CD', locale: 'fr' }) })).status, aemail);
+  assert.equal(reg, 200);
+  await fetch('http://localhost:4000/__make-admin?email=' + encodeURIComponent(aemail));
+  await ap.evaluate(async (e) => fetch('/api/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: e, password: 'Un-bon-mot-de-passe-42', client: 'web' }) }), aemail);
+  await ap.goto(`${WEB}/admin`);
+  await ap.waitForSelector('text=Commissions gagnées');
+  await ap.click('button:has-text("Demandes de plan")');
+  await ap.waitForSelector(`tr:has-text("TechPlus ${stamp}")`);
+  await ap.click(`tr:has-text("TechPlus ${stamp}") button:has-text("Approuver")`);
+  await ap.waitForSelector('text=Plan activé pour 3 mois');
+  await ap.click('button:has-text("Pays & villes")');
+  await ap.waitForSelector('tr:has-text("Kenya")');
+  await ap.click('button:has-text("Textes légaux")');
+  await ap.click('tr:has-text("Conditions générales de vente") button:has-text("Modifier")');
+  await ap.fill('[name=title]', 'Conditions de test');
+  await ap.fill('[name=body]', '## Article 1\n\nTexte rédigé depuis l\'administration.');
+  await ap.click('button:has-text("Publier")');
+  await ap.waitForSelector('text=Texte publié');
+  const lp = await buyer.newPage();
+  for (let i = 0; i < 12; i++) { await lp.goto(`${WEB}/conditions`); if (await lp.locator('h1:has-text("Conditions de test")').count()) break; await lp.waitForTimeout(2500); }
+  await lp.waitForSelector('text=Texte rédigé depuis l\'administration.');
+
+  // ---- Plan activé : le vendeur voit Premium (commission 2 %)
+  await sp.goto(`${WEB}/vendeur/tableau`);
+  await sp.waitForSelector('text=Plan Premium · commission 2 %');
+
   await bp.screenshot({ path: process.env.SHOT ?? '/tmp/e2e-commerce.png', fullPage: true });
+  await ap.screenshot({ path: '/tmp/e2e-admin.png', fullPage: true });
   await browser.close();
   console.log('E2E commerce OK');
 })().catch((e) => { console.error(e); process.exit(1); });

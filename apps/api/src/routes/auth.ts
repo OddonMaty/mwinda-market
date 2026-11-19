@@ -9,6 +9,8 @@ import { webOrigins } from '../config/env.js';
 import { AuthService, type AuthDeps, type UserRow } from '../services/auth.js';
 import { CommerceService } from '../services/commerce.js';
 import { commerceRoutes } from './commerce.js';
+import { adminRoutes, publicPlatformRoutes } from './admin.js';
+import { AdminService } from '../services/admin.js';
 
 export const SESSION_COOKIE = 'stm_session';
 
@@ -112,6 +114,10 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
       await svc.revokeSession(req.auth!.user.id, parse(z.object({ id: z.string().length(26) }), req.params).id);
       return OK;
     });
-    commerceRoutes(r, { svc: new CommerceService(deps.db), authenticate, parse });
+    const commerce = new CommerceService(deps.db);
+    const admin = new AdminService(deps.db, commerce);
+    commerceRoutes(r, { svc: commerce, authenticate, parse });
+    publicPlatformRoutes(r, admin, parse);
+    adminRoutes(r, { svc: admin, authenticate, parse });
   }, { prefix: '/v1' });
 }

@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import { Header, Footer } from '../../components/Chrome';
+import { LegalPage } from '../../components/LegalPage';
+import { getLegalPage } from '../../data/source';
 
-export const metadata: Metadata = { title: 'Politique de confidentialité - Sao Tech Market' };
+export const metadata: Metadata = { title: 'Politique de confidentialité - Mwinda Market' };
 
-export default function Page() {
+function StaticPage() {
   return (
     <>
       <Header active="" />
@@ -65,4 +67,11 @@ export default function Page() {
       <Footer />
     </>
   );
+}
+
+export const revalidate = 30;
+
+export default async function Page() {
+  const page = await getLegalPage('confidentialite');
+  return page ? <LegalPage page={page} /> : <StaticPage />;
 }

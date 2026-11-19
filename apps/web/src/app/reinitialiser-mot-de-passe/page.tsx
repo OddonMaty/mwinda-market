@@ -1,7 +1,7 @@
 import { Header, Footer } from '../../components/Chrome';
 import { ResetPassword } from '../../components/AuthPages';
 
-export const metadata = { title: 'Nouveau mot de passe - Sao Tech Market' };
+export const metadata = { title: 'Nouveau mot de passe - Mwinda Market' };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const { token } = await searchParams;

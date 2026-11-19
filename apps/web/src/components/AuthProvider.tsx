@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { GeoFields } from './Geo';
 
 export interface SessionUser {
   id: string;
@@ -50,7 +51,7 @@ export async function api<T = unknown>(path: string, init?: { method?: string; b
 const ERRORS: Record<string, string> = {
   invalid_credentials: 'E-mail ou mot de passe incorrect.',
   too_many_requests: 'Trop de tentatives. Réessayez dans quelques minutes.',
-  validation_error: 'Vérifiez les informations saisies (téléphone au format +243…).',
+  validation_error: 'Vérifiez les informations saisies (téléphone au format international, par exemple +243…).',
   account_suspended: 'Ce compte est suspendu.',
   wrong_password: 'Mot de passe actuel incorrect.',
   invalid_token: 'Ce lien est invalide.',
@@ -60,7 +61,6 @@ const ERRORS: Record<string, string> = {
 export const errorMessage = (code?: string): string =>
   ERRORS[code ?? ''] ?? (code?.startsWith('weak_password') ? 'Mot de passe trop faible (8 caractères minimum, pas trop courant).' : 'Une erreur est survenue. Réessayez.');
 
-const CITY_SLUGS: Record<string, string | undefined> = { Bukavu: 'bukavu', Uvira: 'uvira', Goma: 'goma', Baraka: 'baraka', Autre: undefined };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       body: {
         email: f.get('email'), password: f.get('password'), firstName: f.get('firstName'), lastName: f.get('lastName'),
-        phone: String(f.get('phone') ?? '').replace(/[\s.-]/g, ''), countryCode: 'CD', citySlug: CITY_SLUGS[String(f.get('city'))], locale: 'fr',
+        phone: String(f.get('phone') ?? '').replace(/[\s.-]/g, ''), countryCode: f.get('country'), citySlug: f.get('city') || undefined, locale: 'fr',
       },
     });
     if (!r.ok) return notify(errorMessage(r.data.code));
@@ -151,13 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           <form id="registerForm" className={`form-content${tab === 'register' ? ' active' : ''}`} onSubmit={onRegister}>
             <div className="form-row"><input type="text" name="firstName" placeholder="Prénom *" required /><input type="text" name="lastName" placeholder="Nom *" required /></div>
             <div className="form-group"><label>Adresse e-mail *</label><input type="email" name="email" placeholder="votre@email.com" required /></div>
-            <div className="form-row">
-              <input type="tel" name="phone" placeholder="Téléphone (+243...)" required />
-              <select name="city" defaultValue="Bukavu">
-                <option value="Bukavu">Bukavu</option><option value="Uvira">Uvira</option><option value="Goma">Goma</option>
-                <option value="Baraka">Baraka (territoire de Fizi)</option><option value="Autre">Autre ville</option>
-              </select>
-            </div>
+            <div className="form-group"><input type="tel" name="phone" placeholder="Téléphone avec indicatif (+243...)" required /></div>
+            <GeoFields label={false} />
             <div className="form-group"><label>Mot de passe *</label><input type="password" name="password" placeholder="••••••••" required minLength={8} /></div>
             <label className="checkbox-label"><input type="checkbox" name="newsletter" /><span>S&apos;abonner à notre newsletter</span></label>
             <button type="submit" className="btn btn-primary full-width">S&apos;inscrire</button>
@@ -166,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       </div>
 
       {toasts.map((t, i) => (
-        <div key={t.id} style={{ position: 'fixed', bottom: 20 + i * 64, right: 20, backgroundColor: '#10B981', color: 'white', padding: '1rem 1.5rem', borderRadius: 2, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)', zIndex: 1000, opacity: t.out ? 0 : 1, transition: 'opacity .3s' }}>{t.text}</div>
+        <div key={t.id} style={{ position: 'fixed', bottom: 20 + i * 64, right: 20, backgroundColor: '#E68723', color: 'white', padding: '1rem 1.5rem', borderRadius: 2, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)', zIndex: 1000, opacity: t.out ? 0 : 1, transition: 'opacity .3s' }}>{t.text}</div>
       ))}
     </AuthContext.Provider>
   );

@@ -10,6 +10,7 @@
     "start": "node dist/server.js",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
+    "make-admin": "tsx src/make-admin-cli.ts",
     "migrate": "tsx src/migrate-cli.ts",
     "test": "node --test --test-reporter=spec --import tsx src/**/*.test.ts"
   },

@@ -56,7 +56,7 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
           </div>
           <div className="filter-group">
             <h4>Marque</h4>
-            <label className="checkbox-label"><input type="checkbox" /><span>Sao Tech Market (5)</span></label>
+            <label className="checkbox-label"><input type="checkbox" /><span>Mwinda Market (5)</span></label>
             <label className="checkbox-label"><input type="checkbox" /><span>Vinova (3)</span></label>
             <label className="checkbox-label"><input type="checkbox" /><span>ProTech (2)</span></label>
           </div>

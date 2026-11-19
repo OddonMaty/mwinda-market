@@ -1,12 +1,12 @@
 {
   "common": {
-    "brand": "Sao Tech Market",
-    "tagline": "Marketplace Électronique Premium en RDC",
+    "brand": "Mwinda Market",
+    "tagline": "La marketplace africaine",
     "searchPlaceholder": "Rechercher un produit, une marque...",
     "contactPhone": "+243 907 261 113",
     "contactEmail": "contact@saotechmarket.com",
-    "citiesCovered": "Bukavu • Uvira • Goma • Baraka",
-    "freeDeliveryInfo": "Livraison rapide partout en RDC",
+    "citiesCovered": "Lancement en RDC • bientôt partout en Afrique",
+    "freeDeliveryInfo": "Livraison rapide dans votre ville",
     "currency": "FC",
     "loading": "Chargement...",
     "error": "Une erreur est survenue"
@@ -28,15 +28,15 @@
     "imprimantes": "Imprimantes"
   },
   "footer": {
-    "aboutTitle": "À propos de Sao Tech",
-    "aboutText": "Sao Tech Market est la plateforme de commerce électronique de référence en RDC, reliant acheteurs et commerçants locaux.",
+    "aboutTitle": "À propos de Mwinda",
+    "aboutText": "Mwinda Market est la place de marché africaine, reliant acheteurs et commerçants locaux.",
     "customerService": "Service Client",
     "legal": "Mentions légales",
     "newsletterTitle": "Newsletter",
     "newsletterText": "Recevez nos meilleures offres et promotions par e-mail.",
     "newsletterPlaceholder": "Votre adresse e-mail",
     "newsletterButton": "S'abonner",
-    "copyright": "© 2026 Sao Tech Market. Tous droits réservés."
+    "copyright": "© 2026 Mwinda Market. Tous droits réservés."
   },
   "health": {
     "title": "État des Services",

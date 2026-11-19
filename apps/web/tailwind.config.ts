@@ -10,8 +10,8 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#2B8C87',
-          dark: '#22706C',
+          DEFAULT: '#E68723',
+          dark: '#C96F12',
         },
         dark: '#1E1E22',
         light: '#F5F5F5',
@@ -21,7 +21,7 @@ const config: Config = {
           DEFAULT: '#1E1E22',
           muted: '#666666',
         },
-        success: '#10B981',
+        success: '#E68723',
         danger: '#EF4444',
       },
       fontFamily: {

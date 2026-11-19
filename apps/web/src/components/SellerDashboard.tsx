@@ -1,14 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { USD_TO_CDF, departmentLabels, formatPrice, productImageUrl } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { PhotoPicker } from './PhotoPicker';
 
-interface Shop { id: string; name: string; isOfficial: boolean; status: string }
+interface Shop { id: string; name: string; isOfficial: boolean; status: string; countryCode: string | null; city: string | null; plan: string; planName: string; planExpiresAt: string | null; commissionBps: number; maxProducts: number | null; productCount: number; pendingPlan: string | null }
+interface Stats { salesUsd: number; commissionUsd: number; netUsd: number; inProgressUsd: number; pendingLines: number; deliveredLines: number }
 interface SProduct { id: number; name: string; description: string; priceUsd: number; originalPriceUsd: number | null; department: string; category: string; colors: string[]; sizes: string[]; inStock: boolean; images: string[] }
-interface SOrder { number: string; status: string; createdAt: string; customer: string; city: string; phone: string; totalUsd: number; items: { name: string; quantity: number; unitPriceUsd: number; color: string; size: string }[] }
+interface SOrder { number: string; status: string; createdAt: string; customer: string; city: string; phone: string; address: string; totalUsd: number; commissionUsd: number; netUsd: number; items: { name: string; quantity: number; unitPriceUsd: number; color: string; size: string }[] }
 const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée' };
 const csv = (v: FormDataEntryValue | null): string[] => String(v ?? '').split(',').map((x) => x.trim()).filter(Boolean);
 const toUsd = (fc: FormDataEntryValue | null): number => Math.round((Number(fc) / USD_TO_CDF) * 100) / 100;
@@ -22,14 +24,16 @@ export function SellerDashboard() {
   const [form, setForm] = useState<{ open: boolean; editing: SProduct | null }>({ open: false, editing: null });
   const [promo, setPromo] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
 
   const load = useCallback(async () => {
     const s = await api<{ shop: Shop | null }>('/seller/shop');
     if (!s.ok || !s.data.shop) { router.replace('/vendeur'); return; }
     setShop(s.data.shop);
-    const [p, o] = await Promise.all([api<{ products: SProduct[] }>('/seller/products'), api<{ orders: SOrder[] }>('/seller/orders')]);
+    const [p, o, st] = await Promise.all([api<{ products: SProduct[] }>('/seller/products'), api<{ orders: SOrder[] }>('/seller/orders'), api<{ stats: Stats }>('/seller/stats')]);
     if (p.ok) setProducts(p.data.products);
     if (o.ok) setOrders(o.data.orders);
+    if (st.ok) setStats(st.data.stats);
   }, [router]);
 
   useEffect(() => {
@@ -58,6 +62,14 @@ export function SellerDashboard() {
     notify(editing ? 'Produit modifié' : 'Produit publié');
   }
 
+  async function orderAction(number: string, action: 'confirm' | 'ship' | 'cancel') {
+    if (action === 'cancel' && !window.confirm('Annuler cette commande ?')) return;
+    const r = await api(`/seller/orders/${number}/${action}`, { method: 'POST' });
+    if (!r.ok) return notify(r.data.message ?? errorMessage(r.data.code));
+    await load();
+    notify(action === 'confirm' ? 'Commande confirmée' : action === 'ship' ? 'Commande marquée comme expédiée' : 'Commande annulée');
+  }
+
   async function remove(p: SProduct) {
     if (!window.confirm(`Supprimer « ${p.name} » ?`)) return;
     const r = await api(`/seller/products/${p.id}`, { method: 'DELETE' });
@@ -81,7 +93,25 @@ export function SellerDashboard() {
         </div>
       </div>
 
+      <div className="seller-product-form-wrapper" style={{ marginBottom: '1.25rem' }}>
+        <div className="seller-dashboard-header" style={{ padding: 0, marginBottom: 0, borderBottom: 'none' }}>
+          <div>
+            <h2 style={{ fontSize: '1.1rem' }}>Plan {shop.planName}{shop.isOfficial ? '' : ` · commission ${shop.commissionBps / 100} %`}</h2>
+            <p style={{ fontSize: '0.85rem' }}>
+              {shop.productCount} produit{shop.productCount > 1 ? 's' : ''} sur {shop.maxProducts ?? 'illimité'}
+              {shop.planExpiresAt ? ` · valable jusqu’au ${new Date(shop.planExpiresAt).toLocaleDateString('fr-FR')}` : ''}
+              {shop.countryCode ? ` · ${shop.city ?? 'Ville non précisée'} (${shop.countryCode})` : ''}
+              {shop.pendingPlan ? ` · demande de plan ${shop.pendingPlan} en attente de validation` : ''}
+            </p>
+          </div>
+          {!shop.isOfficial && <Link href="/tarifs" className="btn btn-outline">Changer de plan</Link>}
+        </div>
+      </div>
+
       <div className="seller-stats">
+        {stats && <div className="seller-stat-card"><span className="seller-stat-value">{formatPrice(stats.netUsd)}</span><span className="seller-stat-label">Gains nets (commandes livrées)</span></div>}
+        {stats && <div className="seller-stat-card"><span className="seller-stat-value">{formatPrice(stats.commissionUsd)}</span><span className="seller-stat-label">Commission payée</span></div>}
+        {stats && <div className="seller-stat-card"><span className="seller-stat-value">{formatPrice(stats.inProgressUsd)}</span><span className="seller-stat-label">Commandes en cours</span></div>}
         <div className="seller-stat-card"><span className="seller-stat-value">{products.length}</span><span className="seller-stat-label">Produits en ligne</span></div>
         <div className="seller-stat-card"><span className="seller-stat-value">{inStock}</span><span className="seller-stat-label">En stock</span></div>
         <div className="seller-stat-card"><span className="seller-stat-value">{formatPrice(products.reduce((s, p) => s + p.priceUsd, 0))}</span><span className="seller-stat-label">Valeur du catalogue</span></div>
@@ -166,7 +196,15 @@ export function SellerDashboard() {
                 <tbody>{o.items.map((i, k) => <tr key={k}><td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</td><td>{i.quantity}</td><td>{formatPrice(i.unitPriceUsd * i.quantity)}</td></tr>)}</tbody>
               </table>
             </div>
-            <p style={{ textAlign: 'right', marginTop: '0.75rem', fontWeight: 700 }}>Total : {formatPrice(o.totalUsd)}</p>
+            <p style={{ textAlign: 'right', marginTop: '0.75rem', fontWeight: 700 }}>Total : {formatPrice(o.totalUsd)}{!shop.isOfficial && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}> · commission {formatPrice(o.commissionUsd)} · net {formatPrice(o.netUsd)}</span>}</p>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Livraison : {o.address}</p>
+            {(o.status === 'pending' || o.status === 'confirmed') && (
+              <div className="seller-form-actions" style={{ marginTop: '1rem' }}>
+                {o.status === 'pending' && <button type="button" className="btn btn-primary" onClick={() => void orderAction(o.number, 'confirm')}>Confirmer la commande</button>}
+                {o.status === 'confirmed' && <button type="button" className="btn btn-primary" onClick={() => void orderAction(o.number, 'ship')}>Marquer comme expédiée</button>}
+                <button type="button" className="btn btn-outline" onClick={() => void orderAction(o.number, 'cancel')}>Annuler</button>
+              </div>
+            )}
           </div>
         ))}
       </div>

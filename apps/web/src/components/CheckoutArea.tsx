@@ -5,15 +5,16 @@ import { useRouter } from 'next/navigation';
 import { formatPrice, productImageUrl } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { useCart } from './CartProvider';
+import { useCountries } from './Geo';
 
 export interface Address { id: string; label: string; city: string; address: string; phone: string; isDefault: boolean }
-const CITIES = ['Bukavu', 'Uvira', 'Goma', 'Baraka', 'Autre'];
 export const e164 = (v: FormDataEntryValue | null): string => String(v ?? '').replace(/[\s.-]/g, '');
 
 export function CheckoutArea() {
   const router = useRouter();
   const { user, ready, notify, openLogin } = useAuth();
   const cart = useCart();
+  const cities = useCountries().find((c) => c.code === (user?.countryCode ?? 'CD'))?.cities ?? [];
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
@@ -124,7 +125,8 @@ export function CheckoutArea() {
                 <div className="form-group"><label>Téléphone de livraison *</label><input type="tel" name="shippingPhone" placeholder="+243..." defaultValue={user.phone ?? ''} required /></div>
                 <div className="form-group">
                   <label>Ville *</label>
-                  <select name="shippingCity" required defaultValue="Bukavu">{CITIES.map((c) => <option key={c} value={c}>{c === 'Baraka' ? 'Baraka (territoire de Fizi)' : c === 'Autre' ? 'Autre ville' : c}</option>)}</select>
+                  <input type="text" name="shippingCity" list="shippingCities" placeholder="Votre ville" required />
+                  <datalist id="shippingCities">{cities.map((c) => <option key={c.slug} value={c.name} />)}</datalist>
                 </div>
                 <div className="form-group"><label>Adresse complète *</label><textarea name="shippingAddress" rows={3} placeholder="Quartier, avenue, référence..." required /></div>
                 <label className="checkbox-label"><input type="checkbox" name="saveAddress" defaultChecked /><span>Enregistrer cette adresse pour la prochaine fois</span></label>

@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { Header, Footer } from '../../components/Chrome';
+import { LegalPage } from '../../components/LegalPage';
+import { getLegalPage } from '../../data/source';
 import { NavButton } from '../../components/NavButton';
 
-export const metadata: Metadata = { title: 'Conditions générales de vente - Sao Tech Market' };
+export const metadata: Metadata = { title: 'Conditions générales de vente - Mwinda Market' };
 
-export default function Page() {
+function StaticPage() {
   return (
     <>
       <Header active="" />
@@ -18,14 +20,14 @@ export default function Page() {
             <h2>1. Objet</h2>
             <p>
               Les présentes conditions générales de vente régissent les ventes de produits
-              électroniques réalisées par Sao Tech Market sur ce site, à destination de tout client
+              électroniques réalisées par Mwinda Market sur ce site, à destination de tout client
               situé en République Démocratique du Congo.
             </p>
           </section>
           <section>
             <h2>2. Commandes</h2>
             <p>
-              Toute commande passée sur le site vaut acceptation des présentes conditions. Sao Tech
+              Toute commande passée sur le site vaut acceptation des présentes conditions. Mwinda
               Market se réserve le droit d'annuler ou de refuser toute commande en cas de rupture de
               stock, d'erreur manifeste sur le prix, ou de suspicion de fraude.
             </p>
@@ -34,7 +36,7 @@ export default function Page() {
             <h2>3. Prix</h2>
             <p>
               Les prix sont indiqués en francs congolais (CDF), toutes taxes comprises, calculés
-              selon le taux de change du jour. Sao Tech Market se réserve le droit de modifier ses
+              selon le taux de change du jour. Mwinda Market se réserve le droit de modifier ses
               prix à tout moment, étant entendu que le prix figurant sur la commande au moment de sa
               validation est le seul applicable.
             </p>
@@ -96,4 +98,11 @@ export default function Page() {
       <Footer />
     </>
   );
+}
+
+export const revalidate = 30;
+
+export default async function Page() {
+  const page = await getLegalPage('conditions');
+  return page ? <LegalPage page={page} /> : <StaticPage />;
 }

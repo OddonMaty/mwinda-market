@@ -24,3 +24,17 @@ export async function getProducts(): Promise<Product[]> {
     return fallback;
   }
 }
+
+export interface LegalPageData { slug: string; title: string; body: string; updatedAt: string }
+
+/** Texte légal rédigé depuis l'espace admin ; null tant qu'aucun texte n'a été enregistré (la page d'origine s'affiche alors). */
+export async function getLegalPage(slug: string): Promise<LegalPageData | null> {
+  const api = process.env.API_URL ?? 'http://localhost:4000';
+  try {
+    const res = await fetch(`${api}/v1/pages/${slug}`, { next: { revalidate: 30 }, signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return null;
+    return ((await res.json()) as { page: LegalPageData }).page;
+  } catch {
+    return null;
+  }
+}

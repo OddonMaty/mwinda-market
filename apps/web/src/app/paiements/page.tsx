@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { Header, Footer } from '../../components/Chrome';
+import { LegalPage } from '../../components/LegalPage';
+import { getLegalPage } from '../../data/source';
 import { NavButton } from '../../components/NavButton';
 
-export const metadata: Metadata = { title: 'Paiements & Retours - Sao Tech Market' };
+export const metadata: Metadata = { title: 'Paiements & Retours - Mwinda Market' };
 
-export default function Page() {
+function StaticPage() {
   return (
     <>
       <Header active="" />
@@ -21,7 +23,7 @@ export default function Page() {
                 <strong>Mobile Money</strong> — M-Pesa, Airtel Money, Orange Money
               </li>
               <li>
-                <strong>Cash à la livraison</strong> — disponible à Bukavu, Uvira, Goma et Baraka
+                <strong>Cash à la livraison</strong> — selon les villes desservies par la boutique
               </li>
             </ul>
             <p>
@@ -34,8 +36,9 @@ export default function Page() {
           <section>
             <h2>Devises</h2>
             <p>
-              Les prix sont affichés uniquement en francs congolais (CDF), convertis automatiquement
-              selon le taux de change du jour. Le montant à régler vous est confirmé par notre
+              Les prix sont affichés en francs congolais (CDF) pour le lancement, convertis
+              automatiquement selon le taux de change du jour ; d'autres devises africaines seront
+              ajoutées à l'ouverture de nouveaux pays. Le montant à régler vous est confirmé par notre
               équipe avant la livraison.
             </p>
           </section>
@@ -49,7 +52,7 @@ export default function Page() {
           <section>
             <h2>Échéancier de paiement</h2>
             <p>
-              Sao Tech Market ne propose pas encore le paiement en plusieurs fois. Cette option est
+              Mwinda Market ne propose pas encore le paiement en plusieurs fois. Cette option est
               à l'étude pour les commandes de plus de 1 400 000 FC.
             </p>
           </section>
@@ -64,4 +67,11 @@ export default function Page() {
       <Footer />
     </>
   );
+}
+
+export const revalidate = 30;
+
+export default async function Page() {
+  const page = await getLegalPage('paiements');
+  return page ? <LegalPage page={page} /> : <StaticPage />;
 }

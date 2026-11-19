@@ -55,7 +55,7 @@ export async function buildApp(config: EnvConfig, deps: AppDeps = {}): Promise<F
 
   // Global rate limit
   await app.register(fastifyRateLimit, {
-    max: 100,
+    max: 600, // beaucoup d'utilisateurs partagent la même adresse IP (réseaux mobiles) : limite large, les routes sensibles ont leurs propres limites
     timeWindow: '1 minute',
   });
 
@@ -71,6 +71,8 @@ export async function buildApp(config: EnvConfig, deps: AppDeps = {}): Promise<F
         ? error.code
         : statusCode === 500
         ? 'INTERNAL_SERVER_ERROR'
+        : statusCode === 429
+        ? 'too_many_requests'
         : 'BAD_REQUEST';
 
     const message =

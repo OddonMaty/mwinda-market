@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Header, Footer } from '../../components/Chrome';
 
-export const metadata: Metadata = { title: 'À propos de nous - Sao Tech Market' };
+export const metadata: Metadata = { title: 'À propos de nous - Mwinda Market' };
 
 export default function Page() {
   return (
@@ -9,15 +9,15 @@ export default function Page() {
       <Header active="about" />
       <div className="about-hero">
         <h1>À propos de nous</h1>
-        <p>Des équipements électroniques premium accessibles à tous, partout en RDC, depuis 2015</p>
+        <p>Des équipements électroniques premium accessibles à tous, partout en Afrique</p>
       </div>
       <div className="container about-container">
         <div className="about-intro">
           <p>
-            Sao Tech Market a été fondée avec une mission simple : rendre la technologie de pointe
-            accessible à tous les Congolais. Ce qui a commencé comme une petite boutique en ligne à
-            Bukavu est devenu l'un des revendeurs d'électronique grand public les plus dynamiques de
-            l'Est de la République Démocratique du Congo.
+            Mwinda Market a été fondée avec une mission simple : rendre la technologie de pointe
+            accessible à tous les Africains. Mwinda Market réunit des boutiques et des acheteurs sur une
+            même place de marché, avec un lancement en République démocratique du Congo avant
+            l'ouverture aux autres pays du continent.
           </p>
           <p>
             Nous travaillons directement avec les grandes marques internationales pour éliminer les
@@ -58,8 +58,7 @@ export default function Page() {
               <i className="fas fa-check"></i> Revendeur agréé de plus de 200 marques
             </li>
             <li>
-              <i className="fas fa-check"></i> Retours gratuits sur toutes les commandes à Bukavu et
-              Uvira
+              <i className="fas fa-check"></i> Des vendeurs de plusieurs pays africains sur une seule plateforme
             </li>
             <li>
               <i className="fas fa-check"></i> Support 24/7 par chat et e-mail
@@ -71,23 +70,6 @@ export default function Page() {
               <i className="fas fa-check"></i> Paiement à la livraison : Mobile Money ou espèces
             </li>
           </ul>
-        </section>
-        <section className="locations">
-          <h2>Nos zones de service</h2>
-          <div className="locations-grid">
-            <div className="location-card">
-              <h3>Bukavu (siège)</h3>
-              <p>
-                <i className="fas fa-clock"></i> 8h – 19h
-              </p>
-            </div>
-            <div className="location-card">
-              <h3>Uvira</h3>
-              <p>
-                <i className="fas fa-clock"></i> 9h – 18h
-              </p>
-            </div>
-          </div>
         </section>
       </div>
       <Footer />
