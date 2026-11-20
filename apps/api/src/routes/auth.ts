@@ -5,7 +5,7 @@ import {
   ChangePasswordBodySchema, EmailBodySchema, LoginBodySchema, RegisterBodySchema, ResetPasswordBodySchema, TokenBodySchema, UpdateProfileBodySchema,
 } from '@saotech/shared';
 import { AppError } from '../errors.js';
-import { webOrigins } from '../config/env.js';
+import { isAllowedOrigin } from '../config/env.js';
 import { AuthService, type AuthDeps, type UserRow } from '../services/auth.js';
 import { CommerceService } from '../services/commerce.js';
 import { commerceRoutes } from './commerce.js';
@@ -33,7 +33,6 @@ function parse<T extends z.ZodTypeAny>(schema: T, data: unknown): z.infer<T> {
 
 export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<void> {
   const svc = new AuthService(deps);
-  const allowed = webOrigins(deps.config);
   const secure = deps.config.NODE_ENV === 'production';
   await app.register(fastifyCookie);
 
@@ -48,7 +47,7 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
     if (['GET', 'HEAD', 'OPTIONS'].includes(req.method) || bearer(req)) return;
     const origin = req.headers.origin;
     const hasCookie = !!req.cookies?.[SESSION_COOKIE] || (req.headers.cookie ?? '').includes(`${SESSION_COOKIE}=`);
-    if (origin ? !allowed.includes(origin.replace(/\/$/, '')) : hasCookie) throw new AppError(403, 'csrf_rejected', 'Origine non autorisée.');
+    if (origin ? !isAllowedOrigin(deps.config, origin) : hasCookie) throw new AppError(403, 'csrf_rejected', 'Origine non autorisée.');
   });
 
   const authenticate = async (req: FastifyRequest) => {

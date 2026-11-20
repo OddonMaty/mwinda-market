@@ -12,8 +12,10 @@ export const EnvSchema = z.object({
   WEB_ORIGIN: z
     .string()
     .refine((v) => v.split(',').every((o) => z.string().url().safeParse(o.trim()).success), 'WEB_ORIGIN must be one or more URLs'),
+  /** Expression régulière optionnelle pour autoriser aussi des adresses générées (ex. déploiements Vercel). */
+  WEB_ORIGIN_REGEX: z.string().optional(),
   SMTP_URL: z.string().optional(),
-  MAIL_FROM: z.string().default('Sao Tech Market <no-reply@saotechmarket.com>'),
+  MAIL_FROM: z.string().default('Mwinda Market <no-reply@saotechmarket.com>'),
   DATABASE_URL: z.string().min(1),
   API_SECRET: z.string().min(16, 'API_SECRET must be at least 16 characters long'),
 });
@@ -22,6 +24,11 @@ export type EnvConfig = z.infer<typeof EnvSchema>;
 
 export const webOrigins = (c: Pick<EnvConfig, 'WEB_ORIGIN'>): string[] =>
   c.WEB_ORIGIN.split(',').map((o) => o.trim().replace(/\/$/, ''));
+
+export const isAllowedOrigin = (c: Pick<EnvConfig, 'WEB_ORIGIN' | 'WEB_ORIGIN_REGEX'>, origin: string): boolean => {
+  const o = origin.replace(/\/$/, '');
+  return webOrigins(c).includes(o) || (!!c.WEB_ORIGIN_REGEX && new RegExp(c.WEB_ORIGIN_REGEX).test(o));
+};
 
 export function parseEnv(customEnv?: Record<string, string | undefined>): EnvConfig {
   const source = customEnv ?? process.env;

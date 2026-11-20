@@ -9,7 +9,7 @@ import type { Db } from './db/client.js';
 import type { Mailer } from './mail/mailer.js';
 import { MemoryRateLimiter, type RateLimiter } from './lib/ratelimit.js';
 import { NoopMailer } from './mail/mailer.js';
-import { webOrigins } from './config/env.js';
+import { isAllowedOrigin } from './config/env.js';
 
 export interface AppDeps {
   db?: Db;
@@ -48,7 +48,7 @@ export async function buildApp(config: EnvConfig, deps: AppDeps = {}): Promise<F
 
   // CORS limited to configured web origin
   await app.register(fastifyCors, {
-    origin: webOrigins(config),
+    origin: (origin, cb) => cb(null, !origin || isAllowedOrigin(config, origin)),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });

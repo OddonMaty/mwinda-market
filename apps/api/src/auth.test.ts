@@ -57,7 +57,7 @@ describe('Comptes et sessions', () => {
     mailer = new MemoryMailer();
     limiter = new MemoryRateLimiter(() => clock);
     app = await buildApp(
-      { NODE_ENV: 'test', PORT: 4001, HOST: '127.0.0.1', WEB_ORIGIN: ORIGIN, DATABASE_URL: 'unused', API_SECRET: 'test_secret_must_be_at_least_16_chars', MAIL_FROM: 'test@x' },
+      { NODE_ENV: 'test', PORT: 4001, HOST: '127.0.0.1', WEB_ORIGIN: ORIGIN, DATABASE_URL: 'unused', API_SECRET: 'test_secret_must_be_at_least_16_chars', MAIL_FROM: 'test@x', WEB_ORIGIN_REGEX: '^https://saotechmarket-[a-z0-9]{9}-sao-tech-agency\\.vercel\\.app$' },
       { db, mailer, limiter, now: () => new Date(clock) },
     );
   });
@@ -207,6 +207,8 @@ describe('Comptes et sessions', () => {
     const s = await login(a.email);
     const evil = await call('POST', '/auth/logout', { cookie: s.cookie, origin: 'https://evil.example' });
     assert.equal(evil.status, 403);
+    // adresse d'un déploiement de l'équipe (forme exacte) : acceptée ; adresse qui y ressemble : refusée
+    assert.equal((await call('POST', '/auth/logout', { cookie: s.cookie, origin: 'https://saotechmarket-git-x-sao-tech-agency.vercel.app' })).status, 403);
     assert.equal((await call('POST', '/auth/logout', { cookie: s.cookie, origin: null })).status, 403);
     assert.equal((await call('GET', '/auth/me', { cookie: s.cookie })).status, 200, 'session toujours valide');
     const api = await login(a.email, PWD, 'api');
@@ -214,7 +216,7 @@ describe('Comptes et sessions', () => {
     assert.equal(api.cookie, undefined);
     const viaBearer = await call('POST', '/auth/logout', { bearer: api.json.token, origin: 'https://evil.example' });
     assert.equal(viaBearer.status, 200);
-    assert.equal((await call('POST', '/auth/logout', { cookie: s.cookie })).status, 200);
+    assert.equal((await call('POST', '/auth/logout', { cookie: s.cookie, origin: 'https://saotechmarket-8wtustpec-sao-tech-agency.vercel.app' })).status, 200);
   });
 
   it('compte suspendu : connexion refusée et sessions actives refusées', async () => {
