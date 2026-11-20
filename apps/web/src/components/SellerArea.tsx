@@ -1,29 +1,79 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Check, Globe2, Smartphone, Store, Users } from 'lucide-react';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { e164 } from './CheckoutArea';
-import { GeoFields } from './Geo';
+import { useCountries } from './Geo';
+import { PlanCards, type Plan } from './PlanCards';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, Input, Select, Textarea, cn } from './ui';
 
+const STEPS = ['Votre boutique', 'Votre plan', 'Votre compte'];
+
+/** Ouverture de boutique en 3 étapes : boutique (pays et ville) → plan → compte. Un vendeur déjà connecté saute l'étape compte. */
 export function SellerArea() {
   const router = useRouter();
   const { user, ready, notify, refresh } = useAuth();
-  const [tab, setTab] = useState<'login' | 'register'>('login');
+  const countries = useCountries();
+  const [mode, setMode] = useState<'open' | 'login'>('open');
+  const [step, setStep] = useState(0);
   const [hasShop, setHasShop] = useState<boolean | null>(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plan, setPlan] = useState('free');
+  const [shop, setShop] = useState({ name: '', description: '', phone: '', country: 'CD', city: '', owner: '' });
+  const [busy, setBusy] = useState(false);
+  const country = countries.find((c) => c.code === shop.country);
+  const last = user ? 1 : 2;
 
+  useEffect(() => { void api<{ plans: Plan[] }>('/plans').then((r) => r.ok && setPlans(r.data.plans)); }, []);
   useEffect(() => {
     if (!user) { setHasShop(null); return; }
+    setShop((s) => ({ ...s, phone: s.phone || user.phone || '', country: user.countryCode ?? s.country }));
     void api<{ shop: unknown }>('/seller/shop').then((r) => {
       if (r.ok && r.data.shop) router.replace('/vendeur/tableau');
       else setHasShop(false);
     });
   }, [user, router]);
 
-  async function createShop(f: FormData): Promise<boolean> {
-    const r = await api('/seller/shop', { method: 'POST', body: { name: String(f.get('shopName')).trim(), phone: e164(f.get('phone')), countryCode: f.get('country'), citySlug: f.get('city') || undefined } });
-    if (!r.ok) { notify(r.data.code === 'shop_exists' ? 'Vous avez déjà une boutique.' : errorMessage(r.data.code)); return false; }
+  const set = (k: keyof typeof shop) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setShop((s) => ({ ...s, [k]: e.target.value, ...(k === 'country' ? { city: '' } : {}) }));
+
+  async function createShopAndPlan(): Promise<boolean> {
+    const r = await api('/seller/shop', { method: 'POST', body: { name: shop.name.trim(), phone: e164(shop.phone), description: shop.description.trim() || undefined, countryCode: shop.country, citySlug: shop.city || undefined } });
+    if (!r.ok) { notify(r.data.code === 'shop_exists' ? 'Vous avez déjà une boutique.' : r.data.message ?? errorMessage(r.data.code)); return false; }
+    if (plan !== 'free') {
+      const p = await api('/seller/plan', { method: 'POST', body: { plan } });
+      if (p.ok) notify('Boutique créée. Votre demande de plan est envoyée : il sera activé après validation du paiement.');
+      else notify('Boutique créée, mais la demande de plan a échoué : refaites-la depuis Tarifs.');
+    } else notify('Boutique créée !');
     return true;
+  }
+
+  function next(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (step < last) { setStep(step + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  }
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      if (user) {
+        if (await createShopAndPlan()) { await refresh(); router.push('/vendeur/tableau'); }
+        return;
+      }
+      const f = new FormData(e.currentTarget);
+      const email = String(f.get('email')); const password = String(f.get('password'));
+      const [first, ...rest] = shop.owner.trim().split(/\s+/);
+      const reg = await api('/auth/register', { method: 'POST', body: { email, password, firstName: first, lastName: rest.join(' ') || first, phone: e164(shop.phone), countryCode: shop.country, citySlug: shop.city || undefined, locale: 'fr' } });
+      if (!reg.ok) return notify(errorMessage(reg.data.code));
+      const log = await api('/auth/login', { method: 'POST', body: { email, password, client: 'web' } });
+      if (!log.ok) return notify('Un compte existe déjà avec cet e-mail : connectez-vous avec votre mot de passe.');
+      if (!(await createShopAndPlan())) { await refresh(); return; }
+      await refresh();
+      router.push('/vendeur/tableau');
+    } finally { setBusy(false); }
   }
 
   async function onLogin(e: React.FormEvent<HTMLFormElement>) {
@@ -35,72 +85,93 @@ export function SellerArea() {
     notify('Connexion réussie !');
   }
 
-  async function onRegister(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const [first, ...rest] = String(f.get('ownerName')).trim().split(/\s+/);
-    const email = f.get('email');
-    const password = f.get('password');
-    const reg = await api('/auth/register', { method: 'POST', body: { email, password, firstName: first, lastName: rest.join(' ') || first, phone: e164(f.get('phone')), countryCode: f.get('country'), citySlug: f.get('city') || undefined, locale: 'fr' } });
-    if (!reg.ok) return notify(errorMessage(reg.data.code));
-    const log = await api('/auth/login', { method: 'POST', body: { email, password, client: 'web' } });
-    if (!log.ok) return notify('Un compte existe déjà avec cet e-mail : connectez-vous avec votre mot de passe.');
-    if (!(await createShop(f))) { await refresh(); return; }
-    await refresh();
-    notify('Boutique créée !');
-    router.push('/vendeur/tableau');
-  }
-
-  async function onCreateShopOnly(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (await createShop(new FormData(e.currentTarget))) { notify('Boutique créée !'); router.push('/vendeur/tableau'); }
-  }
-
   if (!ready || (user && hasShop === null)) return <p className="empty-collection">Chargement…</p>;
+  const chosen = plans.find((p) => p.code === plan);
+  const stepsShown = user ? STEPS.slice(0, 2) : STEPS;
 
   return (
-    <div className="seller-landing">
-      <div className="seller-pitch">
-        <h2>Pourquoi vendre sur Mwinda Market ?</h2>
-        <div className="seller-pitch-item"><i className="fas fa-users" /><div><p className="usp-title">Une audience déjà là</p><p className="usp-sub">Touchez des milliers de clients dans votre pays et partout en Afrique.</p></div></div>
-        <div className="seller-pitch-item"><i className="fas fa-mobile-alt" /><div><p className="usp-title">Paiements Mobile Money</p><p className="usp-sub">Vos clients paient comme ils en ont déjà l&apos;habitude.</p></div></div>
-        <div className="seller-pitch-item"><i className="fas fa-store" /><div><p className="usp-title">Votre propre boutique</p><p className="usp-sub">Ajoutez, modifiez et supprimez vos produits en quelques clics, à tout moment.</p></div></div>
+    <div className="ui mx-auto grid w-full max-w-6xl gap-8 py-2 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="hidden content-start gap-6 lg:grid">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">Pourquoi vendre sur Mwinda Market ?</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Une marketplace pensée pour les commerçants africains.</p>
+        </div>
+        {[[Users, 'Une audience déjà là', 'Touchez des milliers de clients dans votre pays et partout en Afrique.'], [Smartphone, 'Paiements Mobile Money', 'Vos clients paient comme ils en ont déjà l’habitude.'], [Store, 'Votre propre boutique', 'Ajoutez, modifiez et suivez vos produits et commandes en quelques clics.'], [Globe2, 'Votre pays, votre ville', 'Choisissez votre pays et votre ville : vos clients vous trouvent près de chez eux.']].map(([Icon, t, s]) => {
+          const I = Icon as typeof Users;
+          return <div key={t as string} className="flex gap-4"><span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><I className="size-5" /></span><div><p className="font-medium">{t as string}</p><p className="text-sm text-muted-foreground">{s as string}</p></div></div>;
+        })}
       </div>
 
-      <div className="seller-auth-card">
-        {user ? (
+      <Card className="self-start">
+        {mode === 'login' && !user ? (
           <>
-            <h2 style={{ marginBottom: '1rem' }}>Créer ma boutique</h2>
-            <form onSubmit={onCreateShopOnly}>
-              <div className="form-group"><label>Nom de la boutique *</label><input type="text" name="shopName" placeholder="Ex. TechPlus" required /></div>
-              <div className="form-group"><input type="tel" name="phone" placeholder="Téléphone avec indicatif (+243...)" defaultValue={user.phone ?? ''} required /></div>
-              <GeoFields defaultCountry={user?.countryCode ?? 'CD'} />
-              <button type="submit" className="btn btn-primary full-width">Créer ma boutique vendeur</button>
-            </form>
+            <CardHeader><CardTitle>Se connecter à ma boutique</CardTitle><CardDescription>Accédez à votre espace vendeur.</CardDescription></CardHeader>
+            <CardContent>
+              <form id="sellerLoginForm" className="grid gap-4" onSubmit={onLogin}>
+                <Field label="Adresse e-mail *"><Input type="email" name="email" placeholder="vendeur@email.com" required /></Field>
+                <Field label="Mot de passe *"><Input type="password" name="password" required /></Field>
+                <Button type="submit" size="lg">Se connecter</Button>
+                <button type="button" className="text-sm text-primary hover:underline" onClick={() => setMode('open')}>Pas encore de boutique ? Ouvrir ma boutique</button>
+              </form>
+            </CardContent>
           </>
         ) : (
           <>
-            <div className="modal-tabs">
-              <button type="button" className={`modal-tab${tab === 'login' ? ' active' : ''}`} onClick={() => setTab('login')}>Se connecter</button>
-              <button type="button" className={`modal-tab${tab === 'register' ? ' active' : ''}`} onClick={() => setTab('register')}>Créer ma boutique</button>
-            </div>
-            <form id="sellerLoginForm" className={`form-content${tab === 'login' ? ' active' : ''}`} onSubmit={onLogin}>
-              <div className="form-group"><label>Adresse e-mail *</label><input type="email" name="email" placeholder="vendeur@email.com" required /></div>
-              <div className="form-group"><label>Mot de passe *</label><input type="password" name="password" placeholder="••••••••" required /></div>
-              <button type="submit" className="btn btn-primary full-width">Se connecter à ma boutique</button>
-            </form>
-            <form id="sellerRegisterForm" className={`form-content${tab === 'register' ? ' active' : ''}`} onSubmit={onRegister}>
-              <div className="form-group"><label>Nom de la boutique *</label><input type="text" name="shopName" placeholder="Ex. TechPlus" required /></div>
-              <div className="form-row"><input type="text" name="ownerName" placeholder="Votre nom complet *" required /><input type="tel" name="phone" placeholder="Téléphone avec indicatif (+243...)" required /></div>
-              <div className="form-group"><label>Adresse e-mail *</label><input type="email" name="email" placeholder="vendeur@email.com" required /></div>
-              <GeoFields />
-              <div className="form-group"><label>Mot de passe *</label><input type="password" name="password" placeholder="••••••••" required minLength={8} /></div>
-              <p className="seller-form-note">Vos informations sont enregistrées de façon sécurisée sur le serveur de Mwinda Market (mot de passe chiffré).</p>
-              <button type="submit" className="btn btn-primary full-width">Créer ma boutique vendeur</button>
-            </form>
+            <CardHeader>
+              <CardTitle className="text-xl">Ouvrir ma boutique</CardTitle>
+              <ol className="mt-3 flex items-center gap-2 text-xs">
+                {stepsShown.map((s, i) => (
+                  <li key={s} className="flex items-center gap-2">
+                    <span className={cn('flex size-6 items-center justify-center rounded-full border font-semibold', i < step ? 'border-primary bg-primary text-primary-foreground' : i === step ? 'border-primary text-primary' : 'text-muted-foreground')}>{i < step ? <Check className="size-3.5" /> : i + 1}</span>
+                    <span className={cn('hidden sm:inline', i === step ? 'font-medium' : 'text-muted-foreground')}>{s}</span>
+                    {i < stepsShown.length - 1 && <span className="mx-1 h-px w-6 bg-border" />}
+                  </li>
+                ))}
+              </ol>
+            </CardHeader>
+            <CardContent>
+              <form id="sellerRegisterForm" className="grid gap-4" onSubmit={step < last ? next : submit}>
+                <div className={cn('grid gap-4', step !== 0 && 'hidden')}>
+                  <Field label="Nom de la boutique *"><Input name="shopName" value={shop.name} onChange={set('name')} placeholder="Ex. TechPlus" required /></Field>
+                  {!user && <Field label="Votre nom complet *"><Input name="ownerName" value={shop.owner} onChange={set('owner')} required /></Field>}
+                  <Field label="Téléphone *" hint="Avec l’indicatif du pays"><Input type="tel" name="phone" value={shop.phone} onChange={set('phone')} placeholder={`${country?.phonePrefix ?? '+243'} …`} required /></Field>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Pays *"><Select name="country" value={shop.country} onChange={set('country')} required>
+                      {countries.length === 0 && <option value={shop.country}>Chargement…</option>}
+                      {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+                    </Select></Field>
+                    <Field label="Ville"><Select name="city" value={shop.city} onChange={set('city')} key={shop.country}>
+                      <option value="">{country?.cities.length ? 'Autre ville' : 'Ville non listée'}</option>
+                      {country?.cities.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                    </Select></Field>
+                  </div>
+                  <Field label="Description" hint="Optionnel — présentez votre boutique en une phrase"><Textarea name="description" rows={2} value={shop.description} onChange={set('description')} /></Field>
+                </div>
+
+                <div className={cn('grid gap-4', step !== 1 && 'hidden')}>
+                  <p className="text-sm text-muted-foreground">Choisissez le plan qui correspond à votre activité. Vous pourrez en changer à tout moment.</p>
+                  <PlanCards plans={plans} selected={plan} onSelect={setPlan} className="sm:grid-cols-2 xl:grid-cols-2" />
+                  {plan !== 'free' && <p className="rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground">Votre boutique démarre en plan Gratuit. Le plan {chosen?.name} sera activé pour 3 mois dès que notre équipe aura validé le paiement de l’abonnement.</p>}
+                </div>
+
+                {!user && (
+                  <div className={cn('grid gap-4', step !== 2 && 'hidden')}>
+                    <Field label="Adresse e-mail *"><Input type="email" name="email" placeholder="vendeur@email.com" required={step === 2} /></Field>
+                    <Field label="Mot de passe *" hint="8 caractères minimum — enregistré de façon chiffrée"><Input type="password" name="password" minLength={8} required={step === 2} /></Field>
+                    <div className="rounded-xl bg-muted/60 p-3 text-sm"><b>Récapitulatif :</b> {shop.name || 'Votre boutique'} · {country?.name}{shop.city ? ` · ${country?.cities.find((c) => c.slug === shop.city)?.name}` : ''} · plan {chosen?.name}</div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  {step > 0 ? <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>Retour</Button> : !user ? <button type="button" className="text-sm text-primary hover:underline" onClick={() => setMode('login')}>J’ai déjà une boutique</button> : <span />}
+                  <Button type="submit" size="lg" disabled={busy}>{step < last ? 'Continuer' : busy ? 'Création…' : 'Créer ma boutique'}</Button>
+                </div>
+                {!user && step === 0 && <p className="text-center text-xs text-muted-foreground">En continuant, vous acceptez les <Link href="/conditions-vendeur" className="text-primary hover:underline">conditions vendeur</Link>.</p>}
+              </form>
+            </CardContent>
           </>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

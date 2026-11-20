@@ -13,19 +13,24 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   // ---- Vendeur : création de boutique + produit
   const sp = await seller.newPage();
   await sp.goto(`${WEB}/vendeur`);
-  await sp.click('.modal-tab:has-text("Créer ma boutique")');
+  // Assistant en 3 étapes : boutique (pays/ville) → plan → compte
   await sp.fill('#sellerRegisterForm [name=shopName]', `TechPlus ${stamp}`);
   await sp.fill('#sellerRegisterForm [name=ownerName]', 'Grace Hopper');
   await sp.fill('#sellerRegisterForm [name=phone]', '+243 907 261 113');
+  await sp.selectOption('#sellerRegisterForm [name=country]', 'CD');
+  await sp.selectOption('#sellerRegisterForm [name=city]', { index: 1 });
+  await sp.click('#sellerRegisterForm button[type=submit]');
+  await sp.click('[data-plan=free]');
+  await sp.click('#sellerRegisterForm button[type=submit]');
   await sp.fill('#sellerRegisterForm [name=email]', `seller${stamp}@example.com`);
   await sp.fill('#sellerRegisterForm [name=password]', pwd);
   await sp.click('#sellerRegisterForm button[type=submit]');
   await sp.waitForURL('**/vendeur/tableau');
-  await sp.waitForSelector(`h1:has-text("TechPlus ${stamp}")`);
+  await sp.waitForSelector(`text=TechPlus ${stamp}`);
   await sp.click('button:has-text("Ajouter un produit")');
   await sp.fill('[name=name]', 'Casque e2e');
   await sp.selectOption('[name=department]', 'electronique');
-  await sp.fill('[name=category]', 'Audio');
+  await sp.selectOption('[name=category]', 'Audio');
   await sp.fill('[name=price]', '112000'); // 40 $
   // Photo "de téléphone" : grande image (3000x2000) générée dans la page, envoyée via le sélecteur de fichiers.
   await sp.evaluate(async () => {
@@ -91,8 +96,10 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await bp.fill('[name=shippingAddress]', 'Avenue du Lac, Nyawera');
   await bp.click('form button[type=submit]');
   await bp.waitForURL('**/compte');
+  await bp.click('button:has-text("Mes commandes")');
   await bp.waitForSelector('text=Commande STM-');
   await bp.waitForSelector('text=Avenue du Lac, Nyawera'); // adresse enregistrée + livraison
+  await bp.goto(`${WEB}/`);
   assert.equal((await bp.textContent('#cartBadge')).trim(), '0', 'panier vidé après la commande');
 
   // ---- Acheteur commande le produit du vendeur (plan gratuit : commission 5 %)
@@ -103,12 +110,14 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
     return (await res.json()).order.number;
   });
   await bp.goto(`${WEB}/compte`);
+  await bp.click('button:has-text("Mes commandes")');
   await bp.waitForSelector(`text=Commande ${num}`);
-  assert.ok(await bp.isVisible('button:has-text("Annuler la commande")'));
+  assert.ok(await bp.isVisible('button:has-text("Annuler")'));
 
   // ---- Vendeur : confirme puis expédie, voit sa commission
   await sp.goto(`${WEB}/vendeur/tableau`);
   await sp.waitForSelector('text=Plan Gratuit · commission 5 %');
+  await sp.click('button:has-text("Commandes")');
   await sp.waitForSelector(`text=Commande ${num}`);
   await sp.waitForSelector('text=commission 5 600 FC'); // 5 % de 112 000 FC
   await sp.click('button:has-text("Confirmer la commande")');
@@ -118,10 +127,11 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
 
   // ---- Acheteur : confirme la réception
   await bp.goto(`${WEB}/compte`);
+  await bp.click('button:has-text("Mes commandes")');
   await bp.click('button:has-text("J\'ai reçu ma commande")');
   await bp.waitForSelector('text=Réception confirmée');
   await sp.reload();
-  await sp.waitForSelector('text=Gains nets (commandes livrées)');
+  await sp.waitForSelector('text=Gains nets (livrées)');
   await sp.waitForSelector('text=106 400 FC'); // 112 000 - 5 600
 
   // ---- Tarifs : quatre plans, le dernier à 45 $ par trimestre
@@ -129,7 +139,7 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await tp.goto(`${WEB}/tarifs`);
   await tp.waitForSelector('text=Commission 2 %');
   await tp.waitForSelector('text=126 000 FC');
-  await tp.click('.seller-product-form-wrapper:has-text("Premium") button:has-text("Choisir ce plan")');
+  await tp.click('[data-plan=premium] button:has-text("Choisir ce plan")');
   await tp.waitForSelector('text=Demande en attente');
 
   // ---- Administration : un compte non-admin est refusé, puis un admin gère tout

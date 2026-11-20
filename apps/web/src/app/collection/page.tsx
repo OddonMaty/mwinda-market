@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Header, Footer } from '../../components/Chrome';
 import { CollectionView } from '../../components/CollectionView';
 import { getProducts } from '../../data/source';
+import { DEPARTMENTS } from '@saotech/shared';
 import { collectionHref, departmentLabels, matchesSearch } from '../../lib';
 
 export const metadata: Metadata = { title: 'Nos produits - Mwinda Market' };
@@ -21,7 +22,8 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
   if (query) list = list.filter((p) => matchesSearch(p, query));
 
   const inScope = dep !== 'All' ? products.filter((p) => p.department === dep) : products;
-  const categories = ['All', ...new Set(inScope.map((p) => p.category).filter(Boolean))];
+  const taxo = DEPARTMENTS.find((d) => d.slug === dep)?.categories ?? [];
+  const categories = ['All', ...new Set([...taxo, ...inScope.map((p) => p.category).filter(Boolean)])];
   const pills = categories.map((c) => ({
     label: c === 'All' ? 'Tous les produits' : c,
     href: collectionHref(dep, c),
@@ -47,6 +49,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
         query={query}
         clearHref={collectionHref(dep, cat)}
         inStockCount={products.filter((p) => p.inStock).length}
+        activeDep={dep}
       />
       <Footer />
     </>

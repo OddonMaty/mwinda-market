@@ -1,17 +1,26 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { BarChart3, Users as UsersIcon, Store, Package, ShoppingBag, Crown, Inbox, Globe2, FileText, ScrollText, Search as SearchIcon, ShieldCheck, Wallet, Percent } from 'lucide-react';
 import { formatPrice } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Empty, Field, Input, Select, StatCard, Table as UTable, Td, Textarea, Th, DashboardShell, type NavGroup } from './ui';
 
 type Tab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'plans' | 'requests' | 'countries' | 'pages' | 'audit';
-const TABS: [Tab, string][] = [
-  ['dashboard', 'Tableau de bord'], ['users', 'Utilisateurs'], ['shops', 'Boutiques'], ['products', 'Produits'], ['orders', 'Commandes'],
-  ['plans', 'Plans'], ['requests', 'Demandes de plan'], ['countries', 'Pays & villes'], ['pages', 'Textes légaux'], ['audit', 'Journal'],
+const NAV: NavGroup[] = [
+  { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: BarChart3 }] },
+  { title: 'Gestion', items: [
+    { key: 'users', label: 'Utilisateurs', icon: UsersIcon }, { key: 'shops', label: 'Boutiques', icon: Store },
+    { key: 'products', label: 'Produits', icon: Package }, { key: 'orders', label: 'Commandes', icon: ShoppingBag },
+  ] },
+  { title: 'Abonnements', items: [{ key: 'plans', label: 'Plans', icon: Crown }, { key: 'requests', label: 'Demandes de plan', icon: Inbox }] },
+  { title: 'Configuration', items: [{ key: 'countries', label: 'Pays & villes', icon: Globe2 }, { key: 'pages', label: 'Textes légaux', icon: FileText }, { key: 'audit', label: 'Journal d’audit', icon: ScrollText }] },
 ];
 const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée', active: 'Actif', suspended: 'Suspendu', archived: 'Archivé' };
+const TONE: Record<string, 'success' | 'warning' | 'danger' | 'secondary' | 'default'> = { active: 'success', delivered: 'success', approved: 'success', pending: 'warning', confirmed: 'default', shipped: 'default', suspended: 'danger', cancelled: 'danger', rejected: 'danger', archived: 'secondary' };
 const PAGE_LABELS: Record<string, string> = { conditions: 'Conditions générales de vente', confidentialite: 'Politique de confidentialité', 'conditions-vendeur': 'Conditions générales vendeur', remboursement: 'Politique de remboursement', livraison: 'Livraison & retours', paiements: 'Paiements' };
 const day = (d: string | null) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+const St = ({ s }: { s: string }) => <Badge variant={TONE[s] ?? 'secondary'}>{STATUS[s] ?? s}</Badge>;
 
 /** Charge une liste depuis l'API d'administration et la recharge à la demande. */
 function useAdminData<T>(path: string, key: string) {
@@ -25,43 +34,51 @@ function useAdminData<T>(path: string, key: string) {
 }
 
 function Table({ head, children, empty }: { head: string[]; children: React.ReactNode; empty?: boolean }) {
-  if (empty) return <p className="empty-collection">Rien à afficher pour le moment.</p>;
+  if (empty) return <Empty icon={Inbox} title="Rien à afficher" text="Aucun élément ne correspond pour le moment." />;
   return (
-    <div className="seller-products-table-scroll">
-      <table className="seller-products-table">
-        <thead><tr>{head.map((h) => <th key={h}>{h}</th>)}</tr></thead>
+    <Card className="overflow-hidden">
+      <UTable>
+        <thead className="bg-muted/40"><tr>{head.map((h) => <Th key={h}>{h}</Th>)}</tr></thead>
         <tbody>{children}</tbody>
-      </table>
-    </div>
+      </UTable>
+    </Card>
   );
 }
+const Actions = ({ children }: { children: React.ReactNode }) => <div className="flex justify-end gap-1">{children}</div>;
 
 function Search({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return <input type="search" placeholder="Rechercher…" value={value} onChange={(e) => onChange(e.target.value)} style={{ maxWidth: 320, marginBottom: '1rem' }} />;
+  return (
+    <div className="relative mb-4 max-w-sm">
+      <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input type="search" className="pl-9" placeholder="Rechercher…" value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
 }
 
 export function AdminArea() {
   const { user, ready, openLogin, notify } = useAuth();
   const [roles, setRoles] = useState<string[] | null>(null);
   const [tab, setTab] = useState<Tab>('dashboard');
+  const [pending, setPending] = useState(0);
 
   useEffect(() => {
     if (!user) { setRoles(null); return; }
     void api<{ roles: string[] }>('/admin/me').then((r) => setRoles(r.ok ? r.data.roles : []));
+    void api<{ stats: { planRequests: number } }>('/admin/stats').then((r) => r.ok && setPending(r.data.stats.planRequests));
   }, [user]);
 
-  if (!ready || (user && roles === null)) return <p className="empty-collection">Chargement…</p>;
-  if (!user) return <div className="seller-auth-card" style={{ margin: '0 auto' }}><p style={{ marginBottom: '1rem' }}>Connectez-vous avec un compte administrateur.</p><button type="button" className="btn btn-primary full-width" onClick={() => openLogin('signin', '/admin')}>Se connecter</button></div>;
-  if (!roles || roles.length === 0) return <p className="empty-collection">Accès réservé à l&apos;équipe d&apos;administration.</p>;
+  const gate = (node: React.ReactNode) => <div className="ui ui-shell flex items-center justify-center p-6">{node}</div>;
+  if (!ready || (user && roles === null)) return gate(<p className="text-sm text-muted-foreground">Chargement…</p>);
+  if (!user) return gate(<Card className="w-full max-w-sm text-center"><CardHeader className="items-center"><ShieldCheck className="size-8 text-primary" /><CardTitle>Espace administrateur</CardTitle><CardDescription>Connectez-vous avec un compte administrateur.</CardDescription></CardHeader><CardContent><Button className="w-full" onClick={() => openLogin('signin', '/admin')}>Se connecter</Button></CardContent></Card>);
+  if (!roles || roles.length === 0) return gate(<Empty icon={ShieldCheck} title="Accès réservé" text="Cet espace est réservé à l’équipe d’administration." action={<Button asChild variant="outline"><a href="/">Retour à la boutique</a></Button>} />);
 
   const isSuper = roles.includes('superadmin');
   const fail = (r: { data: { code?: string; message?: string } }) => notify(r.data.message ?? errorMessage(r.data.code));
+  const groups = NAV.map((g) => ({ ...g, items: g.items.map((i) => (i.key === 'requests' ? { ...i, badge: pending } : i)) }));
+  const roleLabel = isSuper ? 'Super-administrateur' : roles.map((r) => ({ moderator: 'Modérateur', finance: 'Finance' }[r] ?? r)).join(', ');
 
   return (
-    <>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-        {TABS.map(([k, l]) => <button key={k} type="button" className={`btn ${tab === k ? 'btn-primary' : 'btn-outline'}`} onClick={() => setTab(k)}>{l}</button>)}
-      </div>
+    <DashboardShell space="Administration" subtitle={roleLabel} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email, email: user.email }}>
       {tab === 'dashboard' && <Dashboard />}
       {tab === 'users' && <Users isSuper={isSuper} notify={notify} fail={fail} />}
       {tab === 'shops' && <Shops notify={notify} fail={fail} />}
@@ -72,7 +89,7 @@ export function AdminArea() {
       {tab === 'countries' && <Countries isSuper={isSuper} notify={notify} fail={fail} />}
       {tab === 'pages' && <Pages notify={notify} fail={fail} />}
       {tab === 'audit' && <Audit isSuper={isSuper} />}
-    </>
+    </DashboardShell>
   );
 }
 
@@ -81,21 +98,28 @@ interface P { notify: (m: string) => void; fail: (r: { data: { code?: string; me
 function Dashboard() {
   const [s, setS] = useState<{ users: number; shops: number; shopsPending: number; products: number; orders: number; ordersByStatus: Record<string, number>; planRequests: number; salesUsd: number; commissionUsd: number } | null>(null);
   useEffect(() => { void api<{ stats: NonNullable<typeof s> }>('/admin/stats').then((r) => r.ok && setS(r.data.stats)); }, []);
-  if (!s) return <p className="empty-collection">Chargement…</p>;
-  const card = (v: string | number, l: string) => <div className="seller-stat-card" key={l}><span className="seller-stat-value">{v}</span><span className="seller-stat-label">{l}</span></div>;
+  if (!s) return <p className="text-sm text-muted-foreground">Chargement…</p>;
   return (
-    <>
-      <div className="seller-stats">
-        {card(s.users, 'Utilisateurs')}{card(s.shops, 'Boutiques vendeurs')}{card(s.products, 'Produits en ligne')}{card(s.orders, 'Commandes')}
+    <div className="grid gap-6">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Utilisateurs" value={s.users} icon={UsersIcon} />
+        <StatCard label="Boutiques vendeurs" value={s.shops} icon={Store} hint={s.shopsPending ? `${s.shopsPending} en attente` : undefined} />
+        <StatCard label="Produits en ligne" value={s.products} icon={Package} />
+        <StatCard label="Commandes" value={s.orders} icon={ShoppingBag} />
       </div>
-      <div className="seller-stats">
-        {card(formatPrice(s.salesUsd), 'Ventes livrées')}{card(formatPrice(s.commissionUsd), 'Commissions gagnées')}{card(s.planRequests, 'Demandes de plan à traiter')}{card(s.shopsPending, 'Boutiques en attente')}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard label="Ventes livrées" value={formatPrice(s.salesUsd)} icon={Wallet} />
+        <StatCard label="Commissions gagnées" value={formatPrice(s.commissionUsd)} icon={Percent} />
+        <StatCard label="Demandes de plan à traiter" value={s.planRequests} icon={Inbox} />
       </div>
-      <div className="seller-product-form-wrapper">
-        <h2 style={{ fontSize: '1.1rem' }}>Commandes par état</h2>
-        <p>{Object.entries(s.ordersByStatus).map(([k, v]) => `${STATUS[k] ?? k} : ${v}`).join(' · ') || 'Aucune commande.'}</p>
-      </div>
-    </>
+      <Card>
+        <CardHeader><CardTitle>Commandes par état</CardTitle></CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          {Object.entries(s.ordersByStatus).map(([k, v]) => <span key={k} className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"><St s={k} /><b>{v}</b></span>)}
+          {Object.keys(s.ordersByStatus).length === 0 && <p className="text-sm text-muted-foreground">Aucune commande pour le moment.</p>}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -110,13 +134,13 @@ function Users({ isSuper, notify, fail }: P & { isSuper: boolean }) {
       <Table head={['Nom', 'E-mail', 'Pays', 'Boutique', 'Inscrit le', 'État', 'Rôle', '']} empty={rows?.length === 0}>
         {rows?.map((u) => (
           <tr key={u.id}>
-            <td>{u.name}</td><td>{u.email}</td><td>{u.countryCode ?? '—'}</td><td>{u.shop ?? '—'}</td><td>{day(u.createdAt)}</td><td>{STATUS[u.status]}</td>
-            <td>{isSuper ? (
-              <select value={u.roles[0] ?? ''} onChange={(e) => void setRole(u.id, e.target.value)}>
+            <Td>{u.name}</Td><Td>{u.email}</Td><Td>{u.countryCode ?? '—'}</Td><Td>{u.shop ?? '—'}</Td><Td>{day(u.createdAt)}</Td><Td><St s={u.status} /></Td>
+            <Td>{isSuper ? (
+              <Select className="h-9 min-w-[8rem]" value={u.roles[0] ?? ''} onChange={(e) => void setRole(u.id, e.target.value)}>
                 <option value="">Utilisateur</option><option value="moderator">Modérateur</option><option value="finance">Finance</option><option value="superadmin">Super-admin</option>
-              </select>
-            ) : (u.roles.join(', ') || '—')}</td>
-            <td className="seller-product-row-actions"><button type="button" className="link-btn" onClick={() => void setStatus(u.id, u.status === 'active' ? 'suspended' : 'active')}>{u.status === 'active' ? 'Suspendre' : 'Réactiver'}</button></td>
+              </Select>
+            ) : (u.roles.join(', ') || '—')}</Td>
+            <Td className="text-right"><Actions><Button type="button" variant="ghost" size="sm" onClick={() => void setStatus(u.id, u.status === 'active' ? 'suspended' : 'active')}>{u.status === 'active' ? 'Suspendre' : 'Réactiver'}</Button></Actions></Td>
           </tr>
         ))}
       </Table>
@@ -135,12 +159,12 @@ function Shops({ notify, fail }: P) {
       <Table head={['Boutique', 'Propriétaire', 'Lieu', 'Produits', 'Plan', 'État']} empty={rows?.length === 0}>
         {rows?.map((s) => (
           <tr key={s.id}>
-            <td>{s.name}{s.isOfficial ? ' (officielle)' : ''}</td><td>{s.owner ?? '—'}</td><td>{[s.city, s.countryCode].filter(Boolean).join(', ') || '—'}</td><td>{s.products}</td>
-            <td>
-              <select value={s.plan} onChange={(e) => void patch(s.id, { plan: e.target.value })}>{plans?.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}</select>
-              {s.plan !== 'free' && <div style={{ fontSize: '0.75rem' }}>jusqu’au {day(s.planExpiresAt)}</div>}
-            </td>
-            <td><select value={s.status} onChange={(e) => void patch(s.id, { status: e.target.value })}><option value="active">Actif</option><option value="pending">En attente</option><option value="suspended">Suspendu</option></select></td>
+            <Td>{s.name}{s.isOfficial ? ' (officielle)' : ''}</Td><Td>{s.owner ?? '—'}</Td><Td>{[s.city, s.countryCode].filter(Boolean).join(', ') || '—'}</Td><Td>{s.products}</Td>
+            <Td>
+              <Select className="h-9 min-w-[8rem]" value={s.plan} onChange={(e) => void patch(s.id, { plan: e.target.value })}>{plans?.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}</Select>
+              {s.plan !== 'free' && <div className="mt-1 text-xs text-muted-foreground">jusqu’au {day(s.planExpiresAt)}</div>}
+            </Td>
+            <Td><Select className="h-9 min-w-[8rem]" value={s.status} onChange={(e) => void patch(s.id, { status: e.target.value })}><option value="active">Actif</option><option value="pending">En attente</option><option value="suspended">Suspendu</option></Select></Td>
           </tr>
         ))}
       </Table>
@@ -157,8 +181,8 @@ function Products({ notify, fail }: P) {
       <Search value={q} onChange={setQ} />
       <Table head={['#', 'Produit', 'Boutique', 'Rayon', 'Prix', 'État', '']} empty={rows?.length === 0}>
         {rows?.map((p) => (
-          <tr key={p.id}><td>{p.id}</td><td>{p.name}</td><td>{p.shop}</td><td>{p.department}</td><td>{formatPrice(p.priceUsd)}</td><td>{STATUS[p.status]}</td>
-            <td className="seller-product-row-actions"><button type="button" className="link-btn" onClick={() => void setStatus(p.id, p.status === 'active' ? 'archived' : 'active')}>{p.status === 'active' ? 'Retirer' : 'Remettre en ligne'}</button></td></tr>
+          <tr key={p.id}><Td>{p.id}</Td><Td>{p.name}</Td><Td>{p.shop}</Td><Td>{p.department}</Td><Td>{formatPrice(p.priceUsd)}</Td><Td><St s={p.status} /></Td>
+            <Td className="text-right"><Actions><Button type="button" variant="ghost" size="sm" onClick={() => void setStatus(p.id, p.status === 'active' ? 'archived' : 'active')}>{p.status === 'active' ? 'Retirer' : 'Remettre en ligne'}</Button></Actions></Td></tr>
         ))}
       </Table>
     </>
@@ -174,8 +198,8 @@ function Orders({ notify, fail }: P) {
       <Search value={q} onChange={setQ} />
       <Table head={['N°', 'Date', 'Client', 'Ville', 'Total', 'Commission', 'État']} empty={rows?.length === 0}>
         {rows?.map((o) => (
-          <tr key={o.number}><td>{o.number}</td><td>{day(o.createdAt)}</td><td>{o.customer}<div style={{ fontSize: '0.75rem' }}>{o.email}</div></td><td>{o.city}</td><td>{formatPrice(o.totalUsd)}</td><td>{formatPrice(o.commissionUsd)}</td>
-            <td><select value={o.status} onChange={(e) => void setStatus(o.number, e.target.value)}>{Object.entries(STATUS).filter(([k]) => ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].includes(k)).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td></tr>
+          <tr key={o.number}><Td>{o.number}</Td><Td>{day(o.createdAt)}</Td><Td>{o.customer}<div className="text-xs text-muted-foreground">{o.email}</div></Td><Td>{o.city}</Td><Td>{formatPrice(o.totalUsd)}</Td><Td>{formatPrice(o.commissionUsd)}</Td>
+            <Td><Select className="h-9 min-w-[8rem]" value={o.status} onChange={(e) => void setStatus(o.number, e.target.value)}>{Object.entries(STATUS).filter(([k]) => ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].includes(k)).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Td></tr>
         ))}
       </Table>
     </>
@@ -203,35 +227,33 @@ function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
   }
   return (
     <>
-      <p className="seller-form-note" style={{ marginBottom: '1rem' }}>Les prix sont en dollars par trimestre (affichés en FC aux vendeurs). La commission s&apos;applique aux commandes passées après la modification.</p>
+      <p className="mb-4 max-w-2xl text-sm text-muted-foreground">Les prix sont en dollars par trimestre (affichés en FC aux vendeurs). La commission s&apos;applique aux commandes passées après la modification.</p>
       <Table head={['Plan', 'Prix / trimestre', 'Commission', 'Produits max', 'Actif', '']} empty={rows?.length === 0}>
         {rows?.map((p) => (
-          <tr key={p.code}><td>{p.name} <span style={{ fontSize: '0.75rem' }}>({p.code})</span></td><td>{p.priceUsd} $ · {formatPrice(p.priceUsd)}</td><td>{p.commissionBps / 100} %</td><td>{p.maxProducts ?? 'Illimité'}</td><td>{p.active ? 'Oui' : 'Non'}</td>
-            <td className="seller-product-row-actions">{isSuper && <button type="button" className="link-btn" onClick={() => setEdit(p)}>Modifier</button>}</td></tr>
+          <tr key={p.code}><Td>{p.name} <span className="text-xs text-muted-foreground">({p.code})</span></Td><Td>{p.priceUsd} $ · {formatPrice(p.priceUsd)}</Td><Td>{p.commissionBps / 100} %</Td><Td>{p.maxProducts ?? 'Illimité'}</Td><Td>{p.active ? 'Oui' : 'Non'}</Td>
+            <Td className="text-right"><Actions>{isSuper && <Button type="button" variant="ghost" size="sm" onClick={() => setEdit(p)}>Modifier</Button>}</Actions></Td></tr>
         ))}
       </Table>
-      {isSuper && !edit && <button type="button" className="btn btn-outline" style={{ marginTop: '1rem' }} onClick={() => setEdit({ code: '', name: '', priceUsd: 0, commissionBps: 300, maxProducts: null, features: [], sort: (rows?.length ?? 0), active: true, isNew: true })}>+ Nouveau plan</button>}
+      {isSuper && !edit && <Button type="button" variant="outline" className="mt-4" onClick={() => setEdit({ code: '', name: '', priceUsd: 0, commissionBps: 300, maxProducts: null, features: [], sort: (rows?.length ?? 0), active: true, isNew: true })}>+ Nouveau plan</Button>}
       {edit && (
-        <div className="seller-product-form-wrapper" style={{ marginTop: '1.5rem' }} key={edit.code || 'new'}>
-          <h2>{edit.isNew ? 'Nouveau plan' : `Modifier ${edit.name}`}</h2>
-          <form className="contact-form" onSubmit={save}>
-            <div className="form-row">
-              {edit.isNew && <input type="text" name="code" placeholder="Code (ex. gold) *" pattern="[a-z][a-z0-9-]{1,19}" required />}
-              <input type="text" name="name" placeholder="Nom *" defaultValue={edit.name} required />
-            </div>
-            <div className="form-row">
-              <input type="number" name="priceUsd" step="0.01" min="0" placeholder="Prix par trimestre ($) *" defaultValue={edit.priceUsd} required />
-              <input type="number" name="commission" step="0.1" min="0" max="30" placeholder="Commission (%) *" defaultValue={edit.commissionBps / 100} required />
-            </div>
-            <div className="form-row">
-              <input type="number" name="maxProducts" min="1" placeholder="Produits max (vide = illimité)" defaultValue={edit.maxProducts ?? ''} />
-              <input type="number" name="sort" min="0" placeholder="Ordre" defaultValue={edit.sort} />
-            </div>
-            <div className="form-group"><textarea name="features" rows={4} placeholder="Avantages, un par ligne" defaultValue={edit.features.join('\n')} /></div>
-            <label className="checkbox-label"><input type="checkbox" name="active" defaultChecked={edit.active} disabled={edit.code === 'free'} /><span>Plan proposé aux vendeurs</span></label>
-            <div className="seller-form-actions"><button type="submit" className="btn btn-primary">Enregistrer</button><button type="button" className="btn btn-outline" onClick={() => setEdit(null)}>Annuler</button></div>
-          </form>
-        </div>
+        <Card className="mt-6 max-w-2xl" key={edit.code || 'new'}>
+          <CardHeader><CardTitle>{edit.isNew ? 'Nouveau plan' : `Modifier ${edit.name}`}</CardTitle></CardHeader>
+          <CardContent>
+            <form className="grid gap-4" onSubmit={save}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {edit.isNew && <Field label="Code *" hint="Lettres minuscules, ex. gold"><Input name="code" pattern="[a-z][a-z0-9-]{1,19}" required /></Field>}
+                <Field label="Nom *"><Input name="name" defaultValue={edit.name} required /></Field>
+                <Field label="Prix par trimestre ($) *"><Input type="number" name="priceUsd" step="0.01" min="0" defaultValue={edit.priceUsd} required /></Field>
+                <Field label="Commission (%) *"><Input type="number" name="commission" step="0.1" min="0" max="30" defaultValue={edit.commissionBps / 100} required /></Field>
+                <Field label="Produits max" hint="Vide = illimité"><Input type="number" name="maxProducts" min="1" defaultValue={edit.maxProducts ?? ''} /></Field>
+                <Field label="Ordre d’affichage"><Input type="number" name="sort" min="0" defaultValue={edit.sort} /></Field>
+              </div>
+              <Field label="Avantages" hint="Un avantage par ligne"><Textarea name="features" rows={4} defaultValue={edit.features.join('\n')} /></Field>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="active" defaultChecked={edit.active} disabled={edit.code === 'free'} />Plan proposé aux vendeurs</label>
+              <div className="flex gap-2"><Button type="submit">Enregistrer</Button><Button type="button" variant="outline" onClick={() => setEdit(null)}>Annuler</Button></div>
+            </form>
+          </CardContent>
+        </Card>
       )}
     </>
   );
@@ -242,11 +264,11 @@ function Requests({ notify, fail }: P) {
   async function decide(id: string, d: 'approve' | 'reject') { const r = await api(`/admin/plan-requests/${id}/${d}`, { method: 'POST' }); if (!r.ok) return fail(r); notify(d === 'approve' ? 'Plan activé pour 3 mois' : 'Demande refusée'); await reload(); }
   return (
     <>
-      <p className="seller-form-note" style={{ marginBottom: '1rem' }}>Approuvez une demande uniquement après avoir reçu le paiement de l&apos;abonnement : le plan est alors activé pour 3 mois.</p>
+      <p className="mb-4 max-w-2xl text-sm text-muted-foreground">Approuvez une demande uniquement après avoir reçu le paiement de l&apos;abonnement : le plan est alors activé pour 3 mois.</p>
       <Table head={['Date', 'Boutique', 'Propriétaire', 'Plan demandé', 'Montant', 'État', '']} empty={rows?.length === 0}>
         {rows?.map((r) => (
-          <tr key={r.id}><td>{day(r.createdAt)}</td><td>{r.shop}</td><td>{r.owner ?? '—'}</td><td>{r.plan}</td><td>{formatPrice(r.priceUsd)}</td><td>{r.status === 'pending' ? 'En attente' : r.status === 'approved' ? 'Approuvée' : 'Refusée'}</td>
-            <td className="seller-product-row-actions">{r.status === 'pending' && <><button type="button" className="link-btn" onClick={() => void decide(r.id, 'approve')}>Approuver</button><button type="button" className="link-btn" onClick={() => void decide(r.id, 'reject')}>Refuser</button></>}</td></tr>
+          <tr key={r.id}><Td>{day(r.createdAt)}</Td><Td>{r.shop}</Td><Td>{r.owner ?? '—'}</Td><Td>{r.plan}</Td><Td>{formatPrice(r.priceUsd)}</Td><Td><Badge variant={TONE[r.status] ?? 'secondary'}>{r.status === 'pending' ? 'En attente' : r.status === 'approved' ? 'Approuvée' : 'Refusée'}</Badge></Td>
+            <Td className="text-right"><Actions>{r.status === 'pending' && <><Button type="button" variant="ghost" size="sm" onClick={() => void decide(r.id, 'approve')}>Approuver</Button><Button type="button" variant="ghost" size="sm" onClick={() => void decide(r.id, 'reject')}>Refuser</Button></>}</Actions></Td></tr>
         ))}
       </Table>
     </>
@@ -267,16 +289,18 @@ function Countries({ isSuper, notify, fail }: P & { isSuper: boolean }) {
   const shown = rows?.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()));
   return (
     <>
-      <form onSubmit={addCity} className="form-row" style={{ marginBottom: '1.25rem', alignItems: 'center' }}>
-        <select name="country" defaultValue="CD" required>{rows?.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select>
-        <input type="text" name="name" placeholder="Nouvelle ville *" required minLength={2} />
-        <button type="submit" className="btn btn-primary">Ajouter la ville</button>
-      </form>
+      <Card className="mb-6"><CardContent className="pt-5">
+        <form onSubmit={addCity} className="grid items-end gap-3 sm:grid-cols-[1fr_1fr_auto]">
+          <Field label="Pays"><Select name="country" defaultValue="CD" required>{rows?.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</Select></Field>
+          <Field label="Nouvelle ville *"><Input name="name" required minLength={2} /></Field>
+          <Button type="submit">Ajouter la ville</Button>
+        </form>
+      </CardContent></Card>
       <Search value={q} onChange={setQ} />
       <Table head={['Pays', 'Indicatif', 'Devise', 'Villes', 'Ouvert aux vendeurs']} empty={shown?.length === 0}>
         {shown?.map((c) => (
-          <tr key={c.code}><td>{c.name} ({c.code})</td><td>{c.phonePrefix}</td><td>{c.currency ?? '—'}</td><td>{c.cities}</td>
-            <td>{isSuper ? <input type="checkbox" checked={c.active} onChange={(e) => void toggle(c.code, e.target.checked)} /> : c.active ? 'Oui' : 'Non'}</td></tr>
+          <tr key={c.code}><Td>{c.name} ({c.code})</Td><Td>{c.phonePrefix}</Td><Td>{c.currency ?? '—'}</Td><Td>{c.cities}</Td>
+            <Td>{isSuper ? <input type="checkbox" checked={c.active} onChange={(e) => void toggle(c.code, e.target.checked)} /> : c.active ? 'Oui' : 'Non'}</Td></tr>
         ))}
       </Table>
     </>
@@ -297,22 +321,24 @@ function Pages({ notify, fail }: P) {
   async function reset(s: string) { if (!window.confirm('Revenir au texte d’origine du site ?')) return; const r = await api(`/admin/pages/${s}`, { method: 'DELETE' }); if (!r.ok) return fail(r); notify('Texte d’origine rétabli'); setSlug(null); await reload(); }
   return (
     <>
-      <p className="seller-form-note" style={{ marginBottom: '1rem' }}>Rédigez ici les textes affichés sur le site. Séparez les paragraphes par une ligne vide, commencez une ligne par « ## » pour un titre de section et par « - » pour une liste.</p>
+      <p className="mb-4 max-w-2xl text-sm text-muted-foreground">Rédigez ici les textes affichés sur le site. Séparez les paragraphes par une ligne vide, commencez une ligne par « ## » pour un titre de section et par « - » pour une liste.</p>
       <Table head={['Texte', 'État', 'Mis à jour', '']}>
         {rows?.map((p) => (
-          <tr key={p.slug}><td>{PAGE_LABELS[p.slug] ?? p.slug}</td><td>{p.title ? 'Personnalisé' : 'Texte d’origine'}</td><td>{day(p.updatedAt)}</td>
-            <td className="seller-product-row-actions"><button type="button" className="link-btn" onClick={() => setSlug(p.slug)}>Modifier</button>{p.title && <button type="button" className="link-btn" onClick={() => void reset(p.slug)}>Rétablir</button>}</td></tr>
+          <tr key={p.slug}><Td>{PAGE_LABELS[p.slug] ?? p.slug}</Td><Td>{p.title ? 'Personnalisé' : 'Texte d’origine'}</Td><Td>{day(p.updatedAt)}</Td>
+            <Td className="text-right"><Actions><Button type="button" variant="ghost" size="sm" onClick={() => setSlug(p.slug)}>Modifier</Button>{p.title && <Button type="button" variant="ghost" size="sm" onClick={() => void reset(p.slug)}>Rétablir</Button>}</Actions></Td></tr>
         ))}
       </Table>
       {slug && cur && (
-        <div className="seller-product-form-wrapper" style={{ marginTop: '1.5rem' }} key={slug}>
-          <h2>{PAGE_LABELS[slug] ?? slug}</h2>
-          <form className="contact-form" onSubmit={save}>
-            <div className="form-group"><input type="text" name="title" placeholder="Titre *" defaultValue={cur.title ?? PAGE_LABELS[slug] ?? ''} required /></div>
-            <div className="form-group"><textarea name="body" rows={18} placeholder="Texte *" defaultValue={cur.body ?? ''} required /></div>
-            <div className="seller-form-actions"><button type="submit" className="btn btn-primary">Publier</button><button type="button" className="btn btn-outline" onClick={() => setSlug(null)}>Annuler</button><a className="btn btn-outline" href={`/${slug}`} target="_blank" rel="noreferrer">Voir la page</a></div>
-          </form>
-        </div>
+        <Card className="mt-6" key={slug}>
+          <CardHeader><CardTitle>{PAGE_LABELS[slug] ?? slug}</CardTitle></CardHeader>
+          <CardContent>
+            <form className="grid gap-4" onSubmit={save}>
+              <Field label="Titre *"><Input name="title" defaultValue={cur.title ?? PAGE_LABELS[slug] ?? ''} required /></Field>
+              <Field label="Texte *"><Textarea name="body" rows={18} className="font-mono text-[13px]" defaultValue={cur.body ?? ''} required /></Field>
+              <div className="flex flex-wrap gap-2"><Button type="submit">Publier</Button><Button type="button" variant="outline" onClick={() => setSlug(null)}>Annuler</Button><Button asChild variant="ghost"><a href={`/${slug}`} target="_blank" rel="noreferrer">Voir la page</a></Button></div>
+            </form>
+          </CardContent>
+        </Card>
       )}
     </>
   );
@@ -320,10 +346,10 @@ function Pages({ notify, fail }: P) {
 
 function Audit({ isSuper }: { isSuper: boolean }) {
   const [rows] = useAdminData<{ action: string; targetType: string; targetId: string; createdAt: string; actor: string | null }>('/admin/audit', 'log');
-  if (!isSuper) return <p className="empty-collection">Réservé au super-administrateur.</p>;
+  if (!isSuper) return <Empty icon={ShieldCheck} title="Réservé au super-administrateur" />;
   return (
     <Table head={['Date', 'Administrateur', 'Action', 'Cible']} empty={rows?.length === 0}>
-      {rows?.map((a, i) => <tr key={i}><td>{new Date(a.createdAt).toLocaleString('fr-FR')}</td><td>{a.actor ?? '—'}</td><td>{a.action}</td><td>{a.targetType} {a.targetId}</td></tr>)}
+      {rows?.map((a, i) => <tr key={i} className="hover:bg-muted/30"><Td>{new Date(a.createdAt).toLocaleString('fr-FR')}</Td><Td>{a.actor ?? '—'}</Td><Td>{a.action}</Td><Td>{a.targetType} {a.targetId}</Td></tr>)}
     </Table>
   );
 }

@@ -3,6 +3,8 @@ import { NavButton } from './NavButton';
 import { SearchBar } from './SearchBar';
 import { AccountButton } from './AccountButton';
 import { CartButton } from './CartButton';
+import { CountrySelector } from './CountrySelector';
+import { DEPARTMENTS } from '@saotech/shared';
 import { collectionHref } from '../lib';
 
 type Active = 'home' | 'collection' | 'about' | 'contact' | 'faq' | '';
@@ -10,12 +12,10 @@ type Active = 'home' | 'collection' | 'about' | 'contact' | 'faq' | '';
 /** Bouton de navigation (rendu identique à l'ancien site) ; sans `to` : page pas encore portée. */
 const Nav = NavButton;
 
-const MENU: { dep: string; icon: string; title: string; items: string[] }[] = [
-  { dep: 'electronique', icon: 'fa-mobile-alt', title: 'Gadgets Électroniques', items: ['Smartphone', 'Tablette', 'Audio', 'Montre connectée', 'Ordinateur', 'Appareil photo', 'Télévision'] },
-  { dep: 'construction', icon: 'fa-hard-hat', title: 'Matériaux de Construction', items: ['Ciment', 'Fer à béton', 'Peinture', 'Carrelage'] },
-  { dep: 'vetements', icon: 'fa-tshirt', title: 'Vêtements et Chaussures', items: ['Chemises', 'Robes', 'Pantalons', 'Chaussures'] },
-  { dep: 'imprimantes', icon: 'fa-print', title: 'Imprimantes', items: ['Imprimante Laser', "Imprimante Jet d'encre", 'Multifonction'] },
-];
+const MENU = ['electronique', 'vetements', 'maison', 'construction', 'agriculture'].map((slug) => {
+  const d = DEPARTMENTS.find((x) => x.slug === slug)!;
+  return { dep: d.slug, icon: d.icon, title: d.name, items: d.categories.slice(0, 6) };
+});
 
 export function Header({ active }: { active: Active }) {
   const is = (n: Active) => (active === n ? ' active' : '');
@@ -29,6 +29,7 @@ export function Header({ active }: { active: Active }) {
           </div>
           <div className="top-bar-right">
             <span className="hidden-mobile">La place de marché africaine · Lancement en RDC, bientôt partout en Afrique</span>
+            <CountrySelector />
             <span>FR / CDF</span>
           </div>
         </div>

@@ -39,8 +39,9 @@ const API = process.env.API ?? 'http://localhost:4000';
   await page.waitForSelector('text=Connexion réussie');
 
   await page.goto(`${WEB}/compte`);
-  await page.waitForSelector('h1:has-text("Ada Lovelace")');
-  await page.waitForSelector('text=(cet appareil)');
+  await page.waitForSelector('p:has-text("Ada Lovelace")');
+  await page.click('button:has-text("Sécurité et appareils")');
+  await page.waitForSelector('text=Cet appareil');
   const cookies = await page.context().cookies();
   const c = cookies.find((x) => x.name === 'stm_session');
   assert.ok(c && c.httpOnly, 'cookie de session httpOnly');

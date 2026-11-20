@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { DEPARTMENT_SLUGS } from '@saotech/shared';
 import type { CommerceService } from '../services/commerce.js';
 
 const phone = z.string().trim().regex(/^\+[1-9][0-9]{6,14}$/, 'phone_e164');
@@ -15,10 +16,9 @@ const OrderBody = z.object({
 const AddressBody = z.object({ label: z.string().trim().max(60).optional(), city: text(80), address: text(500), phone });
 const ShopBody = z.object({ name: text(100), phone: phone.optional(), description: z.string().trim().max(1000).optional(), citySlug: z.string().max(100).optional(), countryCode: z.string().length(2).toUpperCase().optional() });
 const ShopPatch = z.object({ name: text(100).optional(), phone: phone.optional(), description: z.string().trim().max(1000).optional() });
-const DEPARTMENTS = ['electronique', 'construction', 'vetements', 'imprimantes'] as const;
 const ProductBody = z.object({
   name: text(200), description: text(5000), priceUsd: z.number().positive().max(1_000_000), originalPriceUsd: z.number().positive().max(1_000_000).nullable().optional(),
-  department: z.enum(DEPARTMENTS), category: text(80), colors: list, sizes: list, inStock: z.boolean().default(true), images: z.array(imageUrl).max(5).default([]),
+  department: z.enum(DEPARTMENT_SLUGS), category: text(80), colors: list, sizes: list, inStock: z.boolean().default(true), images: z.array(imageUrl).max(5).default([]),
 }).refine((p) => p.originalPriceUsd == null || p.originalPriceUsd > p.priceUsd, { message: 'original_price_must_exceed_price', path: ['originalPriceUsd'] });
 const IdParam = z.object({ id: z.string().regex(/^[0-9A-Za-z]{1,26}$/) });
 

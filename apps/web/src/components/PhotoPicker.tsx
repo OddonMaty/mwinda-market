@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { Camera } from 'lucide-react';
 import { productImageUrl } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
 
@@ -60,23 +61,25 @@ export function PhotoPicker({ photos, onChange }: { photos: string[]; onChange: 
   }
 
   return (
-    <div className="form-group">
-      <label>Photos du produit ({photos.length}/{MAX_PHOTOS}) — la première est la photo principale</label>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+    <div className="grid gap-2">
+      <p className="text-sm font-medium">Photos du produit ({photos.length}/{MAX_PHOTOS}) <span className="font-normal text-muted-foreground">— la première est la photo principale</span></p>
+      <div className="flex flex-wrap gap-3">
         {photos.map((url, i) => (
-          <div key={url} style={{ position: 'relative', width: 96 }}>
-            <img src={productImageUrl(url, 96, 96)} alt={`Photo ${i + 1}`} style={{ width: 96, height: 96, objectFit: 'cover', border: i === 0 ? '2px solid var(--primary)' : '1px solid var(--border)' }} />
-            <button type="button" aria-label="Retirer la photo" onClick={() => onChange(photos.filter((u) => u !== url))} style={{ position: 'absolute', top: 2, right: 2, width: 24, height: 24, border: 'none', background: 'rgba(0,0,0,.65)', color: '#fff', cursor: 'pointer' }}>×</button>
-            {i > 0 && <button type="button" className="link-btn" style={{ fontSize: '0.7rem', padding: 0 }} onClick={() => onChange([url, ...photos.filter((u) => u !== url)])}>Mettre en premier</button>}
+          <div key={url} className="relative w-24">
+            <img src={productImageUrl(url, 96, 96)} alt={`Photo ${i + 1}`} className={`size-24 rounded-xl object-cover ${i === 0 ? 'border-2 border-primary' : 'border'}`} />
+            <button type="button" aria-label="Retirer la photo" onClick={() => onChange(photos.filter((u) => u !== url))} className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-black/70 text-sm text-white">×</button>
+            {i > 0 && <button type="button" className="mt-1 text-xs text-primary hover:underline" onClick={() => onChange([url, ...photos.filter((u) => u !== url)])}>Mettre en premier</button>}
           </div>
         ))}
-        {busy > 0 && <div style={{ width: 96, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Envoi…</div>}
+        {busy > 0 && <div className="flex size-24 items-center justify-center rounded-xl border border-dashed text-xs text-muted-foreground">Envoi…</div>}
+        {photos.length < MAX_PHOTOS && busy === 0 && (
+          <button type="button" onClick={() => input.current?.click()} className="flex size-24 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-primary/50 bg-accent/50 text-xs font-medium text-accent-foreground hover:bg-accent">
+            <Camera className="size-5 text-primary" />Ajouter
+          </button>
+        )}
       </div>
       <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/*" multiple hidden onChange={(e) => void pick(e.target.files)} />
-      <button type="button" className="btn btn-outline" disabled={busy > 0 || photos.length >= MAX_PHOTOS} onClick={() => input.current?.click()}>
-        <i className="fas fa-camera" /> Ajouter des photos
-      </button>
-      <p className="seller-form-note" style={{ marginTop: '0.35rem' }}>Prenez une photo ou choisissez-en dans votre galerie : elles sont réduites automatiquement avant l&apos;envoi.</p>
+      <p className="text-xs text-muted-foreground">Prenez une photo ou choisissez-en dans votre galerie : elles sont réduites automatiquement avant l&apos;envoi.</p>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { DEPARTMENTS } from '@saotech/shared';
 import type { Product } from './data/catalogue';
 
 export const USD_TO_CDF = 2800; // taux de secours de l'ancien site (a remplacer par un taux en base)
@@ -23,12 +24,7 @@ export function isProductNew(p: Product, now = Date.now()): boolean {
   return age >= 0 && age <= NEW_WINDOW_DAYS;
 }
 
-export const departmentLabels: Record<string, string> = {
-  electronique: 'Gadgets Électroniques',
-  construction: 'Matériaux de Construction',
-  vetements: 'Vêtements et Chaussures',
-  imprimantes: 'Imprimantes',
-};
+export const departmentLabels: Record<string, string> = Object.fromEntries(DEPARTMENTS.map((d) => [d.slug, d.name]));
 
 export function normalizeSearchText(text: unknown): string {
   return String(text ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');

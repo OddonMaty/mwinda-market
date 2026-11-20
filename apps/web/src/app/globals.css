@@ -1,2 +1,5 @@
 /* Le design est celui de l'ancien site, repris à l'identique (voir legacy.css). */
 @import './legacy.css';
+@import './ui.css';
+@import './storefront.css';
+@tailwind utilities;

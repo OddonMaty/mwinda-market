@@ -3,28 +3,36 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { USD_TO_CDF, departmentLabels, formatPrice, productImageUrl } from '../lib';
+import { LayoutDashboard, Package, ShoppingBag, Settings, Plus, Wallet, Percent, Clock, Boxes, Pencil, Trash2, LogOut, Crown, ExternalLink, Truck, CheckCheck } from 'lucide-react';
+import { DEPARTMENTS, departmentName } from '@saotech/shared';
+import { USD_TO_CDF, formatPrice, productImageUrl } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { PhotoPicker } from './PhotoPicker';
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DashboardShell, Empty, Field, Input, PageHeading, Select, StatCard, Table, Td, Textarea, Th, type NavGroup } from './ui';
 
-interface Shop { id: string; name: string; isOfficial: boolean; status: string; countryCode: string | null; city: string | null; plan: string; planName: string; planExpiresAt: string | null; commissionBps: number; maxProducts: number | null; productCount: number; pendingPlan: string | null }
+interface Shop { id: string; name: string; description?: string | null; phone?: string | null; isOfficial: boolean; status: string; countryCode: string | null; city: string | null; plan: string; planName: string; planExpiresAt: string | null; commissionBps: number; maxProducts: number | null; productCount: number; pendingPlan: string | null }
 interface Stats { salesUsd: number; commissionUsd: number; netUsd: number; inProgressUsd: number; pendingLines: number; deliveredLines: number }
 interface SProduct { id: number; name: string; description: string; priceUsd: number; originalPriceUsd: number | null; department: string; category: string; colors: string[]; sizes: string[]; inStock: boolean; images: string[] }
 interface SOrder { number: string; status: string; createdAt: string; customer: string; city: string; phone: string; address: string; totalUsd: number; commissionUsd: number; netUsd: number; items: { name: string; quantity: number; unitPriceUsd: number; color: string; size: string }[] }
 const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée' };
+const TONE: Record<string, 'success' | 'warning' | 'danger' | 'default'> = { pending: 'warning', confirmed: 'default', shipped: 'default', delivered: 'success', cancelled: 'danger' };
 const csv = (v: FormDataEntryValue | null): string[] => String(v ?? '').split(',').map((x) => x.trim()).filter(Boolean);
 const toUsd = (fc: FormDataEntryValue | null): number => Math.round((Number(fc) / USD_TO_CDF) * 100) / 100;
+type Tab = 'dashboard' | 'products' | 'orders' | 'shop';
 
 export function SellerDashboard() {
   const router = useRouter();
   const { user, ready, logout, notify } = useAuth();
+  const [tab, setTab] = useState<Tab>('dashboard');
   const [shop, setShop] = useState<Shop | null>(null);
   const [products, setProducts] = useState<SProduct[]>([]);
   const [orders, setOrders] = useState<SOrder[]>([]);
   const [form, setForm] = useState<{ open: boolean; editing: SProduct | null }>({ open: false, editing: null });
   const [promo, setPromo] = useState(false);
+  const [dep, setDep] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [orderFilter, setOrderFilter] = useState('all');
 
   const load = useCallback(async () => {
     const s = await api<{ shop: Shop | null }>('/seller/shop');
@@ -42,9 +50,9 @@ export function SellerDashboard() {
     void load();
   }, [ready, user, load, router]);
 
-  if (!ready || !user || !shop) return <p className="empty-collection">Chargement…</p>;
+  if (!ready || !user || !shop) return <div className="ui ui-shell flex items-center justify-center"><p className="text-sm text-muted-foreground">Chargement…</p></div>;
 
-  function openForm(p: SProduct | null) { setForm({ open: true, editing: p }); setPromo(!!p?.originalPriceUsd); setPhotos(p?.images ?? []); }
+  function openForm(p: SProduct | null) { setTab('products'); setForm({ open: true, editing: p }); setPromo(!!p?.originalPriceUsd); setPhotos(p?.images ?? []); setDep(p?.department ?? ''); }
 
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,10 +64,19 @@ export function SellerDashboard() {
     };
     const editing = form.editing;
     const r = await api(editing ? `/seller/products/${editing.id}` : '/seller/products', { method: editing ? 'PUT' : 'POST', body });
-    if (!r.ok) return notify(r.data.code === 'validation_error' ? 'Vérifiez les champs : prix barré supérieur au prix, 5 photos maximum.' : errorMessage(r.data.code));
+    if (!r.ok) return notify(r.data.code === 'validation_error' ? 'Vérifiez les champs : prix barré supérieur au prix, 5 photos maximum.' : r.data.message ?? errorMessage(r.data.code));
     setForm({ open: false, editing: null });
     await load();
     notify(editing ? 'Produit modifié' : 'Produit publié');
+  }
+
+  async function saveShop(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const r = await api('/seller/shop', { method: 'PATCH', body: { name: String(f.get('name')).trim(), phone: String(f.get('phone') ?? '').replace(/[\s.-]/g, '') || undefined, description: String(f.get('description')).trim() } });
+    if (!r.ok) return notify(r.data.message ?? errorMessage(r.data.code));
+    await load();
+    notify('Boutique mise à jour');
   }
 
   async function orderAction(number: string, action: 'confirm' | 'ship' | 'cancel') {
@@ -80,134 +97,163 @@ export function SellerDashboard() {
 
   const ex = form.editing;
   const inStock = products.filter((p) => p.inStock).length;
+  const toDo = orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').length;
+  const groups: NavGroup[] = [
+    { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard }] },
+    { title: 'Ma boutique', items: [{ key: 'products', label: 'Produits', icon: Package, badge: products.length || undefined }, { key: 'orders', label: 'Commandes', icon: ShoppingBag, badge: toDo || undefined }] },
+    { title: 'Paramètres', items: [{ key: 'shop', label: 'Boutique et plan', icon: Settings }] },
+  ];
+  const planLine = `${shop.productCount} produit${shop.productCount > 1 ? 's' : ''} sur ${shop.maxProducts ?? 'illimité'}${shop.planExpiresAt ? ` · valable jusqu’au ${new Date(shop.planExpiresAt).toLocaleDateString('fr-FR')}` : ''}`;
+  const cats = DEPARTMENTS.find((d) => d.slug === dep)?.categories ?? [];
+  const shownOrders = orders.filter((o) => orderFilter === 'all' || o.status === orderFilter);
+
   return (
-    <>
-      <div className="seller-dashboard-header">
-        <div>
-          <h1>{shop.name} {shop.isOfficial && <span className="product-badge official-badge" style={{ position: 'static', verticalAlign: 'middle' }}>BOUTIQUE OFFICIELLE</span>}</h1>
-          <p>Espace vendeur — {user.firstName} {user.lastName} · {user.email}</p>
-        </div>
-        <div className="seller-dashboard-actions">
-          <button type="button" className="btn btn-primary" onClick={() => openForm(null)}><i className="fas fa-plus" /> Ajouter un produit</button>
-          <button type="button" className="btn btn-outline" onClick={() => void logout()}>Déconnexion</button>
-        </div>
-      </div>
+    <DashboardShell space="Espace vendeur" subtitle={shop.name} groups={groups} active={tab} onSelect={(k) => { setTab(k as Tab); setForm({ open: false, editing: null }); }} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email, email: user.email }}
+      topRight={<>
+        <Button size="sm" onClick={() => openForm(null)}><Plus />Ajouter un produit</Button>
+        <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex"><Link href="/compte">Mon compte</Link></Button>
+        <Button variant="ghost" size="sm" onClick={() => void logout()}><LogOut /><span className="hidden sm:inline">Déconnexion</span></Button>
+      </>}>
 
-      <div className="seller-product-form-wrapper" style={{ marginBottom: '1.25rem' }}>
-        <div className="seller-dashboard-header" style={{ padding: 0, marginBottom: 0, borderBottom: 'none' }}>
-          <div>
-            <h2 style={{ fontSize: '1.1rem' }}>Plan {shop.planName}{shop.isOfficial ? '' : ` · commission ${shop.commissionBps / 100} %`}</h2>
-            <p style={{ fontSize: '0.85rem' }}>
-              {shop.productCount} produit{shop.productCount > 1 ? 's' : ''} sur {shop.maxProducts ?? 'illimité'}
-              {shop.planExpiresAt ? ` · valable jusqu’au ${new Date(shop.planExpiresAt).toLocaleDateString('fr-FR')}` : ''}
-              {shop.countryCode ? ` · ${shop.city ?? 'Ville non précisée'} (${shop.countryCode})` : ''}
-              {shop.pendingPlan ? ` · demande de plan ${shop.pendingPlan} en attente de validation` : ''}
-            </p>
+      {tab === 'dashboard' && (
+        <div className="grid gap-6">
+          <Card><CardContent className="flex flex-wrap items-center gap-4 pt-5">
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Crown className="size-6" /></span>
+            <div className="min-w-0 flex-1">
+              <p className="flex flex-wrap items-center gap-2 text-lg font-semibold">{shop.name} {shop.isOfficial && <Badge>Boutique officielle</Badge>}</p>
+              <p className="text-sm text-muted-foreground">Plan {shop.planName}{shop.isOfficial ? '' : ` · commission ${shop.commissionBps / 100} %`} · {planLine}</p>
+              <p className="text-xs text-muted-foreground">{shop.city ?? 'Ville non précisée'}{shop.countryCode ? ` (${shop.countryCode})` : ''}{shop.pendingPlan ? ` · demande de plan ${shop.pendingPlan} en attente de validation` : ''}</p>
+            </div>
+            {!shop.isOfficial && <Button asChild variant="dark"><Link href="/tarifs">Changer de plan</Link></Button>}
+          </CardContent></Card>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard label="Gains nets (livrées)" value={formatPrice(stats?.netUsd ?? 0)} icon={Wallet} />
+            <StatCard label="Commission payée" value={formatPrice(stats?.commissionUsd ?? 0)} icon={Percent} />
+            <StatCard label="Commandes en cours" value={formatPrice(stats?.inProgressUsd ?? 0)} icon={Clock} hint={toDo ? `${toDo} à traiter` : undefined} />
+            <StatCard label="Produits en ligne" value={products.length} icon={Boxes} hint={`${inStock} en stock`} />
           </div>
-          {!shop.isOfficial && <Link href="/tarifs" className="btn btn-outline">Changer de plan</Link>}
-        </div>
-      </div>
-
-      <div className="seller-stats">
-        {stats && <div className="seller-stat-card"><span className="seller-stat-value">{formatPrice(stats.netUsd)}</span><span className="seller-stat-label">Gains nets (commandes livrées)</span></div>}
-        {stats && <div className="seller-stat-card"><span className="seller-stat-value">{formatPrice(stats.commissionUsd)}</span><span className="seller-stat-label">Commission payée</span></div>}
-        {stats && <div className="seller-stat-card"><span className="seller-stat-value">{formatPrice(stats.inProgressUsd)}</span><span className="seller-stat-label">Commandes en cours</span></div>}
-        <div className="seller-stat-card"><span className="seller-stat-value">{products.length}</span><span className="seller-stat-label">Produits en ligne</span></div>
-        <div className="seller-stat-card"><span className="seller-stat-value">{inStock}</span><span className="seller-stat-label">En stock</span></div>
-        <div className="seller-stat-card"><span className="seller-stat-value">{formatPrice(products.reduce((s, p) => s + p.priceUsd, 0))}</span><span className="seller-stat-label">Valeur du catalogue</span></div>
-      </div>
-
-      {form.open && (
-        <div id="sellerProductFormWrapper" className="seller-product-form-wrapper" key={ex?.id ?? 'new'}>
-          <h2>{ex ? 'Modifier le produit' : 'Ajouter un produit'}</h2>
-          <form className="contact-form" onSubmit={save}>
-            <div className="form-row">
-              <input type="text" name="name" placeholder="Nom du produit *" defaultValue={ex?.name ?? ''} required />
-              <select name="department" required defaultValue={ex?.department ?? ''}>
-                <option value="" disabled>Choisir un rayon *</option>
-                {Object.entries(departmentLabels).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-              </select>
-            </div>
-            <div className="form-row"><input type="text" name="category" placeholder="Catégorie * (ex. Smartphone, Chemises…)" defaultValue={ex?.category ?? ''} required /></div>
-            <input type="number" name="price" step="1" min="1" placeholder="Prix de vente (FC) *" defaultValue={ex ? Math.round(ex.priceUsd * USD_TO_CDF) : ''} required />
-            <label className="checkbox-label promo-checkbox"><input type="checkbox" checked={promo} onChange={(e) => setPromo(e.target.checked)} /><span>🔥 Mettre ce produit en promotion</span></label>
-            <div className="form-row" style={{ display: promo ? 'grid' : 'none' }}>
-              <input type="number" name="originalPrice" step="1" min="0" placeholder="Prix barré (FC) — plus élevé que le prix de vente" defaultValue={ex?.originalPriceUsd ? Math.round(ex.originalPriceUsd * USD_TO_CDF) : ''} />
-            </div>
-            <PhotoPicker photos={photos} onChange={setPhotos} />
-            <div className="form-row">
-              <input type="text" name="colors" placeholder="Couleurs (séparées par des virgules)" defaultValue={ex?.colors.join(', ') ?? ''} />
-              <input type="text" name="sizes" placeholder="Capacités / tailles (séparées par des virgules)" defaultValue={ex?.sizes.join(', ') ?? ''} />
-            </div>
-            <textarea name="description" rows={4} placeholder="Description du produit *" defaultValue={ex?.description ?? ''} required />
-            <label className="checkbox-label"><input type="checkbox" name="inStock" defaultChecked={ex ? ex.inStock : true} /><span>Produit en stock</span></label>
-            <p className="seller-form-note">Le rayon détermine dans quelle colonne du menu « Nos produits » votre article apparaîtra sur le site.</p>
-            <div className="seller-form-actions">
-              <button type="submit" className="btn btn-primary">{ex ? 'Enregistrer les modifications' : 'Publier le produit'}</button>
-              <button type="button" className="btn btn-outline" onClick={() => setForm({ open: false, editing: null })}>Annuler</button>
-            </div>
-          </form>
+          <Card>
+            <CardHeader className="flex-row items-center justify-between"><CardTitle>Commandes à traiter</CardTitle><Button variant="link" size="sm" onClick={() => setTab('orders')}>Tout voir</Button></CardHeader>
+            <CardContent>
+              {orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').length === 0 ? <p className="text-sm text-muted-foreground">Aucune commande à traiter pour le moment.</p> : orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').slice(0, 5).map((o) => (
+                <div key={o.number} className="flex flex-wrap items-center gap-3 border-b py-3 last:border-0">
+                  <div className="min-w-0 flex-1"><p className="text-sm font-medium">{o.number} · {o.customer}</p><p className="text-xs text-muted-foreground">{o.city} · {formatPrice(o.totalUsd)}</p></div>
+                  <Badge variant={TONE[o.status]}>{STATUS[o.status]}</Badge>
+                  {o.status === 'pending' ? <Button size="sm" onClick={() => void orderAction(o.number, 'confirm')}>Confirmer</Button> : <Button size="sm" onClick={() => void orderAction(o.number, 'ship')}>Expédier</Button>}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      <div className="seller-products-table-wrapper">
-        <h2>Mes produits</h2>
-        {products.length === 0 ? (
-          <p className="empty-collection">Vous n&apos;avez pas encore ajouté de produit. Cliquez sur « Ajouter un produit » pour commencer à vendre.</p>
-        ) : (
-          <div className="seller-products-table-scroll">
-            <table className="seller-products-table">
-              <thead><tr><th></th><th>Nom</th><th>Rayon</th><th>Catégorie</th><th>Prix</th><th>Stock</th><th></th></tr></thead>
-              <tbody>
-                {products.map((p) => (
-                  <tr key={p.id}>
-                    <td><img src={productImageUrl(p.images[0], 60, 60)} alt={p.name} className="seller-product-thumb" /></td>
-                    <td>{p.name}</td>
-                    <td>{departmentLabels[p.department] ?? p.department}</td>
-                    <td>{p.category}</td>
-                    <td>{formatPrice(p.priceUsd)}</td>
-                    <td className={p.inStock ? 'in-stock' : 'out-of-stock'}>{p.inStock ? 'En stock' : 'Rupture'}</td>
-                    <td className="seller-product-row-actions">
-                      <button type="button" className="link-btn" onClick={() => openForm(p)}>Modifier</button>
-                      <button type="button" className="link-btn" onClick={() => void remove(p)}>Supprimer</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {tab === 'products' && (
+        <div className="grid gap-5">
+          {form.open ? (
+            <Card className="max-w-3xl" key={ex?.id ?? 'new'}>
+              <CardHeader><CardTitle>{ex ? 'Modifier le produit' : 'Ajouter un produit'}</CardTitle><CardDescription>Choisissez le rayon puis la catégorie : c’est là que vos clients trouveront l’article.</CardDescription></CardHeader>
+              <CardContent>
+                <form id="sellerProductForm" className="grid gap-5" onSubmit={save}>
+                  <Field label="Nom du produit *"><Input name="name" defaultValue={ex?.name ?? ''} required /></Field>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Rayon *"><Select name="department" required value={dep} onChange={(e) => setDep(e.target.value)}>
+                      <option value="" disabled>Choisir un rayon</option>
+                      {DEPARTMENTS.map((d) => <option key={d.slug} value={d.slug}>{d.name}</option>)}
+                    </Select></Field>
+                    <Field label="Catégorie *"><Select name="category" required defaultValue={ex?.category ?? ''} key={dep}>
+                      <option value="" disabled>{dep ? 'Choisir une catégorie' : 'Choisissez d’abord un rayon'}</option>
+                      {ex && ex.department === dep && !cats.includes(ex.category) && <option value={ex.category}>{ex.category}</option>}
+                      {cats.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </Select></Field>
+                  </div>
+                  <Field label="Prix de vente (FC) *"><Input type="number" name="price" step="1" min="1" defaultValue={ex ? Math.round(ex.priceUsd * USD_TO_CDF) : ''} required /></Field>
+                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={promo} onChange={(e) => setPromo(e.target.checked)} />🔥 Mettre ce produit en promotion</label>
+                  {promo && <Field label="Prix barré (FC)" hint="Doit être plus élevé que le prix de vente"><Input type="number" name="originalPrice" step="1" min="0" defaultValue={ex?.originalPriceUsd ? Math.round(ex.originalPriceUsd * USD_TO_CDF) : ''} /></Field>}
+                  <PhotoPicker photos={photos} onChange={setPhotos} />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Couleurs" hint="Séparées par des virgules"><Input name="colors" defaultValue={ex?.colors.join(', ') ?? ''} /></Field>
+                    <Field label="Capacités / tailles" hint="Séparées par des virgules"><Input name="sizes" defaultValue={ex?.sizes.join(', ') ?? ''} /></Field>
+                  </div>
+                  <Field label="Description *"><Textarea name="description" rows={4} defaultValue={ex?.description ?? ''} required /></Field>
+                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="inStock" defaultChecked={ex ? ex.inStock : true} />Produit en stock</label>
+                  <div className="flex gap-2"><Button type="submit">{ex ? 'Enregistrer les modifications' : 'Publier le produit'}</Button><Button type="button" variant="outline" onClick={() => setForm({ open: false, editing: null })}>Annuler</Button></div>
+                </form>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <PageHeading description={planLine} actions={<Button onClick={() => openForm(null)}><Plus />Ajouter un produit</Button>} />
+              {products.length === 0 ? <Empty icon={Package} title="Aucun produit" text="Ajoutez votre premier produit pour commencer à vendre." action={<Button onClick={() => openForm(null)}><Plus />Ajouter un produit</Button>} /> : (
+                <Card className="overflow-hidden">
+                  <Table>
+                    <thead className="bg-muted/40"><tr><Th></Th><Th>Produit</Th><Th>Rayon</Th><Th>Prix</Th><Th>Stock</Th><Th></Th></tr></thead>
+                    <tbody>{products.map((p) => (
+                      <tr key={p.id}>
+                        <Td><img src={productImageUrl(p.images[0], 60, 60)} alt={p.name} className="size-11 rounded-lg border object-cover" /></Td>
+                        <Td><p className="font-medium">{p.name}</p><p className="text-xs text-muted-foreground">{p.category}</p></Td>
+                        <Td className="text-muted-foreground">{departmentName(p.department)}</Td>
+                        <Td>{formatPrice(p.priceUsd)}</Td>
+                        <Td><Badge variant={p.inStock ? 'success' : 'danger'}>{p.inStock ? 'En stock' : 'Rupture'}</Badge></Td>
+                        <Td><div className="flex justify-end gap-1"><Button variant="ghost" size="sm" onClick={() => openForm(p)}><Pencil />Modifier</Button><Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => void remove(p)}><Trash2 />Supprimer</Button></div></Td>
+                      </tr>))}</tbody>
+                  </Table>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
-      <div className="seller-products-table-wrapper">
-        <h2>Commandes reçues</h2>
-        {orders.length === 0 ? <p className="empty-collection">Aucune commande pour le moment.</p> : orders.map((o) => (
-          <div className="seller-product-form-wrapper" style={{ marginBottom: '1.25rem' }} key={o.number}>
-            <div className="seller-dashboard-header" style={{ padding: '0 0 1rem', marginBottom: '1rem' }}>
-              <div>
-                <h2 style={{ fontSize: '1.1rem' }}>Commande {o.number}</h2>
-                <p style={{ fontSize: '0.85rem' }}>{new Date(o.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · {o.customer} · {o.city} · {o.phone}</p>
-              </div>
-              <span className="product-badge" style={{ position: 'static' }}>{STATUS[o.status] ?? o.status}</span>
-            </div>
-            <div className="seller-products-table-scroll">
-              <table className="seller-products-table">
-                <thead><tr><th>Article</th><th>Qté</th><th>Prix</th></tr></thead>
-                <tbody>{o.items.map((i, k) => <tr key={k}><td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</td><td>{i.quantity}</td><td>{formatPrice(i.unitPriceUsd * i.quantity)}</td></tr>)}</tbody>
-              </table>
-            </div>
-            <p style={{ textAlign: 'right', marginTop: '0.75rem', fontWeight: 700 }}>Total : {formatPrice(o.totalUsd)}{!shop.isOfficial && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}> · commission {formatPrice(o.commissionUsd)} · net {formatPrice(o.netUsd)}</span>}</p>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Livraison : {o.address}</p>
-            {(o.status === 'pending' || o.status === 'confirmed') && (
-              <div className="seller-form-actions" style={{ marginTop: '1rem' }}>
-                {o.status === 'pending' && <button type="button" className="btn btn-primary" onClick={() => void orderAction(o.number, 'confirm')}>Confirmer la commande</button>}
-                {o.status === 'confirmed' && <button type="button" className="btn btn-primary" onClick={() => void orderAction(o.number, 'ship')}>Marquer comme expédiée</button>}
-                <button type="button" className="btn btn-outline" onClick={() => void orderAction(o.number, 'cancel')}>Annuler</button>
-              </div>
-            )}
+      {tab === 'orders' && (
+        <div className="grid gap-4">
+          <div className="flex flex-wrap gap-2">
+            {[['all', 'Toutes'], ['pending', 'À confirmer'], ['confirmed', 'À expédier'], ['shipped', 'Expédiées'], ['delivered', 'Livrées'], ['cancelled', 'Annulées']].map(([k, l]) => (
+              <button key={k} type="button" onClick={() => setOrderFilter(k!)} className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${orderFilter === k ? 'border-primary bg-primary/10 font-medium text-accent-foreground' : 'bg-card text-muted-foreground hover:bg-muted'}`}>{l}</button>
+            ))}
           </div>
-        ))}
-      </div>
-    </>
+          {shownOrders.length === 0 ? <Empty icon={ShoppingBag} title="Aucune commande" text="Les commandes de vos clients apparaîtront ici." /> : shownOrders.map((o) => (
+            <Card key={o.number} className="overflow-hidden">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/40 px-5 py-3">
+                <div><p className="text-sm font-semibold">Commande {o.number}</p><p className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · {o.customer} · {o.city} · {o.phone}</p></div>
+                <Badge variant={TONE[o.status] ?? 'default'}>{STATUS[o.status] ?? o.status}</Badge>
+              </div>
+              <Table>
+                <thead><tr><Th>Article</Th><Th>Qté</Th><Th>Prix</Th></tr></thead>
+                <tbody>{o.items.map((i, k) => <tr key={k}><Td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</Td><Td>{i.quantity}</Td><Td>{formatPrice(i.unitPriceUsd * i.quantity)}</Td></tr>)}</tbody>
+              </Table>
+              <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                <p className="text-xs text-muted-foreground">Livraison : {o.address}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm">Total <b>{formatPrice(o.totalUsd)}</b>{!shop.isOfficial && <span className="text-muted-foreground"> · commission {formatPrice(o.commissionUsd)} · net {formatPrice(o.netUsd)}</span>}</span>
+                  {o.status === 'pending' && <Button size="sm" onClick={() => void orderAction(o.number, 'confirm')}><CheckCheck />Confirmer la commande</Button>}
+                  {o.status === 'confirmed' && <Button size="sm" onClick={() => void orderAction(o.number, 'ship')}><Truck />Marquer comme expédiée</Button>}
+                  {(o.status === 'pending' || o.status === 'confirmed') && <Button size="sm" variant="outline" onClick={() => void orderAction(o.number, 'cancel')}>Annuler</Button>}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {tab === 'shop' && (
+        <div className="grid max-w-3xl gap-6">
+          <Card>
+            <CardHeader><CardTitle>Informations de la boutique</CardTitle><CardDescription>Localisation : {shop.city ?? 'ville non précisée'}{shop.countryCode ? ` (${shop.countryCode})` : ''}</CardDescription></CardHeader>
+            <CardContent>
+              <form className="grid gap-4" onSubmit={saveShop} key={shop.name + shop.description + shop.phone}>
+                <Field label="Nom de la boutique *"><Input name="name" defaultValue={shop.name} required /></Field>
+                <Field label="Téléphone"><Input type="tel" name="phone" defaultValue={shop.phone ?? ''} /></Field>
+                <Field label="Description"><Textarea name="description" rows={3} defaultValue={shop.description ?? ''} /></Field>
+                <div><Button type="submit">Enregistrer</Button></div>
+              </form>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Plan {shop.planName}</CardTitle><CardDescription>{shop.isOfficial ? 'Boutique officielle : aucune commission.' : `Commission ${shop.commissionBps / 100} % · ${planLine}`}{shop.pendingPlan ? ` · demande ${shop.pendingPlan} en attente` : ''}</CardDescription></CardHeader>
+            <CardContent>{!shop.isOfficial && <Button asChild><Link href="/tarifs"><ExternalLink />Voir les plans et changer</Link></Button>}</CardContent>
+          </Card>
+        </div>
+      )}
+    </DashboardShell>
   );
 }

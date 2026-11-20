@@ -1,5 +1,6 @@
 import { Header, Footer } from '../components/Chrome';
 import { HeroSlider, type Slide } from '../components/HeroSlider';
+import { CategorySidebar } from '../components/CategorySidebar';
 import { Countdown } from '../components/Countdown';
 import { NewProducts, HomeCatalog } from '../components/HomeCatalog';
 import { ProductCard } from '../components/ProductCard';
@@ -29,7 +30,7 @@ export default async function HomePage() {
   return (
     <>
       <Header active="home" />
-      <HeroSlider slides={slides(products)} />
+      <div className="container home-hero-row"><CategorySidebar /><HeroSlider slides={slides(products)} /></div>
 
       <section className="usp-band">
         <div className="container">
