@@ -260,6 +260,22 @@ describe('Boutiques, produits, commandes', () => {
     assert.equal((await call('POST', '/seller/products', { cookie: c, body: PRODUCT })).status, 201);
   });
 
+  it('certification : seulement pour le plan Premium actif (et la boutique officielle)', async () => {
+    const c = await user();
+    await call('POST', '/seller/shop', { cookie: c, body: { name: 'Certif Shop' } });
+    const made = await call('POST', '/seller/products', { cookie: c, body: { ...PRODUCT, name: 'Produit certifie' } });
+    const id = made.json.id as number;
+    const flag = async () => (await call('GET', `/products/${id}`)).json.product.certified;
+    assert.equal(await flag(), false);
+    await db.query("UPDATE shops SET plan = 'pro', plan_expires_at = now() + interval '3 months' WHERE name = 'Certif Shop'");
+    assert.equal(await flag(), false); // Pro : pas de certification
+    await db.query("UPDATE shops SET plan = 'premium' WHERE name = 'Certif Shop'");
+    assert.equal(await flag(), true);
+    assert.equal((await call('GET', '/seller/shop', { cookie: c })).json.shop.certified, true);
+    await db.query("UPDATE shops SET plan_expires_at = now() - interval '1 day' WHERE name = 'Certif Shop'");
+    assert.equal(await flag(), false); // abonnement expiré : certification retirée
+  });
+
   it('plan payant expiré : retour au plan gratuit', async () => {
     const c = await user();
     await call('POST', '/seller/shop', { cookie: c, body: { name: 'Expire Shop' } });

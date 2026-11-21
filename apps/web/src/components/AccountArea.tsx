@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LayoutDashboard, ShoppingBag, MapPin, UserRound, ShieldCheck, Store, LogOut, Plus, Package, Truck, CheckCircle2, Clock, Trash2, Laptop, KeyRound } from 'lucide-react';
-import { formatPrice } from '../lib';
+import { Price } from './Locale';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { e164, type Address } from './CheckoutArea';
 import { useCountries } from './Geo';
@@ -125,14 +125,14 @@ export function AccountArea() {
         <thead><tr><Th>Article</Th><Th>Boutique</Th><Th>Qté</Th><Th>Prix</Th><Th>État</Th></tr></thead>
         <tbody>
           {o.items.map((i, k) => (
-            <tr key={k}><Td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</Td><Td>{i.shop}</Td><Td>{i.quantity}</Td><Td>{formatPrice(i.unitPriceUsd * i.quantity)}</Td><Td><Badge variant={TONE[i.status] ?? 'secondary'}>{STATUS[i.status] ?? i.status}</Badge></Td></tr>
+            <tr key={k}><Td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</Td><Td>{i.shop}</Td><Td>{i.quantity}</Td><Td><Price usd={i.unitPriceUsd * i.quantity} /></Td><Td><Badge variant={TONE[i.status] ?? 'secondary'}>{STATUS[i.status] ?? i.status}</Badge></Td></tr>
           ))}
         </tbody>
       </Table>
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
         <p className="text-xs text-muted-foreground">Livraison : {o.address}</p>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm">Total <b>{formatPrice(o.subtotalUsd)}</b></span>
+          <span className="text-sm">Total <b><Price usd={o.subtotalUsd} /></b></span>
           {o.canConfirmReceipt && <Button size="sm" onClick={() => void orderAction(o.number, 'receive')}>J&apos;ai reçu ma commande</Button>}
           {o.canCancel && <Button size="sm" variant="outline" onClick={() => void orderAction(o.number, 'cancel')}>Annuler</Button>}
         </div>

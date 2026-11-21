@@ -1,12 +1,12 @@
 import type { Mail } from './mailer.js';
 
 type Locale = 'fr' | 'en';
-const sign = { fr: '\n\nL\'équipe Sao Tech Market', en: '\n\nThe Sao Tech Market team' };
+const sign = { fr: '\n\nL\'équipe Mwinda Market', en: '\n\nThe Mwinda Market team' };
 
 export function verifyEmail(locale: Locale, to: string, link: string): Mail {
   return locale === 'en'
-    ? { to, subject: 'Confirm your email address', text: `Welcome to Sao Tech Market.\nConfirm your email address: ${link}\nThis link is valid for 24 hours.${sign.en}` }
-    : { to, subject: 'Confirmez votre adresse e-mail', text: `Bienvenue sur Sao Tech Market.\nConfirmez votre adresse e-mail : ${link}\nCe lien est valable 24 heures.${sign.fr}` };
+    ? { to, subject: 'Confirm your email address', text: `Welcome to Mwinda Market.\nConfirm your email address: ${link}\nThis link is valid for 24 hours.${sign.en}` }
+    : { to, subject: 'Confirmez votre adresse e-mail', text: `Bienvenue sur Mwinda Market.\nConfirmez votre adresse e-mail : ${link}\nCe lien est valable 24 heures.${sign.fr}` };
 }
 export function accountExists(locale: Locale, to: string, loginLink: string, resetLink: string): Mail {
   return locale === 'en'
@@ -20,6 +20,6 @@ export function resetPassword(locale: Locale, to: string, link: string): Mail {
 }
 export function passwordChanged(locale: Locale, to: string): Mail {
   return locale === 'en'
-    ? { to, subject: 'Your password was changed', text: `Your Sao Tech Market password was just changed. If this wasn't you, reset it immediately and contact us.${sign.en}` }
-    : { to, subject: 'Votre mot de passe a été modifié', text: `Le mot de passe de votre compte Sao Tech Market vient d'être modifié. Si ce n'était pas vous, réinitialisez-le immédiatement et contactez-nous.${sign.fr}` };
+    ? { to, subject: 'Your password was changed', text: `Your Mwinda Market password was just changed. If this wasn't you, reset it immediately and contact us.${sign.en}` }
+    : { to, subject: 'Votre mot de passe a été modifié', text: `Le mot de passe de votre compte Mwinda Market vient d'être modifié. Si ce n'était pas vous, réinitialisez-le immédiatement et contactez-nous.${sign.fr}` };
 }

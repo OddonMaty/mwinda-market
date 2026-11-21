@@ -8,7 +8,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
   return (
     <>
       <Header active="" />
-      <div className="page-header"><h1>Confirmation de l&apos;e-mail</h1><p>Activation de votre compte Mwinda Market</p></div>
+      <div className="page-header" data-theme="compte"><h1>Confirmation de l&apos;e-mail</h1><p>Activation de votre compte Mwinda Market</p></div>
       <div className="container"><VerifyEmail token={token} /></div>
       <Footer />
     </>

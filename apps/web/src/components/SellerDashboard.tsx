@@ -3,21 +3,21 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingBag, Settings, Plus, Wallet, Percent, Clock, Boxes, Pencil, Trash2, LogOut, Crown, ExternalLink, Truck, CheckCheck } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Settings, Plus, Wallet, Percent, Clock, Boxes, Pencil, Trash2, LogOut, Crown, ShieldCheck, ExternalLink, Truck, CheckCheck } from 'lucide-react';
 import { DEPARTMENTS, departmentName } from '@saotech/shared';
-import { USD_TO_CDF, formatPrice, productImageUrl } from '../lib';
+import { formatUsd, productImageUrl } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { PhotoPicker } from './PhotoPicker';
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DashboardShell, Empty, Field, Input, PageHeading, Select, StatCard, Table, Td, Textarea, Th, type NavGroup } from './ui';
 
-interface Shop { id: string; name: string; description?: string | null; phone?: string | null; isOfficial: boolean; status: string; countryCode: string | null; city: string | null; plan: string; planName: string; planExpiresAt: string | null; commissionBps: number; maxProducts: number | null; productCount: number; pendingPlan: string | null }
+interface Shop { certified: boolean; id: string; name: string; description?: string | null; phone?: string | null; isOfficial: boolean; status: string; countryCode: string | null; city: string | null; plan: string; planName: string; planExpiresAt: string | null; commissionBps: number; maxProducts: number | null; productCount: number; pendingPlan: string | null }
 interface Stats { salesUsd: number; commissionUsd: number; netUsd: number; inProgressUsd: number; pendingLines: number; deliveredLines: number }
 interface SProduct { id: number; name: string; description: string; priceUsd: number; originalPriceUsd: number | null; department: string; category: string; colors: string[]; sizes: string[]; inStock: boolean; images: string[] }
 interface SOrder { number: string; status: string; createdAt: string; customer: string; city: string; phone: string; address: string; totalUsd: number; commissionUsd: number; netUsd: number; items: { name: string; quantity: number; unitPriceUsd: number; color: string; size: string }[] }
 const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée' };
 const TONE: Record<string, 'success' | 'warning' | 'danger' | 'default'> = { pending: 'warning', confirmed: 'default', shipped: 'default', delivered: 'success', cancelled: 'danger' };
 const csv = (v: FormDataEntryValue | null): string[] => String(v ?? '').split(',').map((x) => x.trim()).filter(Boolean);
-const toUsd = (fc: FormDataEntryValue | null): number => Math.round((Number(fc) / USD_TO_CDF) * 100) / 100;
+const toUsd = (v: FormDataEntryValue | null): number => Math.round(Number(v) * 100) / 100;
 type Tab = 'dashboard' | 'products' | 'orders' | 'shop';
 
 export function SellerDashboard() {
@@ -120,16 +120,17 @@ export function SellerDashboard() {
           <Card><CardContent className="flex flex-wrap items-center gap-4 pt-5">
             <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Crown className="size-6" /></span>
             <div className="min-w-0 flex-1">
-              <p className="flex flex-wrap items-center gap-2 text-lg font-semibold">{shop.name} {shop.isOfficial && <Badge>Boutique officielle</Badge>}</p>
+              <p className="flex flex-wrap items-center gap-2 text-lg font-semibold">{shop.name} {shop.isOfficial && <Badge>Boutique officielle</Badge>}{shop.certified && <Badge variant="success"><ShieldCheck className="mr-1 size-3" />Vendeur certifié</Badge>}</p>
               <p className="text-sm text-muted-foreground">Plan {shop.planName}{shop.isOfficial ? '' : ` · commission ${shop.commissionBps / 100} %`} · {planLine}</p>
+              {!shop.certified && !shop.isOfficial && <p className="text-xs text-primary">La certification « Vendeur certifié » est incluse dans le plan Premium.</p>}
               <p className="text-xs text-muted-foreground">{shop.city ?? 'Ville non précisée'}{shop.countryCode ? ` (${shop.countryCode})` : ''}{shop.pendingPlan ? ` · demande de plan ${shop.pendingPlan} en attente de validation` : ''}</p>
             </div>
             {!shop.isOfficial && <Button asChild variant="dark"><Link href="/tarifs">Changer de plan</Link></Button>}
           </CardContent></Card>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Gains nets (livrées)" value={formatPrice(stats?.netUsd ?? 0)} icon={Wallet} />
-            <StatCard label="Commission payée" value={formatPrice(stats?.commissionUsd ?? 0)} icon={Percent} />
-            <StatCard label="Commandes en cours" value={formatPrice(stats?.inProgressUsd ?? 0)} icon={Clock} hint={toDo ? `${toDo} à traiter` : undefined} />
+            <StatCard label="Gains nets (livrées)" value={formatUsd(stats?.netUsd ?? 0)} icon={Wallet} />
+            <StatCard label="Commission payée" value={formatUsd(stats?.commissionUsd ?? 0)} icon={Percent} />
+            <StatCard label="Commandes en cours" value={formatUsd(stats?.inProgressUsd ?? 0)} icon={Clock} hint={toDo ? `${toDo} à traiter` : undefined} />
             <StatCard label="Produits en ligne" value={products.length} icon={Boxes} hint={`${inStock} en stock`} />
           </div>
           <Card>
@@ -137,7 +138,7 @@ export function SellerDashboard() {
             <CardContent>
               {orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').length === 0 ? <p className="text-sm text-muted-foreground">Aucune commande à traiter pour le moment.</p> : orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').slice(0, 5).map((o) => (
                 <div key={o.number} className="flex flex-wrap items-center gap-3 border-b py-3 last:border-0">
-                  <div className="min-w-0 flex-1"><p className="text-sm font-medium">{o.number} · {o.customer}</p><p className="text-xs text-muted-foreground">{o.city} · {formatPrice(o.totalUsd)}</p></div>
+                  <div className="min-w-0 flex-1"><p className="text-sm font-medium">{o.number} · {o.customer}</p><p className="text-xs text-muted-foreground">{o.city} · {formatUsd(o.totalUsd)}</p></div>
                   <Badge variant={TONE[o.status]}>{STATUS[o.status]}</Badge>
                   {o.status === 'pending' ? <Button size="sm" onClick={() => void orderAction(o.number, 'confirm')}>Confirmer</Button> : <Button size="sm" onClick={() => void orderAction(o.number, 'ship')}>Expédier</Button>}
                 </div>
@@ -166,9 +167,9 @@ export function SellerDashboard() {
                       {cats.map((c) => <option key={c} value={c}>{c}</option>)}
                     </Select></Field>
                   </div>
-                  <Field label="Prix de vente (FC) *"><Input type="number" name="price" step="1" min="1" defaultValue={ex ? Math.round(ex.priceUsd * USD_TO_CDF) : ''} required /></Field>
+                  <Field label="Prix de vente ($) *" hint="Les clients voient aussi la valeur dans leur monnaie locale"><Input type="number" name="price" step="0.01" min="0.01" defaultValue={ex ? ex.priceUsd : ''} required /></Field>
                   <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={promo} onChange={(e) => setPromo(e.target.checked)} />🔥 Mettre ce produit en promotion</label>
-                  {promo && <Field label="Prix barré (FC)" hint="Doit être plus élevé que le prix de vente"><Input type="number" name="originalPrice" step="1" min="0" defaultValue={ex?.originalPriceUsd ? Math.round(ex.originalPriceUsd * USD_TO_CDF) : ''} /></Field>}
+                  {promo && <Field label="Prix barré ($)" hint="Doit être plus élevé que le prix de vente"><Input type="number" name="originalPrice" step="0.01" min="0" defaultValue={ex?.originalPriceUsd ?? ''} /></Field>}
                   <PhotoPicker photos={photos} onChange={setPhotos} />
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Couleurs" hint="Séparées par des virgules"><Input name="colors" defaultValue={ex?.colors.join(', ') ?? ''} /></Field>
@@ -192,7 +193,7 @@ export function SellerDashboard() {
                         <Td><img src={productImageUrl(p.images[0], 60, 60)} alt={p.name} className="size-11 rounded-lg border object-cover" /></Td>
                         <Td><p className="font-medium">{p.name}</p><p className="text-xs text-muted-foreground">{p.category}</p></Td>
                         <Td className="text-muted-foreground">{departmentName(p.department)}</Td>
-                        <Td>{formatPrice(p.priceUsd)}</Td>
+                        <Td>{formatUsd(p.priceUsd)}</Td>
                         <Td><Badge variant={p.inStock ? 'success' : 'danger'}>{p.inStock ? 'En stock' : 'Rupture'}</Badge></Td>
                         <Td><div className="flex justify-end gap-1"><Button variant="ghost" size="sm" onClick={() => openForm(p)}><Pencil />Modifier</Button><Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => void remove(p)}><Trash2 />Supprimer</Button></div></Td>
                       </tr>))}</tbody>
@@ -219,12 +220,12 @@ export function SellerDashboard() {
               </div>
               <Table>
                 <thead><tr><Th>Article</Th><Th>Qté</Th><Th>Prix</Th></tr></thead>
-                <tbody>{o.items.map((i, k) => <tr key={k}><Td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</Td><Td>{i.quantity}</Td><Td>{formatPrice(i.unitPriceUsd * i.quantity)}</Td></tr>)}</tbody>
+                <tbody>{o.items.map((i, k) => <tr key={k}><Td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</Td><Td>{i.quantity}</Td><Td>{formatUsd(i.unitPriceUsd * i.quantity)}</Td></tr>)}</tbody>
               </Table>
               <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                 <p className="text-xs text-muted-foreground">Livraison : {o.address}</p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm">Total <b>{formatPrice(o.totalUsd)}</b>{!shop.isOfficial && <span className="text-muted-foreground"> · commission {formatPrice(o.commissionUsd)} · net {formatPrice(o.netUsd)}</span>}</span>
+                  <span className="text-sm">Total <b>{formatUsd(o.totalUsd)}</b>{!shop.isOfficial && <span className="text-muted-foreground"> · commission {formatUsd(o.commissionUsd)} · net {formatUsd(o.netUsd)}</span>}</span>
                   {o.status === 'pending' && <Button size="sm" onClick={() => void orderAction(o.number, 'confirm')}><CheckCheck />Confirmer la commande</Button>}
                   {o.status === 'confirmed' && <Button size="sm" onClick={() => void orderAction(o.number, 'ship')}><Truck />Marquer comme expédiée</Button>}
                   {(o.status === 'pending' || o.status === 'confirmed') && <Button size="sm" variant="outline" onClick={() => void orderAction(o.number, 'cancel')}>Annuler</Button>}

@@ -20,7 +20,7 @@ export function LegalPage({ page }: { page: LegalPageData | null }) {
   return (
     <>
       <Header active="" />
-      <div className="page-header">
+      <div className="page-header" data-theme={page?.slug ?? 'conditions'}>
         <h1>{page?.title ?? 'Page en préparation'}</h1>
         {page && <p>Dernière mise à jour : {new Date(page.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>}
       </div>

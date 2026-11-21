@@ -3,7 +3,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { Product } from '../data/catalogue';
 import { useCart } from './CartProvider';
-import { formatPrice, isProductNew, productImageUrl } from '../lib';
+import { isProductNew, productImageUrl } from '../lib';
+import { Price } from './Locale';
+
 
 export function Stars({ rating }: { rating: number }) {
   return (
@@ -28,6 +30,7 @@ export function ProductCard({ product, now }: { product: Product; now: number })
         <div className="product-badges">
           {isProductNew(product, now) && <span className="product-badge">NOUVEAU</span>}
           {product.tags.includes('bestseller') && <span className="product-badge">BEST-SELLER</span>}
+          {product.certified && <span className="product-badge badge-certified"><i className="fas fa-check-circle" /> CERTIFIÉ</span>}
         </div>
         <div className="product-actions-hover">
           <button type="button" className={wish ? 'active' : ''} style={wish ? { color: 'var(--primary)' } : undefined} onClick={(e) => { e.stopPropagation(); setWish(!wish); }}><i className="fas fa-heart" /></button>
@@ -43,8 +46,8 @@ export function ProductCard({ product, now }: { product: Product; now: number })
           <span className="review-count">({product.reviews})</span>
         </div>
         <div className="product-price">
-          <span className="current-price">{formatPrice(product.price)}</span>
-          {product.originalPrice ? <span className="original-price">{formatPrice(product.originalPrice)}</span> : null}
+          <span className="current-price"><Price usd={product.price} /></span>
+          {product.originalPrice ? <span className="original-price"><Price usd={product.originalPrice} local={false} /></span> : null}
         </div>
         <p className={`product-stock ${product.inStock ? 'in-stock' : 'out-of-stock'}`}>
           {product.inStock ? 'En stock' : 'Rupture de stock'}

@@ -1,4 +1,4 @@
-# Sao Tech Market — Monorepo
+# Mwinda Market — Monorepo
 
 > **Plateforme SaaS e-commerce multi-vendeurs** conçue en TypeScript strict, démarrant en République Démocratique du Congo (RDC) et destinée à l'échelle panafricaine.
 

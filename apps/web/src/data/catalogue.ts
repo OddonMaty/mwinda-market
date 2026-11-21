@@ -1,5 +1,5 @@
 // Données issues de legacy/js/data.js (catalogue officiel, prix en USD). Seront remplacées par la base de données.
-export interface Product { id:number; createdAt:string; name:string; price:number; originalPrice?:number|null; discount?:number|null; department:string; category:string; image:string; images?:string[]; rating:number; reviews:number; inStock:boolean; sku:string; colors:string[]; sizes:string[]; tags:string[]; description:string; [k:string]:unknown }
+export interface Product { id:number; createdAt:string; name:string; price:number; originalPrice?:number|null; discount?:number|null; department:string; category:string; image:string; images?:string[]; rating:number; reviews:number; inStock:boolean; sku:string; colors:string[]; sizes:string[]; tags:string[]; description:string; certified?:boolean; shopName?:string; [k:string]:unknown }
 export const products: Product[] = [
   {
     "id": 1,

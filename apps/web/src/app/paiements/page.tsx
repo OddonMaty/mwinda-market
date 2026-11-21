@@ -10,7 +10,7 @@ function StaticPage() {
   return (
     <>
       <Header active="" />
-      <div className="page-header">
+      <div className="page-header" data-theme="paiements">
         <h1>Paiements & Retours</h1>
         <p>Les moyens de paiement acceptés et notre politique de remboursement</p>
       </div>

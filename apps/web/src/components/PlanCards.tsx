@@ -1,7 +1,6 @@
 'use client';
 
 import { Check, Crown } from 'lucide-react';
-import { formatPrice } from '../lib';
 import { Badge, cn } from './ui';
 
 export interface Plan { code: string; name: string; priceUsd: number; commissionBps: number; maxProducts: number | null; features: string[] }
@@ -22,7 +21,7 @@ export function PlanCards({ plans, selected, onSelect, action, className }: { pl
             {i === plans.length - 1 && plans.length > 1 && <Crown className="absolute right-4 top-4 size-5 text-primary" />}
             <p className="text-base font-semibold">{p.name}</p>
             <p className="mt-3 text-3xl font-semibold tracking-tight">{p.priceUsd === 0 ? 'Gratuit' : `${p.priceUsd} $`}</p>
-            <p className="text-xs text-muted-foreground">{p.priceUsd === 0 ? 'sans abonnement' : `par trimestre · ${formatPrice(p.priceUsd)}`}</p>
+            <p className="text-xs text-muted-foreground">{p.priceUsd === 0 ? 'sans abonnement' : 'par trimestre, en dollars'}</p>
             <div className="mt-4 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground">Commission {p.commissionBps / 100} %</div>
             <ul className="mt-4 grid flex-1 gap-2 text-sm">
               {p.features.map((f) => <li key={f} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-primary" /><span>{f}</span></li>)}

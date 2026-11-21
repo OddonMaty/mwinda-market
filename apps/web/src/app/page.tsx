@@ -5,7 +5,7 @@ import { Countdown } from '../components/Countdown';
 import { NewProducts, HomeCatalog } from '../components/HomeCatalog';
 import { ProductCard } from '../components/ProductCard';
 import { getProducts } from '../data/source';
-import { formatPrice, isProductNew } from '../lib';
+import { formatUsd, isProductNew } from '../lib';
 import type { Product } from '../data/catalogue';
 
 export const revalidate = 10;
@@ -13,7 +13,7 @@ export const revalidate = 10;
 const u = (id: string) => `https://images.unsplash.com/photo-${id}?w=1400&h=600&fit=crop&auto=format`;
 
 const slides = (products: Product[]): Slide[] => {
-  const price = (id: number) => `À partir de ${formatPrice(products.find((p) => p.id === id)?.price ?? 0)}`;
+  const price = (id: number) => `À partir de ${formatUsd(products.find((p) => p.id === id)?.price ?? 0)}`;
   return [
   { tag: 'Nouveauté', title: ['Vinova SmartPhone', 'Pro 12'], text: '108MP de clarté. Vitesse 5G. Batterie toute la journée. Le seul téléphone dont vous avez besoin.', image: u('1511707171634-5f897ff02aa9'), priceLabel: price(1) },
   { tag: 'Meilleure vente', title: ['Audio Master', 'Pro XR'], text: "40 heures d'autonomie, réduction active du bruit, un son de qualité studio pour votre quotidien.", image: u('1505740420928-5e560c06d30e'), priceLabel: price(2) },

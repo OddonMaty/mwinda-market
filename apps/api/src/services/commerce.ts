@@ -22,8 +22,8 @@ function sniff(b: Buffer): 'image/jpeg' | 'image/png' | 'image/webp' | null {
   return null;
 }
 
-export interface PlanRow { code: string; name: string; price_usd: string; commission_bps: number; max_products: number | null; features: string[]; sort: number; active: boolean }
-export const planDto = (p: PlanRow) => ({ code: p.code, name: p.name, priceUsd: Number(p.price_usd), commissionBps: p.commission_bps, maxProducts: p.max_products, features: p.features, sort: p.sort, active: p.active });
+export interface PlanRow { code: string; name: string; price_usd: string; commission_bps: number; max_products: number | null; features: string[]; sort: number; active: boolean; certified: boolean }
+export const planDto = (p: PlanRow) => ({ code: p.code, name: p.name, priceUsd: Number(p.price_usd), commissionBps: p.commission_bps, maxProducts: p.max_products, features: p.features, sort: p.sort, active: p.active, certified: p.certified });
 /** Plan réellement appliqué : un plan payant expiré (ou sans date) retombe sur le plan gratuit. */
 export const EFFECTIVE_PLAN_FOR = (plan: string, expires: string): string => `(CASE WHEN ${plan} <> 'free' AND (${expires}::timestamptz IS NULL OR ${expires}::timestamptz <= now()) THEN 'free' ELSE ${plan} END)`;
 
@@ -34,7 +34,7 @@ const round2 = (n: number): number => Math.round(n * 100) / 100;
 const slugify = (s: string): string =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'boutique';
 
-interface ProductRow { rating?: string; reviews?: number; sku?: string | null; tags?: string[]; id: string; shop_id: string; name: string; description: string; price_usd: string; original_price_usd: string | null; department: string; category: string; colors: string[]; sizes: string[]; in_stock: boolean; status: string; created_at: Date }
+interface ProductRow { certified?: boolean; shop_name?: string; rating?: string; reviews?: number; sku?: string | null; tags?: string[]; id: string; shop_id: string; name: string; description: string; price_usd: string; original_price_usd: string | null; department: string; category: string; colors: string[]; sizes: string[]; in_stock: boolean; status: string; created_at: Date }
 
 export class CommerceService {
   constructor(private db: Db) {}
@@ -45,18 +45,19 @@ export class CommerceService {
       id: Number(p.id), name: p.name, description: p.description, priceUsd: Number(p.price_usd), originalPriceUsd: p.original_price_usd ? Number(p.original_price_usd) : null,
       department: p.department, category: p.category, sku: p.sku ?? '', colors: p.colors, sizes: p.sizes, tags: p.tags ?? [], inStock: p.in_stock,
       rating: Number(p.rating ?? 0), reviews: p.reviews ?? 0, images: imgs, createdAt: p.created_at,
+      certified: !!p.certified, shopName: p.shop_name ?? '',
     };
   }
 
   /** Produits visibles par les acheteurs : actifs, d'une boutique active. */
   async listPublicProducts() {
-    const rows = await this.db.query<ProductRow>("SELECT p.* FROM products p JOIN shops s ON s.id = p.shop_id WHERE p.status = 'active' AND s.status = 'active' ORDER BY p.id");
+    const rows = await this.db.query<ProductRow>(`SELECT p.*, (s.is_official OR COALESCE(pl.certified, false)) AS certified, s.name AS shop_name FROM products p JOIN shops s ON s.id = p.shop_id LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.status = 'active' AND s.status = 'active' ORDER BY p.id`);
     const imgs = await this.images(rows.map((r) => r.id));
     return rows.map((r) => this.publicDto(r, imgs.get(r.id) ?? []));
   }
 
   async getPublicProduct(id: number) {
-    const rows = await this.db.query<ProductRow>("SELECT p.* FROM products p JOIN shops s ON s.id = p.shop_id WHERE p.id = $1 AND p.status = 'active' AND s.status = 'active'", [id]);
+    const rows = await this.db.query<ProductRow>(`SELECT p.*, (s.is_official OR COALESCE(pl.certified, false)) AS certified, s.name AS shop_name FROM products p JOIN shops s ON s.id = p.shop_id LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.id = $1 AND p.status = 'active' AND s.status = 'active'`, [id]);
     if (!rows[0]) throw new AppError(404, 'not_found', 'Produit introuvable.');
     return this.publicDto(rows[0], (await this.images([rows[0].id])).get(rows[0].id) ?? []);
   }
@@ -171,7 +172,7 @@ export class CommerceService {
     const pending = await this.db.query<{ plan: string }>("SELECT plan FROM plan_requests WHERE shop_id = $1 AND status = 'pending' ORDER BY created_at DESC LIMIT 1", [s.id]);
     return {
       id: s.id, name: s.name, slug: s.slug, phone: s.phone, description: s.description, status: s.status, isOfficial: s.is_official, countryCode: s.country_code, city: s.city,
-      plan: plan.code, planName: plan.name, planExpiresAt: s.plan_expires_at, commissionBps: s.is_official ? 0 : plan.commission_bps,
+      plan: plan.code, planName: plan.name, certified: s.is_official || plan.certified, planExpiresAt: s.plan_expires_at, commissionBps: s.is_official ? 0 : plan.commission_bps,
       maxProducts: plan.max_products, productCount: Number(used[0]?.n ?? 0), pendingPlan: pending[0]?.plan ?? null,
     };
   }

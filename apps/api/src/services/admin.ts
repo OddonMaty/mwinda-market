@@ -50,6 +50,7 @@ export class AdminService extends PlatformService {
       orders: await one('SELECT count(*) AS n FROM orders'),
       ordersByStatus: Object.fromEntries(byStatus.map((r) => [r.status, Number(r.n)])),
       planRequests: await one("SELECT count(*) AS n FROM plan_requests WHERE status = 'pending'"),
+      productsByDepartment: (await this.db.query<{ department: string; name: string; n: string }>("SELECT department, department_name AS name, SUM(products) AS n FROM catalogue_counts GROUP BY department, department_name HAVING SUM(products) > 0 ORDER BY SUM(products) DESC")).map((r) => ({ department: r.department, name: r.name, count: Number(r.n) })),
       salesUsd: round2(Number(money.gmv)), commissionUsd: round2(Number(money.commission)),
     };
   }
@@ -142,11 +143,11 @@ export class AdminService extends PlatformService {
     return (await this.db.query<PlanRow>('SELECT * FROM plans ORDER BY sort, price_usd')).map(planDto);
   }
 
-  async savePlan(actor: string, code: string, b: { name: string; priceUsd: number; commissionBps: number; maxProducts: number | null; features: string[]; sort: number; active: boolean }) {
+  async savePlan(actor: string, code: string, b: { name: string; priceUsd: number; commissionBps: number; maxProducts: number | null; features: string[]; sort: number; active: boolean; certified: boolean }) {
     await this.db.query(
-      `INSERT INTO plans(code,name,price_usd,commission_bps,max_products,features,sort,active) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-       ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, price_usd=EXCLUDED.price_usd, commission_bps=EXCLUDED.commission_bps, max_products=EXCLUDED.max_products, features=EXCLUDED.features, sort=EXCLUDED.sort, active=EXCLUDED.active`,
-      [code, b.name, b.priceUsd, b.commissionBps, b.maxProducts, b.features, b.sort, code === 'free' ? true : b.active]);
+      `INSERT INTO plans(code,name,price_usd,commission_bps,max_products,features,sort,active,certified) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, price_usd=EXCLUDED.price_usd, commission_bps=EXCLUDED.commission_bps, max_products=EXCLUDED.max_products, features=EXCLUDED.features, sort=EXCLUDED.sort, active=EXCLUDED.active, certified=EXCLUDED.certified`,
+      [code, b.name, b.priceUsd, b.commissionBps, b.maxProducts, b.features, b.sort, code === 'free' ? true : b.active, code === 'free' ? false : b.certified]);
     await this.audit(actor, 'plan.save', 'plan', code, b);
   }
 

@@ -2,7 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { formatPrice, productImageUrl } from '../lib';
+import { productImageUrl } from '../lib';
+import { Price } from './Locale';
+
 import type { Product } from '../data/catalogue';
 import { useAuth } from './AuthProvider';
 
@@ -86,7 +88,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 <div className="cart-item-info">
                   <div className="cart-item-name">{item.name}</div>
                   <div className="cart-item-qty">Qté : <input type="number" value={item.quantity} min={1} onChange={(e) => setQty(item.id, Number(e.target.value))} style={{ width: 40 }} /></div>
-                  <div className="cart-item-price">{formatPrice(item.price * item.quantity)}</div>
+                  <div className="cart-item-price"><Price usd={item.price * item.quantity} /></div>
                   <button type="button" onClick={() => remove(item.id)} style={{ background: 'none', border: 'none', color: 'var(--primary-dark)', cursor: 'pointer', fontSize: '0.75rem' }}>Retirer</button>
                 </div>
               </div>
@@ -95,7 +97,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           <div className="cart-footer" id="cartFooter">
             {items.length > 0 && (
               <>
-                <div className="cart-subtotal"><span>Sous-total</span><span className="cart-subtotal-value">{formatPrice(subtotal)}</span></div>
+                <div className="cart-subtotal"><span>Sous-total</span><span className="cart-subtotal-value"><Price usd={subtotal} /></span></div>
                 <button type="button" className="btn btn-primary full-width" onClick={() => {
                   setOpen(false);
                   if (!user) { notify('Connectez-vous pour finaliser votre commande.'); openLogin('signin', '/commande'); return; }

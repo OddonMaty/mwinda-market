@@ -10,7 +10,7 @@ function StaticPage() {
   return (
     <>
       <Header active="" />
-      <div className="page-header">
+      <div className="page-header" data-theme="livraison">
         <h1>Livraison & Retours</h1>
         <p>Tout ce qu'il faut savoir sur la réception et le retour de vos commandes en Afrique</p>
       </div>

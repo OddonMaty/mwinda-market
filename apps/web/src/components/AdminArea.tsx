@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart3, Users as UsersIcon, Store, Package, ShoppingBag, Crown, Inbox, Globe2, FileText, ScrollText, Search as SearchIcon, ShieldCheck, Wallet, Percent } from 'lucide-react';
-import { formatPrice } from '../lib';
+import { formatUsd } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Empty, Field, Input, Select, StatCard, Table as UTable, Td, Textarea, Th, DashboardShell, type NavGroup } from './ui';
 
@@ -96,7 +96,7 @@ export function AdminArea() {
 interface P { notify: (m: string) => void; fail: (r: { data: { code?: string; message?: string } }) => void }
 
 function Dashboard() {
-  const [s, setS] = useState<{ users: number; shops: number; shopsPending: number; products: number; orders: number; ordersByStatus: Record<string, number>; planRequests: number; salesUsd: number; commissionUsd: number } | null>(null);
+  const [s, setS] = useState<{ users: number; shops: number; shopsPending: number; products: number; productsByDepartment: { department: string; name: string; count: number }[]; orders: number; ordersByStatus: Record<string, number>; planRequests: number; salesUsd: number; commissionUsd: number } | null>(null);
   useEffect(() => { void api<{ stats: NonNullable<typeof s> }>('/admin/stats').then((r) => r.ok && setS(r.data.stats)); }, []);
   if (!s) return <p className="text-sm text-muted-foreground">Chargement…</p>;
   return (
@@ -108,10 +108,17 @@ function Dashboard() {
         <StatCard label="Commandes" value={s.orders} icon={ShoppingBag} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard label="Ventes livrées" value={formatPrice(s.salesUsd)} icon={Wallet} />
-        <StatCard label="Commissions gagnées" value={formatPrice(s.commissionUsd)} icon={Percent} />
+        <StatCard label="Ventes livrées" value={formatUsd(s.salesUsd)} icon={Wallet} />
+        <StatCard label="Commissions gagnées" value={formatUsd(s.commissionUsd)} icon={Percent} />
         <StatCard label="Demandes de plan à traiter" value={s.planRequests} icon={Inbox} />
       </div>
+      <Card>
+        <CardHeader><CardTitle>Produits par rayon</CardTitle><CardDescription>Nombre de produits actifs dans chaque rayon du catalogue.</CardDescription></CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          {s.productsByDepartment.map((d) => <span key={d.department} className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm">{d.name}<b>{d.count}</b></span>)}
+          {s.productsByDepartment.length === 0 && <p className="text-sm text-muted-foreground">Aucun produit actif.</p>}
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader><CardTitle>Commandes par état</CardTitle></CardHeader>
         <CardContent className="flex flex-wrap gap-2">
@@ -181,7 +188,7 @@ function Products({ notify, fail }: P) {
       <Search value={q} onChange={setQ} />
       <Table head={['#', 'Produit', 'Boutique', 'Rayon', 'Prix', 'État', '']} empty={rows?.length === 0}>
         {rows?.map((p) => (
-          <tr key={p.id}><Td>{p.id}</Td><Td>{p.name}</Td><Td>{p.shop}</Td><Td>{p.department}</Td><Td>{formatPrice(p.priceUsd)}</Td><Td><St s={p.status} /></Td>
+          <tr key={p.id}><Td>{p.id}</Td><Td>{p.name}</Td><Td>{p.shop}</Td><Td>{p.department}</Td><Td>{formatUsd(p.priceUsd)}</Td><Td><St s={p.status} /></Td>
             <Td className="text-right"><Actions><Button type="button" variant="ghost" size="sm" onClick={() => void setStatus(p.id, p.status === 'active' ? 'archived' : 'active')}>{p.status === 'active' ? 'Retirer' : 'Remettre en ligne'}</Button></Actions></Td></tr>
         ))}
       </Table>
@@ -198,7 +205,7 @@ function Orders({ notify, fail }: P) {
       <Search value={q} onChange={setQ} />
       <Table head={['N°', 'Date', 'Client', 'Ville', 'Total', 'Commission', 'État']} empty={rows?.length === 0}>
         {rows?.map((o) => (
-          <tr key={o.number}><Td>{o.number}</Td><Td>{day(o.createdAt)}</Td><Td>{o.customer}<div className="text-xs text-muted-foreground">{o.email}</div></Td><Td>{o.city}</Td><Td>{formatPrice(o.totalUsd)}</Td><Td>{formatPrice(o.commissionUsd)}</Td>
+          <tr key={o.number}><Td>{o.number}</Td><Td>{day(o.createdAt)}</Td><Td>{o.customer}<div className="text-xs text-muted-foreground">{o.email}</div></Td><Td>{o.city}</Td><Td>{formatUsd(o.totalUsd)}</Td><Td>{formatUsd(o.commissionUsd)}</Td>
             <Td><Select className="h-9 min-w-[8rem]" value={o.status} onChange={(e) => void setStatus(o.number, e.target.value)}>{Object.entries(STATUS).filter(([k]) => ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].includes(k)).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Td></tr>
         ))}
       </Table>
@@ -206,7 +213,7 @@ function Orders({ notify, fail }: P) {
   );
 }
 
-interface PlanRow { code: string; name: string; priceUsd: number; commissionBps: number; maxProducts: number | null; features: string[]; sort: number; active: boolean }
+interface PlanRow { code: string; name: string; priceUsd: number; commissionBps: number; maxProducts: number | null; features: string[]; sort: number; active: boolean; certified: boolean }
 
 function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
   const [rows, reload] = useAdminData<PlanRow>('/admin/plans', 'plans');
@@ -218,7 +225,7 @@ function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
     const body = {
       name: String(f.get('name')).trim(), priceUsd: Number(f.get('priceUsd')), commissionBps: Math.round(Number(f.get('commission')) * 100),
       maxProducts: f.get('maxProducts') ? Number(f.get('maxProducts')) : null, features: String(f.get('features')).split('\n').map((x) => x.trim()).filter(Boolean),
-      sort: Number(f.get('sort') ?? 0), active: !!f.get('active'),
+      sort: Number(f.get('sort') ?? 0), active: !!f.get('active'), certified: !!f.get('certified'),
     };
     const code = edit.isNew ? String(f.get('code')).trim().toLowerCase() : edit.code;
     const r = await api(`/admin/plans/${code}`, { method: 'PUT', body });
@@ -230,11 +237,11 @@ function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
       <p className="mb-4 max-w-2xl text-sm text-muted-foreground">Les prix sont en dollars par trimestre (affichés en FC aux vendeurs). La commission s&apos;applique aux commandes passées après la modification.</p>
       <Table head={['Plan', 'Prix / trimestre', 'Commission', 'Produits max', 'Actif', '']} empty={rows?.length === 0}>
         {rows?.map((p) => (
-          <tr key={p.code}><Td>{p.name} <span className="text-xs text-muted-foreground">({p.code})</span></Td><Td>{p.priceUsd} $ · {formatPrice(p.priceUsd)}</Td><Td>{p.commissionBps / 100} %</Td><Td>{p.maxProducts ?? 'Illimité'}</Td><Td>{p.active ? 'Oui' : 'Non'}</Td>
+          <tr key={p.code}><Td>{p.name} <span className="text-xs text-muted-foreground">({p.code})</span></Td><Td>{p.priceUsd} $ · {formatUsd(p.priceUsd)}</Td><Td>{p.commissionBps / 100} %</Td><Td>{p.maxProducts ?? 'Illimité'}</Td><Td>{p.active ? 'Oui' : 'Non'}</Td>
             <Td className="text-right"><Actions>{isSuper && <Button type="button" variant="ghost" size="sm" onClick={() => setEdit(p)}>Modifier</Button>}</Actions></Td></tr>
         ))}
       </Table>
-      {isSuper && !edit && <Button type="button" variant="outline" className="mt-4" onClick={() => setEdit({ code: '', name: '', priceUsd: 0, commissionBps: 300, maxProducts: null, features: [], sort: (rows?.length ?? 0), active: true, isNew: true })}>+ Nouveau plan</Button>}
+      {isSuper && !edit && <Button type="button" variant="outline" className="mt-4" onClick={() => setEdit({ code: '', name: '', priceUsd: 0, commissionBps: 300, maxProducts: null, features: [], sort: (rows?.length ?? 0), active: true, certified: false, isNew: true })}>+ Nouveau plan</Button>}
       {edit && (
         <Card className="mt-6 max-w-2xl" key={edit.code || 'new'}>
           <CardHeader><CardTitle>{edit.isNew ? 'Nouveau plan' : `Modifier ${edit.name}`}</CardTitle></CardHeader>
@@ -249,6 +256,7 @@ function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
                 <Field label="Ordre d’affichage"><Input type="number" name="sort" min="0" defaultValue={edit.sort} /></Field>
               </div>
               <Field label="Avantages" hint="Un avantage par ligne"><Textarea name="features" rows={4} defaultValue={edit.features.join('\n')} /></Field>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="certified" defaultChecked={edit.certified} disabled={edit.code === 'free'} />Certification « Vendeur certifié » incluse</label>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="active" defaultChecked={edit.active} disabled={edit.code === 'free'} />Plan proposé aux vendeurs</label>
               <div className="flex gap-2"><Button type="submit">Enregistrer</Button><Button type="button" variant="outline" onClick={() => setEdit(null)}>Annuler</Button></div>
             </form>
@@ -267,7 +275,7 @@ function Requests({ notify, fail }: P) {
       <p className="mb-4 max-w-2xl text-sm text-muted-foreground">Approuvez une demande uniquement après avoir reçu le paiement de l&apos;abonnement : le plan est alors activé pour 3 mois.</p>
       <Table head={['Date', 'Boutique', 'Propriétaire', 'Plan demandé', 'Montant', 'État', '']} empty={rows?.length === 0}>
         {rows?.map((r) => (
-          <tr key={r.id}><Td>{day(r.createdAt)}</Td><Td>{r.shop}</Td><Td>{r.owner ?? '—'}</Td><Td>{r.plan}</Td><Td>{formatPrice(r.priceUsd)}</Td><Td><Badge variant={TONE[r.status] ?? 'secondary'}>{r.status === 'pending' ? 'En attente' : r.status === 'approved' ? 'Approuvée' : 'Refusée'}</Badge></Td>
+          <tr key={r.id}><Td>{day(r.createdAt)}</Td><Td>{r.shop}</Td><Td>{r.owner ?? '—'}</Td><Td>{r.plan}</Td><Td>{formatUsd(r.priceUsd)}</Td><Td><Badge variant={TONE[r.status] ?? 'secondary'}>{r.status === 'pending' ? 'En attente' : r.status === 'approved' ? 'Approuvée' : 'Refusée'}</Badge></Td>
             <Td className="text-right"><Actions>{r.status === 'pending' && <><Button type="button" variant="ghost" size="sm" onClick={() => void decide(r.id, 'approve')}>Approuver</Button><Button type="button" variant="ghost" size="sm" onClick={() => void decide(r.id, 'reject')}>Refuser</Button></>}</Actions></Td></tr>
         ))}
       </Table>

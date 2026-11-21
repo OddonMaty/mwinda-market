@@ -24,8 +24,8 @@ export function Header({ active }: { active: Active }) {
       <div className="top-bar">
         <div className="container">
           <div className="top-bar-left">
-            <span><i className="fas fa-phone" /> +243 907 261 113</span>
-            <span className="hidden-mobile"><i className="fas fa-envelope" /> contact@saotechmarket.com</span>
+            <span><i className="fas fa-phone" /> +243 972 584 021</span>
+            <span className="hidden-mobile"><i className="fas fa-envelope" /> contact@mwindamarket.com</span>
           </div>
           <div className="top-bar-right">
             <span className="hidden-mobile">La place de marché africaine · Lancement en RDC, bientôt partout en Afrique</span>
@@ -105,8 +105,8 @@ export function Footer() {
             <div className="footer-column">
               <h4>Contactez-nous</h4>
               <ul className="contact-list">
-                <li><i className="fas fa-phone" /> +243 907 261 113</li>
-                <li><i className="fas fa-envelope" /> contact@saotechmarket.com</li>
+                <li><i className="fas fa-phone" /> +243 972 584 021</li>
+                <li><i className="fas fa-envelope" /> contact@mwindamarket.com</li>
                 <li><i className="fas fa-clock" /> Lun–Sam : 8h – 19h</li>
               </ul>
               <div className="social-links">
@@ -121,7 +121,7 @@ export function Footer() {
       <div className="footer-bottom">
         <div className="container">
           <p>&copy; 2026 Mwinda Market. Tous droits réservés.</p>
-          <p>Plateforme créée par <a href="https://saotechagency.com" target="_blank" rel="noopener noreferrer" className="footer-credit-link">Sao Tech Agency</a></p>
+          <p>La place de marché africaine</p>
         </div>
       </div>
     </footer>

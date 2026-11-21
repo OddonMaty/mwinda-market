@@ -10,7 +10,7 @@ export default function ContactPage() {
       <Header active="contact" />
       <div className="contact-hero">
         <i className="fas fa-phone" />
-        <span>+243 907 261 113 — Service client en ligne, RDC</span>
+        <span>+243 972 584 021 — Service client en ligne, RDC</span>
       </div>
       <div className="container contact-container">
         <div className="contact-form-section">
@@ -24,8 +24,8 @@ export default function ContactPage() {
         <div className="contact-info">
           <h2>Informations de contact</h2>
           {[
-            ['fa-envelope', 'E-mail', 'contact@saotechmarket.com'],
-            ['fa-phone', 'Appelez-nous', '+243 907 261 113'],
+            ['fa-envelope', 'E-mail', 'contact@mwindamarket.com'],
+            ['fa-phone', 'Appelez-nous', '+243 972 584 021'],
             ['fa-clock', "Horaires d'ouverture", 'Lun – Sam : 8h00 – 19h00'],
           ].map(([icon, label, v]) => (
             <div className="info-item" key={label}>

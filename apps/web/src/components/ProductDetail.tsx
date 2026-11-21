@@ -1,7 +1,9 @@
 'use client';
 import { useState } from 'react';
 import type { Product } from '../data/catalogue';
-import { formatPrice, productImageUrl } from '../lib';
+import { productImageUrl } from '../lib';
+import { Price } from './Locale';
+
 import { useCart } from './CartProvider';
 import { Countdown } from './Countdown';
 import { NavButton } from './NavButton';
@@ -45,6 +47,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
         <div className="product-info">
           <div className="product-meta"><i className="fas fa-eye" /> Récemment consulté</div>
           <h1>{product.name}</h1>
+          {product.shopName && <p className="seller-line">Vendu par <b>{product.shopName}</b>{product.certified && <span className="badge-certified-inline"><i className="fas fa-check-circle" /> Vendeur certifié Mwinda</span>}</p>}
           <div className="product-rating">
             <div className="stars"><Stars rating={product.rating} /></div>
             <span><span className="review-count">({product.reviews} avis)</span></span>
@@ -52,8 +55,8 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
           </div>
 
           <div className="product-price">
-            <span className="current-price">{formatPrice(product.price)}</span>
-            <span className="original-price" style={hasDiscount ? undefined : { display: 'none' }}>{hasDiscount ? formatPrice(product.originalPrice as number) : ''}</span>
+            <span className="current-price"><Price usd={product.price} /></span>
+            <span className="original-price" style={hasDiscount ? undefined : { display: 'none' }}>{hasDiscount ? <Price usd={product.originalPrice as number} local={false} /> : ''}</span>
             <span className="discount-badge" style={hasDiscount ? undefined : { display: 'none' }}>{hasDiscount ? `-${product.discount}%` : ''}</span>
           </div>
 

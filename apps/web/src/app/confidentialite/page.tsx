@@ -9,7 +9,7 @@ function StaticPage() {
   return (
     <>
       <Header active="" />
-      <div className="page-header">
+      <div className="page-header" data-theme="confidentialite">
         <h1>Politique de confidentialité</h1>
         <p>Dernière mise à jour : janvier 2026</p>
       </div>
@@ -51,7 +51,7 @@ function StaticPage() {
             <h2>5. Vos droits</h2>
             <p>
               Vous pouvez à tout moment demander l'accès, la correction ou la suppression de vos
-              données personnelles en nous contactant à contact@saotechmarket.com.
+              données personnelles en nous contactant à contact@mwindamarket.com.
             </p>
           </section>
           <section>

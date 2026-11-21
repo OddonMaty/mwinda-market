@@ -2,14 +2,14 @@ import { products as fallback, type Product } from './catalogue';
 
 interface ApiProduct {
   id: number; name: string; description: string; priceUsd: number; originalPriceUsd: number | null; department: string; category: string; sku: string;
-  colors: string[]; sizes: string[]; tags: string[]; inStock: boolean; rating: number; reviews: number; images: string[]; createdAt: string;
+  colors: string[]; sizes: string[]; tags: string[]; inStock: boolean; rating: number; reviews: number; images: string[]; createdAt: string; certified?: boolean; shopName?: string;
 }
 
 const toProduct = (p: ApiProduct): Product => ({
   id: p.id, createdAt: p.createdAt.slice(0, 10), name: p.name, price: p.priceUsd, originalPrice: p.originalPriceUsd,
   discount: p.originalPriceUsd ? Math.round((1 - p.priceUsd / p.originalPriceUsd) * 100) : null,
   department: p.department, category: p.category, image: p.images[0] ?? '', images: p.images.slice(1), rating: p.rating, reviews: p.reviews,
-  inStock: p.inStock, sku: p.sku, colors: p.colors, sizes: p.sizes, tags: p.tags, description: p.description,
+  inStock: p.inStock, sku: p.sku, colors: p.colors, sizes: p.sizes, tags: p.tags, description: p.description, certified: !!p.certified, shopName: p.shopName,
 });
 
 /** Catalogue lu depuis l'API (boutique officielle + vendeurs) ; en cas de panne, repli sur la liste d'origine. */

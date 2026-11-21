@@ -10,7 +10,7 @@ function StaticPage() {
   return (
     <>
       <Header active="" />
-      <div className="page-header">
+      <div className="page-header" data-theme="conditions">
         <h1>Conditions générales de vente</h1>
         <p>Dernière mise à jour : janvier 2026</p>
       </div>
@@ -90,7 +90,7 @@ function StaticPage() {
             <h2>8. Contact</h2>
             <p>
               Pour toute question relative à ces conditions, vous pouvez nous contacter à
-              contact@saotechmarket.com ou au +243 907 261 113.
+              contact@mwindamarket.com ou au +243 972 584 021.
             </p>
           </section>
         </div>

@@ -12,7 +12,7 @@ const Roles = z.object({ roles: z.array(z.enum(['moderator', 'finance', 'superad
 const PlanBody = z.object({
   name: z.string().trim().min(1).max(60), priceUsd: z.number().min(0).max(100000), commissionBps: z.number().int().min(0).max(3000),
   maxProducts: z.number().int().positive().max(1_000_000).nullable(), features: z.array(z.string().trim().min(1).max(120)).max(12).default([]),
-  sort: z.number().int().min(0).max(100).default(0), active: z.boolean().default(true),
+  sort: z.number().int().min(0).max(100).default(0), active: z.boolean().default(true), certified: z.boolean().default(false),
 });
 const PageBody = z.object({ title: z.string().trim().min(1).max(150), body: z.string().trim().min(1).max(60000) });
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { LocaleProvider } from '../components/Locale';
 import { AuthProvider } from '../components/AuthProvider';
 import { CartProvider } from '../components/CartProvider';
 
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body><AuthProvider><CartProvider>{children}</CartProvider></AuthProvider></body>
+      <body><AuthProvider><LocaleProvider><CartProvider>{children}</CartProvider></LocaleProvider></AuthProvider></body>
     </html>
   );
 }

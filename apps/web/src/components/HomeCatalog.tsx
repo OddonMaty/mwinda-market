@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import type { Product } from '../data/catalogue';
 import { DEPARTMENTS, departmentIcon, departmentName } from '@saotech/shared';
+import { useAuth } from './AuthProvider';
 import { ProductCard } from './ProductCard';
 
 /** Rayons qui contiennent des produits, dans l'ordre du catalogue. */
@@ -34,6 +35,8 @@ export function NewProducts({ products, now }: { products: Product[]; now: numbe
 /** Section « Tous nos produits » avec filtre par secteur. */
 export function HomeCatalog({ products, now }: { products: Product[]; now: number }) {
   const [dep, setDep] = useState('All');
+  const [email, setEmail] = useState('');
+  const { notify } = useAuth();
   const items = dep === 'All'
     ? depsOf(products).flatMap((d) => products.filter((p) => p.department === d).slice(0, 3))
     : products.filter((p) => p.department === dep).slice(0, 12);
@@ -45,10 +48,18 @@ export function HomeCatalog({ products, now }: { products: Product[]; now: numbe
   return (
     <>
       <div className="section-header"><h2>Tous nos produits</h2></div>
+      <div className="home-sector-tabs">
+        {btn('All', 'Tous')}
+        {depsOf(products).map((d) => btn(d, departmentName(d)))}
+      </div>
       <div className="home-catalog-layout">
-        <aside className="home-sector-filters">
-          {btn('All', 'Tous les secteurs')}
-          {depsOf(products).map((d) => btn(d, departmentName(d)))}
+        <aside className="home-newsletter-card">
+          <i className="fas fa-envelope-open-text" />
+          <p className="newsletter-tag">Newsletter</p>
+          <h3>-10 % sur votre première commande</h3>
+          <p>Offres exclusives, nouveautés et réductions réservées aux abonnés.</p>
+          <input type="email" placeholder="Votre e-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <button type="button" className="btn btn-primary" onClick={() => { notify(email.includes('@') ? 'Merci ! Votre inscription sera confirmée dès l’activation des e-mails.' : 'Entrez une adresse e-mail valide.'); if (email.includes('@')) setEmail(''); }}>S&apos;abonner</button>
         </aside>
         <div className="products-grid">
           {items.length > 0

@@ -8,7 +8,7 @@ export default function Page() {
   return (
     <>
       <Header active="" />
-      <div className="page-header">
+      <div className="page-header" data-theme="carrieres">
         <h1>Carrières</h1>
         <p>Rejoignez l'équipe Mwinda Market</p>
       </div>

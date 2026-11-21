@@ -8,7 +8,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
   return (
     <>
       <Header active="" />
-      <div className="page-header"><h1>Nouveau mot de passe</h1><p>Choisissez un nouveau mot de passe pour votre compte</p></div>
+      <div className="page-header" data-theme="compte"><h1>Nouveau mot de passe</h1><p>Choisissez un nouveau mot de passe pour votre compte</p></div>
       <div className="container"><ResetPassword token={token} /></div>
       <Footer />
     </>

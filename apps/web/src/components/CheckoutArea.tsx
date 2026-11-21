@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { formatPrice, productImageUrl } from '../lib';
+import { productImageUrl } from '../lib';
+import { Price } from './Locale';
+
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { useCart } from './CartProvider';
 import { useCountries } from './Geo';
@@ -91,11 +93,11 @@ export function CheckoutArea() {
             <img src={productImageUrl(item.image, 60, 60)} alt={item.name} className="seller-product-thumb" />
             <div>
               <p className="usp-title">{item.name}</p>
-              <p className="usp-sub">Qté {item.quantity}{item.color ? ` · ${item.color}` : ''}{item.size ? ` · ${item.size}` : ''} — {formatPrice(item.price * item.quantity)}</p>
+              <p className="usp-sub">Qté {item.quantity}{item.color ? ` · ${item.color}` : ''}{item.size ? ` · ${item.size}` : ''} — <Price usd={item.price * item.quantity} /></p>
             </div>
           </div>
         ))}
-        <p style={{ fontWeight: 700, fontSize: '1.1rem', marginTop: '1rem' }}>Total : {formatPrice(cart.subtotal)}</p>
+        <p style={{ fontWeight: 700, fontSize: '1.1rem', marginTop: '1rem' }}>Total : <Price usd={cart.subtotal} /></p>
       </div>
 
       <div className="seller-auth-card">

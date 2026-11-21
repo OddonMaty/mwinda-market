@@ -15,7 +15,7 @@ export const EnvSchema = z.object({
   /** Expression régulière optionnelle pour autoriser aussi des adresses générées (ex. déploiements Vercel). */
   WEB_ORIGIN_REGEX: z.string().optional(),
   SMTP_URL: z.string().optional(),
-  MAIL_FROM: z.string().default('Mwinda Market <no-reply@saotechmarket.com>'),
+  MAIL_FROM: z.string().default('Mwinda Market <no-reply@mwindamarket.com>'),
   DATABASE_URL: z.string().min(1),
   API_SECRET: z.string().min(16, 'API_SECRET must be at least 16 characters long'),
 });

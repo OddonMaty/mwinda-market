@@ -7,7 +7,7 @@ export default function Page() {
   return (
     <>
       <Header active="" />
-      <div className="page-header">
+      <div className="page-header" data-theme="rse">
         <h1>Responsabilité sociale</h1>
         <p>Notre engagement envers les communautés africaines</p>
       </div>

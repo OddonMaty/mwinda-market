@@ -4,10 +4,9 @@ import type { Product } from './data/catalogue';
 export const USD_TO_CDF = 2800; // taux de secours de l'ancien site (a remplacer par un taux en base)
 const NEW_WINDOW_DAYS = 30;
 
-export function formatPrice(usd: number): string {
-  const cdf = Math.round(usd * USD_TO_CDF);
-  // Intl fr-FR utilise des espaces insécables fines, comme sur l'ancien site
-  return new Intl.NumberFormat('fr-FR').format(cdf) + ' FC';
+/** Prix affiché en dollars : « $12.50 », sans décimales quand le montant est rond. */
+export function formatUsd(usd: number): string {
+  return '$' + new Intl.NumberFormat('en-US', { minimumFractionDigits: Number.isInteger(usd) ? 0 : 2, maximumFractionDigits: 2 }).format(usd);
 }
 
 export function productImageUrl(image: string | undefined, w: number, h: number): string {

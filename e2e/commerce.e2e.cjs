@@ -31,7 +31,7 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await sp.fill('[name=name]', 'Casque e2e');
   await sp.selectOption('[name=department]', 'electronique');
   await sp.selectOption('[name=category]', 'Audio');
-  await sp.fill('[name=price]', '112000'); // 40 $
+  await sp.fill('[name=price]', '40'); // 40 $
   // Photo "de téléphone" : grande image (3000x2000) générée dans la page, envoyée via le sélecteur de fichiers.
   await sp.evaluate(async () => {
     const c = document.createElement('canvas'); c.width = 3000; c.height = 2000;
@@ -48,7 +48,7 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await sp.fill('textarea[name=description]', 'Un casque de test.');
   await sp.click('button:has-text("Publier le produit")');
   await sp.waitForSelector('td:has-text("Casque e2e")');
-  await sp.waitForSelector('text=112 000 FC');
+  await sp.waitForSelector('td:has-text("$40")');
   const size = await sp.evaluate(async (u) => { const r = await fetch(u); const b = await r.blob(); const bm = await createImageBitmap(b); return { bytes: b.size, w: bm.width, type: b.type }; }, photoSrc);
   assert.equal(size.type, 'image/jpeg');
   assert.ok(size.w <= 1200 && size.bytes < 1_300_000, `photo réduite avant envoi (${size.w}px, ${size.bytes} octets)`);
@@ -119,7 +119,7 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await sp.waitForSelector('text=Plan Gratuit · commission 5 %');
   await sp.click('button:has-text("Commandes")');
   await sp.waitForSelector(`text=Commande ${num}`);
-  await sp.waitForSelector('text=commission 5 600 FC'); // 5 % de 112 000 FC
+  await sp.waitForSelector('text=/commission \\$2/'); // 5 % de 40 $
   await sp.click('button:has-text("Confirmer la commande")');
   await sp.waitForSelector('button:has-text("Marquer comme expédiée")');
   await sp.click('button:has-text("Marquer comme expédiée")');
@@ -132,13 +132,13 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await bp.waitForSelector('text=Réception confirmée');
   await sp.reload();
   await sp.waitForSelector('text=Gains nets (livrées)');
-  await sp.waitForSelector('text=106 400 FC'); // 112 000 - 5 600
+  await sp.waitForSelector('text=$38'); // 40 - 2
 
   // ---- Tarifs : quatre plans, le dernier à 45 $ par trimestre
   const tp = await seller.newPage();
   await tp.goto(`${WEB}/tarifs`);
   await tp.waitForSelector('text=Commission 2 %');
-  await tp.waitForSelector('text=126 000 FC');
+  await tp.waitForSelector('text=45 $');
   await tp.click('[data-plan=premium] button:has-text("Choisir ce plan")');
   await tp.waitForSelector('text=Demande en attente');
 

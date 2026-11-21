@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import type { Product } from '../data/catalogue';
-import { formatPrice } from '../lib';
+import { formatUsd } from '../lib';
 import { ProductCard } from './ProductCard';
 import { NavButton } from './NavButton';
 import { CategorySidebar } from './CategorySidebar';
@@ -53,7 +53,7 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
           <div className="filter-group">
             <h4>Prix</h4>
             <div className="price-range">
-              <p><span>{formatPrice(0)}</span> — <span>{formatPrice(price)}</span></p>
+              <p><span>{formatUsd(0)}</span> — <span>{formatUsd(price)}</span></p>
               <input type="range" min={0} max={2500} value={price} onChange={(e) => setPrice(Number(e.target.value))} />
             </div>
           </div>
