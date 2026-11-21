@@ -58,7 +58,7 @@ export function Header({ active }: { active: Active }) {
 }
 
 const FOOTER_COLS: [string, [string, string?][]][] = [
-  ['Service Client', [['Contactez-nous', '/contact'], ['Aide & conseils', '/faq'], ['Livraison', '/livraison'], ['Conditions générales', '/conditions'], ['Conditions vendeur', '/conditions-vendeur'], ['Retours et remboursements', '/remboursement']]],
+  ['Service Client', [['Contactez-nous', '/contact'], ['Aide & conseils', '/faq'], ['Suivre ma commande', '/suivi'], ['Livraison', '/livraison'], ['Conditions générales', '/conditions'], ['Conditions vendeur', '/conditions-vendeur'], ['Retours et remboursements', '/remboursement']]],
   ['Informations', [['À propos de nous', '/a-propos'], ['Mon compte'], ['Paiements', '/paiements'], ['Tarifs vendeurs', '/tarifs'], ['Voir les catalogues', '/collection']]],
   ['À propos', [['Qui sommes-nous', '/a-propos'], ['Responsabilité sociale', '/responsabilite-sociale'], ['Carrières', '/carrieres'], ['Politique de confidentialité', '/confidentialite']]],
 ];

@@ -2,7 +2,7 @@ import { products as fallback, type Product } from './catalogue';
 
 interface ApiProduct {
   id: number; name: string; description: string; priceUsd: number; originalPriceUsd: number | null; department: string; category: string; sku: string;
-  colors: string[]; sizes: string[]; tags: string[]; inStock: boolean; rating: number; reviews: number; images: string[]; createdAt: string; certified?: boolean; shopName?: string;
+  colors: string[]; sizes: string[]; tags: string[]; inStock: boolean; rating: number; reviews: number; images: string[]; createdAt: string; certified?: boolean; shopName?: string; countryCode?: string | null; countryName?: string | null; city?: string | null; citySlug?: string | null;
 }
 
 const toProduct = (p: ApiProduct): Product => ({
@@ -10,6 +10,7 @@ const toProduct = (p: ApiProduct): Product => ({
   discount: p.originalPriceUsd ? Math.round((1 - p.priceUsd / p.originalPriceUsd) * 100) : null,
   department: p.department, category: p.category, image: p.images[0] ?? '', images: p.images.slice(1), rating: p.rating, reviews: p.reviews,
   inStock: p.inStock, sku: p.sku, colors: p.colors, sizes: p.sizes, tags: p.tags, description: p.description, certified: !!p.certified, shopName: p.shopName,
+  countryCode: p.countryCode ?? null, countryName: p.countryName ?? null, city: p.city ?? null, citySlug: p.citySlug ?? null,
 });
 
 /** Catalogue lu depuis l'API (boutique officielle + vendeurs) ; en cas de panne, repli sur la liste d'origine. */

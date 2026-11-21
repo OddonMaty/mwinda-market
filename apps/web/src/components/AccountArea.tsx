@@ -135,6 +135,7 @@ export function AccountArea() {
         <p className="text-xs text-muted-foreground">Livraison : {o.address}</p>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm">Total <b><Price usd={o.subtotalUsd} /></b></span>
+          {o.status !== 'cancelled' && <Button asChild size="sm" variant="outline"><Link href={`/suivi?n=${o.number}`}><MapPin />Suivre</Link></Button>}
           {o.canConfirmReceipt && <Button size="sm" onClick={() => void orderAction(o.number, 'receive')}>J&apos;ai reçu ma commande</Button>}
           {o.canCancel && <Button size="sm" variant="outline" onClick={() => void orderAction(o.number, 'cancel')}>Annuler</Button>}
         </div>

@@ -35,11 +35,16 @@ export function matchesSearch(p: Product, query: string): boolean {
   return normalizeSearchText(p.name).includes(q) || normalizeSearchText(p.category).includes(q) || normalizeSearchText(p.description).includes(q);
 }
 
-export function collectionHref(department?: string, category?: string, q?: string): string {
+export function collectionHref(department?: string, category?: string, q?: string, place?: { pays?: string; ville?: string }): string {
   const sp = new URLSearchParams();
   if (q) sp.set('q', q);
+  if (place?.pays) sp.set('pays', place.pays);
+  if (place?.ville) sp.set('ville', place.ville);
   if (department && department !== 'All') sp.set('dep', department);
   if (category && category !== 'All') sp.set('cat', category);
   const s = sp.toString();
   return s ? `/collection?${s}` : '/collection';
 }
+
+/** « Goma, RD Congo » : où se trouve le vendeur d'un produit. */
+export const placeLabel = (p: { city?: string | null; countryName?: string | null }): string => [p.city, p.countryName].filter(Boolean).join(', ');

@@ -134,3 +134,16 @@
 .search-sug-all { display: block; width: 100%; background: #faf7f3; border: 0; padding: 0.65rem; cursor: pointer; font: inherit; font-size: 0.82rem; color: var(--primary-dark); font-weight: 600; }
 .search-bar .search-suggest button { position: static; transform: none; right: auto; top: auto; }
 .search-bar .search-suggest { min-width: min(440px, 92vw); }
+
+/* Localisation des produits */
+.product-place { font-size: 0.74rem; color: #777; margin: 0.1rem 0 0.3rem; }
+.product-place i { color: var(--primary); }
+.seller-place { margin: 0.25rem 0 0.75rem; font-size: 0.88rem; color: #555; }
+.seller-place i { color: var(--primary); }
+.location-filter .near-me-btn { display: block; width: 100%; text-align: left; background: #fdf1e3; color: var(--primary-dark); border: 1px solid #f3d3a6; border-radius: 8px; padding: 0.5rem 0.65rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; margin-bottom: 0.6rem; }
+.loc-list, .loc-cities { list-style: none; margin: 0; padding: 0; }
+.loc-cities { margin: 0.15rem 0 0.4rem 1.6rem; border-left: 2px solid #f0e4d4; padding-left: 0.6rem; }
+.loc-link { display: flex; align-items: center; gap: 0.5rem; width: 100%; background: none; border: 0; padding: 0.3rem 0; text-align: left; cursor: pointer; font: inherit; font-size: 0.86rem; color: #444; }
+.loc-link:hover, .loc-link.active { color: var(--primary-dark); font-weight: 600; }
+.loc-link em { margin-left: auto; font-style: normal; font-size: 0.72rem; color: #999; }
+.loc-empty { font-size: 0.82rem; color: #888; }

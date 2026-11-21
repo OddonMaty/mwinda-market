@@ -431,4 +431,37 @@ describe('Validation des boutiques, messagerie, recherche, taux', () => {
     assert.equal(r.json.rates.USD, 1);
     assert.ok(r.json.rates.CDF > 100);
   });
+  it('suivi de commande : étapes, position du colis, réception', async () => {
+    const seller = await user();
+    await call('POST', '/seller/shop', { cookie: seller, body: { name: 'Boutique Suivi', countryCode: 'CD', citySlug: 'goma' } });
+    await db.query("UPDATE shops SET status = 'active' WHERE status = 'pending'");
+    const pid = (await call('POST', '/seller/products', { cookie: seller, body: PRODUCT })).json.id as number;
+    // localisation du produit : ville et pays du vendeur
+    const pub = (await call('GET', `/products/${pid}`)).json.product;
+    assert.equal(pub.countryCode, 'CD');
+    assert.equal(pub.city, 'Goma');
+    const buyer = await user();
+    const number = (await call('POST', '/orders', { cookie: buyer, body: { items: [{ id: pid, quantity: 1 }], ...SHIP } })).json.order.number as string;
+    let t = (await call('GET', `/orders/${number}/tracking`, { cookie: buyer })).json;
+    assert.equal(t.status, 'pending');
+    assert.equal(t.placed.location, 'Bukavu');
+    assert.equal(t.shipments[0].shop, 'Boutique Suivi');
+    assert.equal(t.shipments[0].currentLocation, null);
+    // un autre client ne voit pas cette commande
+    assert.equal((await call('GET', `/orders/${number}/tracking`, { cookie: await user() })).status, 404);
+    // position impossible avant la confirmation
+    assert.equal((await call('POST', `/seller/orders/${number}/tracking`, { cookie: seller, body: { location: 'Goma' } })).status, 409);
+    await call('POST', `/seller/orders/${number}/confirm`, { cookie: seller });
+    await call('POST', `/seller/orders/${number}/ship`, { cookie: seller });
+    assert.equal((await call('POST', `/seller/orders/${number}/tracking`, { cookie: seller, body: { location: 'Bukavu', note: 'Arrivé au dépôt' } })).status, 200);
+    t = (await call('GET', `/orders/${number}/tracking`, { cookie: buyer })).json;
+    assert.equal(t.status, 'shipped');
+    assert.equal(t.shipments[0].currentLocation, 'Bukavu');
+    assert.deepEqual(t.shipments[0].events.map((e: { kind: string }) => e.kind), ['confirmed', 'shipped', 'update']);
+    await call('POST', `/orders/${number}/receive`, { cookie: buyer });
+    t = (await call('GET', `/orders/${number}/tracking`, { cookie: buyer })).json;
+    assert.equal(t.status, 'delivered');
+    assert.equal(t.shipments[0].currentLocation, 'Bukavu');
+    assert.equal(t.shipments[0].events.at(-1).kind, 'delivered');
+  });
 });

@@ -49,6 +49,7 @@ export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }:
   });
   r.get('/orders', pre, async (req) => ({ orders: await svc.listOrders(user(req).id) }));
   const Number_ = z.object({ number: z.string().regex(/^STM-[0-9]{1,12}$/) });
+  r.get('/orders/:number/tracking', pre, async (req) => svc.trackOrder(user(req).id, parse(Number_, req.params).number));
   r.post('/orders/:number/cancel', pre, async (req) => svc.buyerOrderAction(user(req).id, parse(Number_, req.params).number, 'cancel'));
   r.post('/orders/:number/receive', pre, async (req) => svc.buyerOrderAction(user(req).id, parse(Number_, req.params).number, 'receive'));
   r.get('/plans', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=600'); return { plans: await svc.listPlans() }; });
@@ -58,6 +59,7 @@ export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }:
   r.patch('/seller/shop', pre, async (req) => ({ shop: await svc.updateShop(user(req).id, parse(ShopPatch, req.body)) }));
   r.post('/seller/plan', pre, async (req) => svc.requestPlan(user(req).id, parse(z.object({ plan: z.string().regex(/^[a-z][a-z0-9-]{1,19}$/) }), req.body).plan));
   r.get('/seller/stats', pre, async (req) => ({ stats: await svc.shopStats(user(req).id) }));
+  r.post('/seller/orders/:number/tracking', pre, async (req) => svc.addTracking(user(req).id, parse(Number_, req.params).number, parse(z.object({ location: z.string().trim().min(2).max(120), note: z.string().trim().max(300).optional() }), req.body)));
   r.post('/seller/orders/:number/:action', pre, async (req) => {
     const p = parse(Number_.extend({ action: z.enum(['confirm', 'ship', 'cancel']) }), req.params);
     return svc.shopOrderAction(user(req).id, p.number, ({ confirm: 'confirmed', ship: 'shipped', cancel: 'cancelled' } as const)[p.action]);

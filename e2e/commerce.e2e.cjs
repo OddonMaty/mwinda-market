@@ -135,6 +135,20 @@ const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { tim
   await sp.waitForSelector('button:has-text("Marquer comme expédiée")');
   await sp.click('button:has-text("Marquer comme expédiée")');
   await sp.waitForSelector('text=Marquer comme expédiée', { state: 'detached' });
+  // Le vendeur indique où se trouve le colis ; le client le voit dans son suivi
+  await sp.click('button:has-text("Position du colis")');
+  await sp.fill('[name=trackLocation]', 'Dépôt de Kadutu, Bukavu');
+  await sp.fill('[name=trackNote]', 'Colis en cours de tri');
+  await sp.click('form button:has-text("Enregistrer")');
+  await sp.waitForSelector('text=Position du colis mise à jour');
+  await bp.goto(`${WEB}/compte`);
+  await bp.click('button:has-text("Mes commandes")');
+  await bp.click('a:has-text("Suivre")');
+  await bp.waitForURL(`**/suivi?n=${num}`);
+  await bp.waitForSelector('[data-track-position]:has-text("Dépôt de Kadutu, Bukavu")');
+  await bp.waitForSelector('text=Colis en cours de tri');
+  await bp.waitForSelector('li[aria-current="step"]:has-text("Expédiée")');
+  await bp.screenshot({ path: '/tmp/e2e-suivi.png', fullPage: true });
 
   // ---- Acheteur : confirme la réception
   await bp.goto(`${WEB}/compte`);
@@ -191,6 +205,14 @@ const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { tim
   await bp.waitForSelector('.country-select-btn .fi-ke');
   assert.match(await bp.textContent('.country-select-btn'), /KES/);
   await bp.waitForSelector('.product-card .price-local:has-text("KSh")');
+
+  // ---- Localisation : filtre du catalogue par pays et ville du vendeur
+  await bp.goto(`${WEB}/collection`);
+  await bp.waitForSelector('.location-filter .loc-link');
+  await bp.goto(`${WEB}/collection?pays=CD`);
+  await bp.waitForSelector('.product-card .product-place');
+  await bp.goto(`${WEB}/collection?pays=KE`);
+  await bp.waitForSelector('text=Aucun produit dans cette catégorie pour le moment.');
 
   // ---- Nouvelle boutique : l'administrateur est notifié et accepte
   const shop2 = await bp.evaluate(async () => (await fetch('/api/v1/seller/shop', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Boutique Neuve E2E' }) })).status);

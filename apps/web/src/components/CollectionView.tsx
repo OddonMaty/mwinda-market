@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import type { Product } from '../data/catalogue';
-import { formatUsd } from '../lib';
+import { collectionHref, formatUsd } from '../lib';
+import { useLocale } from './Locale';
 import { ProductCard } from './ProductCard';
 import { NavButton } from './NavButton';
 import { CategorySidebar } from './CategorySidebar';
@@ -16,10 +17,18 @@ interface Props {
   clearHref: string;
   inStockCount: number;
   activeDep?: string;
+  places: { code: string; name: string; count: number; cities: { slug: string; name: string; count: number }[] }[];
+  place: { pays: string; ville: string };
+  baseDep: string;
+  baseCat: string;
 }
 
 /** Page catalogue : même structure que l'ancien site (les filtres de la barre latérale n'y étaient qu'indicatifs). */
-export function CollectionView({ products, now, pills, breadcrumbLabel, query, clearHref, inStockCount, activeDep }: Props) {
+export function CollectionView({ products, now, pills, breadcrumbLabel, query, clearHref, inStockCount, activeDep, places, place, baseDep, baseCat }: Props) {
+  const { code: myCountry } = useLocale();
+  const href = (pays?: string, ville?: string) => collectionHref(baseDep, baseCat, query, { pays, ville });
+  const nearMe = places.find((c) => c.code === myCountry);
+  const open = places.find((c) => c.code === place.pays);
   const [price, setPrice] = useState(2500);
   const [sort, setSort] = useState(0);
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -46,6 +55,23 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
       <div className="collection-layout">
         <aside className={`sidebar${sidebarOpen ? ' sidebar-open' : ''}`}>
           <div className="collection-cats"><CategorySidebar active={activeDep} /></div>
+          <div className="filter-group location-filter">
+            <h4>Localisation du vendeur</h4>
+            {nearMe && place.pays !== myCountry && <NavButton to={href(nearMe.code)} className="near-me-btn"><i className="fas fa-location-arrow" /> Vendeurs de mon pays ({nearMe.count})</NavButton>}
+            {places.length === 0 ? <p className="loc-empty">Aucune localisation pour cette sélection.</p> : (
+              <ul className="loc-list">
+                <li><NavButton to={href()} className={`loc-link${!place.pays ? ' active' : ''}`}>Tous les pays</NavButton></li>
+                {places.map((c) => (
+                  <li key={c.code}>
+                    <NavButton to={href(c.code)} className={`loc-link${place.pays === c.code && !place.ville ? ' active' : ''}`}><span className={`fi fi-${c.code.toLowerCase()} country-flag`} /> {c.name} <em>{c.count}</em></NavButton>
+                    {open?.code === c.code && c.cities.length > 0 && (
+                      <ul className="loc-cities">{c.cities.map((ci) => <li key={ci.slug}><NavButton to={href(c.code, ci.slug)} className={`loc-link${place.ville === ci.slug ? ' active' : ''}`}>{ci.name} <em>{ci.count}</em></NavButton></li>)}</ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <div className="filter-group">
             <h4>Disponibilité</h4>
             <label className="checkbox-label"><input type="checkbox" /><span>En stock ({inStockCount})</span></label>

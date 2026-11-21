@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingBag, Settings, Plus, Wallet, Percent, Clock, Boxes, Pencil, Trash2, LogOut, Crown, ShieldCheck, ExternalLink, Truck, CheckCheck, MessageCircle, X } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Settings, Plus, Wallet, Percent, Clock, Boxes, Pencil, Trash2, LogOut, Crown, ShieldCheck, ExternalLink, Truck, CheckCheck, MessageCircle, MapPin, X } from 'lucide-react';
 import { DEPARTMENTS, departmentName } from '@saotech/shared';
 import { formatUsd, productImageUrl } from '../lib';
 import { ConversationList, Thread, type Conv } from './Chat';
@@ -36,6 +36,7 @@ export function SellerDashboard() {
   const [orderFilter, setOrderFilter] = useState('all');
   const [welcome, setWelcome] = useState(true);
   const [conv, setConv] = useState<Conv | null>(null);
+  const [trackFor, setTrackFor] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const s = await api<{ shop: Shop | null }>('/seller/shop');
@@ -88,6 +89,15 @@ export function SellerDashboard() {
     if (!r.ok) return notify(r.data.message ?? errorMessage(r.data.code));
     await load();
     notify(action === 'confirm' ? 'Commande confirmée' : action === 'ship' ? 'Commande marquée comme expédiée' : 'Commande annulée');
+  }
+
+  async function savePosition(e: React.FormEvent<HTMLFormElement>, number: string) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const r = await api(`/seller/orders/${number}/tracking`, { method: 'POST', body: { location: String(f.get('trackLocation') ?? ''), note: String(f.get('trackNote') ?? '') || undefined } });
+    if (!r.ok) return notify(r.data.message ?? errorMessage(r.data.code));
+    setTrackFor(null);
+    notify('Position du colis mise à jour : le client la voit dans son suivi.');
   }
 
   async function remove(p: SProduct) {
@@ -256,9 +266,17 @@ export function SellerDashboard() {
                   <span className="text-sm">Total <b>{formatUsd(o.totalUsd)}</b>{!shop.isOfficial && <span className="text-muted-foreground"> · commission {formatUsd(o.commissionUsd)} · net {formatUsd(o.netUsd)}</span>}</span>
                   {o.status === 'pending' && <Button size="sm" onClick={() => void orderAction(o.number, 'confirm')}><CheckCheck />Confirmer la commande</Button>}
                   {o.status === 'confirmed' && <Button size="sm" onClick={() => void orderAction(o.number, 'ship')}><Truck />Marquer comme expédiée</Button>}
+                  {(o.status === 'confirmed' || o.status === 'shipped') && <Button size="sm" variant="outline" onClick={() => setTrackFor(trackFor === o.number ? null : o.number)}><MapPin />Position du colis</Button>}
                   {(o.status === 'pending' || o.status === 'confirmed') && <Button size="sm" variant="outline" onClick={() => void orderAction(o.number, 'cancel')}>Annuler</Button>}
                 </div>
               </div>
+              {trackFor === o.number && (
+                <form className="grid gap-3 border-t bg-muted/30 px-5 py-4 sm:grid-cols-[1fr_1fr_auto]" onSubmit={(e) => void savePosition(e, o.number)}>
+                  <Input name="trackLocation" required minLength={2} maxLength={120} placeholder="Où est le colis ? (ville, dépôt…)" />
+                  <Input name="trackNote" maxLength={300} placeholder="Remarque pour le client (facultatif)" />
+                  <Button type="submit">Enregistrer</Button>
+                </form>
+              )}
             </Card>
           ))}
         </div>

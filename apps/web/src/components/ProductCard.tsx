@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { Product } from '../data/catalogue';
 import { useCart } from './CartProvider';
-import { isProductNew, productImageUrl } from '../lib';
+import { isProductNew, placeLabel, productImageUrl } from '../lib';
 import { Price } from './Locale';
 
 
@@ -40,6 +40,7 @@ export function ProductCard({ product, now }: { product: Product; now: number })
       </div>
       <div className="product-info">
         <p className="product-category">{product.category}</p>
+        {placeLabel(product) && <p className="product-place"><i className="fas fa-map-marker-alt" /> {placeLabel(product)}</p>}
         <h3 className="product-name">{product.name}</h3>
         <div className="product-rating">
           <div className="stars"><Stars rating={product.rating} /></div>

@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import type { Product } from '../data/catalogue';
-import { productImageUrl } from '../lib';
+import { placeLabel, productImageUrl } from '../lib';
 import { Price } from './Locale';
 
 import { useCart } from './CartProvider';
@@ -50,6 +50,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
           <div className="product-meta"><i className="fas fa-eye" /> Récemment consulté</div>
           <h1>{product.name}</h1>
           {product.shopName && <p className="seller-line">Vendu par <b>{product.shopName}</b>{product.certified && <span className="badge-certified-inline"><i className="fas fa-check-circle" /> Vendeur certifié Mwinda</span>}</p>}
+          {placeLabel(product) && <p className="seller-place"><i className="fas fa-map-marker-alt" /> Expédié depuis <b>{placeLabel(product)}</b></p>}
           <div className="product-rating">
             <div className="stars"><Stars rating={product.rating} /></div>
             <span><span className="review-count">({product.reviews} avis)</span></span>

@@ -34,7 +34,7 @@ const round2 = (n: number): number => Math.round(n * 100) / 100;
 const slugify = (s: string): string =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'boutique';
 
-interface ProductRow { certified?: boolean; shop_name?: string; rating?: string; reviews?: number; sku?: string | null; tags?: string[]; id: string; shop_id: string; name: string; description: string; price_usd: string; original_price_usd: string | null; department: string; category: string; colors: string[]; sizes: string[]; in_stock: boolean; status: string; created_at: Date }
+interface ProductRow { certified?: boolean; shop_name?: string; shop_country?: string | null; shop_country_name?: string | null; shop_city?: string | null; shop_city_slug?: string | null; rating?: string; reviews?: number; sku?: string | null; tags?: string[]; id: string; shop_id: string; name: string; description: string; price_usd: string; original_price_usd: string | null; department: string; category: string; colors: string[]; sizes: string[]; in_stock: boolean; status: string; created_at: Date }
 
 export class CommerceService {
   constructor(private db: Db) {}
@@ -46,18 +46,19 @@ export class CommerceService {
       department: p.department, category: p.category, sku: p.sku ?? '', colors: p.colors, sizes: p.sizes, tags: p.tags ?? [], inStock: p.in_stock,
       rating: Number(p.rating ?? 0), reviews: p.reviews ?? 0, images: imgs, createdAt: p.created_at,
       certified: !!p.certified, shopName: p.shop_name ?? '',
+      countryCode: p.shop_country ?? null, countryName: p.shop_country_name ?? null, city: p.shop_city ?? null, citySlug: p.shop_city_slug ?? null,
     };
   }
 
   /** Produits visibles par les acheteurs : actifs, d'une boutique active. */
   async listPublicProducts() {
-    const rows = await this.db.query<ProductRow>(`SELECT p.*, (s.is_official OR COALESCE(pl.certified, false)) AS certified, s.name AS shop_name FROM products p JOIN shops s ON s.id = p.shop_id LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.status = 'active' AND s.status = 'active' ORDER BY p.id`);
+    const rows = await this.db.query<ProductRow>(`SELECT p.*, (s.is_official OR COALESCE(pl.certified, false)) AS certified, s.name AS shop_name, s.country_code AS shop_country, co.name AS shop_country_name, ci.name AS shop_city, ci.slug AS shop_city_slug FROM products p JOIN shops s ON s.id = p.shop_id LEFT JOIN countries co ON co.code = s.country_code LEFT JOIN cities ci ON ci.id = s.city_id LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.status = 'active' AND s.status = 'active' ORDER BY p.id`);
     const imgs = await this.images(rows.map((r) => r.id));
     return rows.map((r) => this.publicDto(r, imgs.get(r.id) ?? []));
   }
 
   async getPublicProduct(id: number) {
-    const rows = await this.db.query<ProductRow>(`SELECT p.*, (s.is_official OR COALESCE(pl.certified, false)) AS certified, s.name AS shop_name FROM products p JOIN shops s ON s.id = p.shop_id LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.id = $1 AND p.status = 'active' AND s.status = 'active'`, [id]);
+    const rows = await this.db.query<ProductRow>(`SELECT p.*, (s.is_official OR COALESCE(pl.certified, false)) AS certified, s.name AS shop_name, s.country_code AS shop_country, co.name AS shop_country_name, ci.name AS shop_city, ci.slug AS shop_city_slug FROM products p JOIN shops s ON s.id = p.shop_id LEFT JOIN countries co ON co.code = s.country_code LEFT JOIN cities ci ON ci.id = s.city_id LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.id = $1 AND p.status = 'active' AND s.status = 'active'`, [id]);
     if (!rows[0]) throw new AppError(404, 'not_found', 'Produit introuvable.');
     return this.publicDto(rows[0], (await this.images([rows[0].id])).get(rows[0].id) ?? []);
   }
@@ -116,6 +117,7 @@ export class CommerceService {
         await t.query('INSERT INTO order_items(id,order_id,product_id,shop_id,name,unit_price_usd,quantity,color,size,image,commission_bps) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
           [newId(), orderId, p.id, p.shop_id, p.name, unit.toFixed(2), i.quantity, i.color ?? '', i.size ?? '', p.image, bps]);
       }
+      await t.query("INSERT INTO order_events(order_id, kind, location, note) VALUES ($1, 'placed', $2, 'Commande passée')", [orderId, ship.shippingCity]);
       return { id: orderId, number, subtotalUsd: Number(subtotal.toFixed(2)) };
     });
   }
@@ -153,10 +155,52 @@ export class CommerceService {
     if (!o) throw new AppError(404, 'not_found', 'Commande introuvable.');
     const [from, to] = action === 'cancel' ? ['pending', 'cancelled'] : ['shipped', 'delivered'];
     return this.db.transaction(async (t) => {
-      const r = await t.query('UPDATE order_items SET status = $3 WHERE order_id = $1 AND status = $2 RETURNING id', [o.id, from, to]);
+      const r = await t.query<{ shop_id: string }>('UPDATE order_items SET status = $3 WHERE order_id = $1 AND status = $2 RETURNING shop_id', [o.id, from, to]);
       if (!r[0]) throw new AppError(409, 'invalid_transition', action === 'cancel' ? 'Cette commande ne peut plus être annulée.' : 'Aucun colis à confirmer.');
+      for (const shopId of new Set(r.map((x) => x.shop_id))) {
+        await t.query('INSERT INTO order_events(order_id, shop_id, kind, location, note) VALUES ($1,$2,$3,$4,$5)',
+          [o.id, shopId, to, to === 'delivered' ? (await t.query<{ c: string }>('SELECT shipping_city AS c FROM orders WHERE id = $1', [o.id]))[0]!.c : null, to === 'delivered' ? 'Réception confirmée par le client' : 'Commande annulée par le client']);
+      }
       return { status: await this.syncOrderStatus(t, o.id) };
     });
+  }
+
+  // ---------- Suivi de commande ----------
+  /** Frise de suivi d'une commande de l'acheteur : une expédition par boutique, avec sa position actuelle et son historique. */
+  async trackOrder(userId: string, number: string) {
+    const o = (await this.db.query<{ id: string; number: string; status: string; shipping_city: string; shipping_address: string; created_at: Date }>(
+      'SELECT id, number, status, shipping_city, shipping_address, created_at FROM orders WHERE number = $1 AND user_id = $2', [number, userId]))[0];
+    if (!o) throw new AppError(404, 'not_found', 'Commande introuvable.');
+    const items = await this.db.query<{ shop_id: string; shop: string; status: string; name: string; city: string | null; country: string | null }>(
+      `SELECT i.shop_id, s.name AS shop, i.status, i.name, c.name AS city, co.name AS country
+         FROM order_items i JOIN shops s ON s.id = i.shop_id LEFT JOIN cities c ON c.id = s.city_id LEFT JOIN countries co ON co.code = s.country_code
+        WHERE i.order_id = $1 ORDER BY i.id`, [o.id]);
+    const events = await this.db.query<{ shop_id: string | null; kind: string; location: string | null; note: string | null; created_at: Date }>(
+      'SELECT shop_id, kind, location, note, created_at FROM order_events WHERE order_id = $1 ORDER BY id', [o.id]);
+    const dto = (e: (typeof events)[number]) => ({ kind: e.kind, location: e.location, note: e.note, createdAt: e.created_at });
+    const shipments = [...new Set(items.map((i) => i.shop_id))].map((shopId) => {
+      const its = items.filter((i) => i.shop_id === shopId);
+      const live = its.map((i) => i.status).filter((x) => x !== 'cancelled');
+      const status = live.length === 0 ? 'cancelled' : ORDER_FLOW[Math.min(...live.map((x) => ORDER_FLOW.indexOf(x as OrderStatus)))]!;
+      const evs = events.filter((e) => e.shop_id === shopId);
+      const located = [...evs].reverse().find((e) => e.location);
+      const currentLocation = status === 'delivered' ? o.shipping_city : (located?.location ?? (status === 'pending' ? null : its[0]!.city));
+      return { shop: its[0]!.shop, origin: { city: its[0]!.city, country: its[0]!.country }, status, items: its.map((i) => i.name), currentLocation, events: evs.map(dto) };
+    });
+    return {
+      number: o.number, status: o.status, createdAt: o.created_at, destination: { city: o.shipping_city, address: o.shipping_address },
+      placed: events.filter((e) => e.kind === 'placed').map(dto)[0] ?? null, shipments,
+    };
+  }
+
+  /** Le vendeur indique où se trouve le colis (ville, étape, remarque) tant que sa part de commande est confirmée ou expédiée. */
+  async addTracking(userId: string, number: string, b: { location: string; note?: string }) {
+    const s = await this.requireShop(userId);
+    const o = (await this.db.query<{ id: string }>('SELECT id FROM orders WHERE number = $1', [number]))[0];
+    const live = o ? await this.db.query('SELECT 1 FROM order_items WHERE order_id = $1 AND shop_id = $2 AND status IN (\'confirmed\',\'shipped\') LIMIT 1', [o.id, s.id]) : [];
+    if (!o || !live[0]) throw new AppError(409, 'invalid_transition', 'La position ne peut être mise à jour que pour une commande confirmée ou expédiée.');
+    await this.db.query("INSERT INTO order_events(order_id, shop_id, kind, location, note) VALUES ($1,$2,'update',$3,$4)", [o.id, s.id, b.location.trim(), b.note?.trim() || null]);
+    return { ok: true };
   }
 
   // ---------- Boutique du vendeur ----------
@@ -349,6 +393,9 @@ export class CommerceService {
     return this.db.transaction(async (t) => {
       const r = await t.query('UPDATE order_items SET status = $4 WHERE order_id = $1 AND shop_id = $2 AND status = ANY($3::text[]) RETURNING id', [o.id, s.id, from, to]);
       if (!r[0]) throw new AppError(409, 'invalid_transition', 'Cette action n’est pas possible dans l’état actuel de la commande.');
+      const origin = (await t.query<{ city: string | null }>('SELECT c.name AS city FROM shops sh LEFT JOIN cities c ON c.id = sh.city_id WHERE sh.id = $1', [s.id]))[0]?.city ?? null;
+      await t.query('INSERT INTO order_events(order_id, shop_id, kind, location, note) VALUES ($1,$2,$3,$4,$5)',
+        [o.id, s.id, to, to === 'cancelled' ? null : origin, to === 'confirmed' ? 'Commande confirmée par le vendeur' : to === 'shipped' ? 'Colis expédié par le vendeur' : 'Commande annulée par le vendeur']);
       return { status: await this.syncOrderStatus(t, o.id) };
     });
   }
