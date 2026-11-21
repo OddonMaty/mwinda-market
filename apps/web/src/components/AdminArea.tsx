@@ -18,7 +18,7 @@ const NAV: NavGroup[] = [
 ];
 const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée', active: 'Actif', suspended: 'Suspendu', archived: 'Archivé' };
 const TONE: Record<string, 'success' | 'warning' | 'danger' | 'secondary' | 'default'> = { active: 'success', delivered: 'success', approved: 'success', pending: 'warning', confirmed: 'default', shipped: 'default', suspended: 'danger', cancelled: 'danger', rejected: 'danger', archived: 'secondary' };
-const PAGE_LABELS: Record<string, string> = { conditions: 'Conditions générales de vente', confidentialite: 'Politique de confidentialité', 'conditions-vendeur': 'Conditions générales vendeur', remboursement: 'Politique de remboursement', livraison: 'Livraison & retours', paiements: 'Paiements' };
+const PAGE_LABELS: Record<string, string> = { conditions: 'Conditions générales d’utilisation', confidentialite: 'Politique de confidentialité', 'conditions-vendeur': 'Conditions générales vendeur', remboursement: 'Retours et remboursements', livraison: 'Livraison', paiements: 'Paiements' };
 const day = (d: string | null) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const St = ({ s }: { s: string }) => <Badge variant={TONE[s] ?? 'secondary'}>{STATUS[s] ?? s}</Badge>;
 

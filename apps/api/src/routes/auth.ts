@@ -6,7 +6,7 @@ import {
 } from '@saotech/shared';
 import { AppError } from '../errors.js';
 import { isAllowedOrigin } from '../config/env.js';
-import { AuthService, type AuthDeps, type UserRow } from '../services/auth.js';
+import { AuthService, publicUrl, type AuthDeps, type UserRow } from '../services/auth.js';
 import { CommerceService } from '../services/commerce.js';
 import { commerceRoutes } from './commerce.js';
 import { adminRoutes, publicPlatformRoutes } from './admin.js';
@@ -114,7 +114,7 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
       return OK;
     });
     const commerce = new CommerceService(deps.db);
-    const admin = new AdminService(deps.db, commerce);
+    const admin = new AdminService(deps.db, commerce, { mailer: deps.mailer, baseUrl: publicUrl(deps.config) });
     commerceRoutes(r, { svc: commerce, authenticate, parse });
     publicPlatformRoutes(r, admin, parse);
     adminRoutes(r, { svc: admin, authenticate, parse });

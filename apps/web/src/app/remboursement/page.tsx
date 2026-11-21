@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { LegalPage } from '../../components/LegalPage';
 import { getLegalPage } from '../../data/source';
 
-export const metadata: Metadata = { title: 'Politique de remboursement - Mwinda Market' };
+export const metadata: Metadata = { title: 'Retours et remboursements - Mwinda Market' };
 export const revalidate = 30;
 
 export default async function Page() {

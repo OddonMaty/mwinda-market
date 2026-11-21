@@ -1,17 +1,23 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import type { Product } from '../data/catalogue';
-import { DEPARTMENTS, departmentIcon, departmentName } from '@saotech/shared';
+import { departmentIcon } from '@saotech/shared';
 import { useAuth } from './AuthProvider';
 import { ProductCard } from './ProductCard';
 
-/** Rayons qui contiennent des produits, dans l'ordre du catalogue. */
-const depsOf = (products: Product[]) => DEPARTMENTS.map((d) => d.slug).filter((s) => products.some((p) => p.department === s));
+/** Catégories réellement présentes dans le catalogue, les plus fournies d'abord. */
+const catsOf = (products: Product[]) => {
+  const count = new Map<string, number>();
+  for (const p of products) count.set(p.category, (count.get(p.category) ?? 0) + 1);
+  return [...count.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'fr')).map(([name]) => name);
+};
+const iconOf = (products: Product[], category: string) => departmentIcon(products.find((p) => p.category === category)?.department ?? '');
 
 /** Onglets « Nouveaux produits » (filtre par rayon). */
 export function NewProducts({ products, now }: { products: Product[]; now: number }) {
   const [dep, setDep] = useState('All');
-  const list = dep === 'All' ? products : products.filter((p) => p.department === dep);
+  const list = dep === 'All' ? products : products.filter((p) => p.category === dep);
   const tab = (key: string, label: string) => (
     <button type="button" key={key} className={`tab-btn${dep === key ? ' active' : ''}`} onClick={() => setDep(key)}>{label}</button>
   );
@@ -20,7 +26,7 @@ export function NewProducts({ products, now }: { products: Product[]; now: numbe
       <div className="section-header">
         <h2>Nouveaux produits</h2>
         <div className="filter-tabs">
-          {tab('All', 'Tous')}{depsOf(products).slice(0, 6).map((d) => tab(d, departmentName(d)))}
+          {tab('All', 'Tous')}{catsOf(products).slice(0, 6).map((c) => tab(c, c))}
         </div>
       </div>
       <div className="products-grid">
@@ -38,11 +44,11 @@ export function HomeCatalog({ products, now }: { products: Product[]; now: numbe
   const [email, setEmail] = useState('');
   const { notify } = useAuth();
   const items = dep === 'All'
-    ? depsOf(products).flatMap((d) => products.filter((p) => p.department === d).slice(0, 3))
-    : products.filter((p) => p.department === dep).slice(0, 12);
+    ? catsOf(products).flatMap((c) => products.filter((p) => p.category === c).slice(0, 3))
+    : products.filter((p) => p.category === dep).slice(0, 12);
   const btn = (key: string, label: string) => (
     <button type="button" key={key} className={`sector-filter-btn${dep === key ? ' active' : ''}`} onClick={() => setDep(key)}>
-      {key !== 'All' && <><i className={`fas ${departmentIcon(key)}`} />{' '}</>}{label}
+      {key !== 'All' && <><i className={`fas ${iconOf(products, key)}`} />{' '}</>}{label}
     </button>
   );
   return (
@@ -50,7 +56,7 @@ export function HomeCatalog({ products, now }: { products: Product[]; now: numbe
       <div className="section-header"><h2>Tous nos produits</h2></div>
       <div className="home-sector-tabs">
         {btn('All', 'Tous')}
-        {depsOf(products).map((d) => btn(d, departmentName(d)))}
+        {catsOf(products).map((c) => btn(c, c))}
       </div>
       <div className="home-catalog-layout">
         <aside className="home-newsletter-card">
@@ -64,11 +70,11 @@ export function HomeCatalog({ products, now }: { products: Product[]; now: numbe
         <div className="products-grid">
           {items.length > 0
             ? items.map((p) => <ProductCard key={p.id} product={p} now={now} />)
-            : <p className="empty-collection">Aucun produit dans ce secteur pour le moment.</p>}
+            : <p className="empty-collection">Aucun produit dans cette catégorie pour le moment.</p>}
         </div>
       </div>
       <div className="home-catalog-cta">
-        <button type="button" className="btn btn-outline">Voir tout le catalogue <i className="fas fa-arrow-right" /></button>
+        <Link href="/collection" className="btn btn-outline">Voir tout le catalogue <i className="fas fa-arrow-right" /></Link>
       </div>
     </>
   );

@@ -496,27 +496,39 @@ export const products: Product[] = [
 ];
 export const faqs: { q:string; a:string }[] = [
   {
-    "q": "Quels modes de livraison proposez-vous ?",
-    "a": "Nous proposons la livraison Standard (2 à 4 jours), Express (24h sur Bukavu) et un retrait en boutique à Bukavu. La livraison est disponible à Bukavu, Uvira et dans les environs du Sud-Kivu."
+    "q": "Comment fonctionne Mwinda Market ?",
+    "a": "Mwinda Market est une place de marché panafricaine : des vendeurs indépendants y publient leurs produits et vous commandez directement auprès d'eux, avec le suivi de la plateforme."
   },
   {
     "q": "Comment passer une commande ?",
-    "a": "Parcourez les produits, sélectionnez vos options (couleur, capacité), cliquez sur « Ajouter au panier » puis validez votre commande. Vous pouvez commander en tant qu'invité ou en vous connectant à votre compte."
+    "a": "Parcourez les produits, cliquez sur « Ajouter au panier » puis validez votre commande depuis votre compte. Vous suivez ensuite son état dans Mon compte : en attente, confirmée, expédiée, livrée."
   },
   {
-    "q": "Combien de temps faut-il pour recevoir mon colis ?",
-    "a": "Les commandes à Bukavu sont expédiées sous 24h depuis notre entrepôt du centre-ville. Pour Uvira, comptez généralement 2 à 4 jours ouvrables selon les conditions de route."
+    "q": "Puis-je poser une question au vendeur avant d'acheter ?",
+    "a": "Oui. Sur la fiche produit, cliquez sur « Acheter » pour ouvrir une discussion avec le vendeur, ou sur « Poser une question » depuis votre panier. Vous retrouvez vos échanges dans Mon compte > Mes messages."
   },
   {
-    "q": "D'où sont expédiés vos produits ?",
-    "a": "Notre entrepôt principal se trouve à Bukavu, sur l'avenue Patrice Lumumba. Nous disposons également d'un point de retrait à Uvira."
+    "q": "Dans quelle monnaie sont les prix ?",
+    "a": "Tous les prix sont en dollars américains. L'équivalent dans la monnaie du pays choisi en haut de page est affiché à côté, à titre indicatif, d'après un taux de change actualisé régulièrement."
   },
   {
-    "q": "Comment modifier mes informations de facturation ?",
-    "a": "Vous pouvez mettre à jour vos informations dans « Paramètres du compte » sous « Paiements & Retours ». Pour une commande déjà passée, contactez notre équipe support."
+    "q": "Où livrez-vous et en combien de temps ?",
+    "a": "Mwinda Market s'ouvre progressivement aux pays africains. Le vendeur prépare puis expédie votre commande ; les délais et les frais dépendent du vendeur et de la distance. Posez-lui la question avant de commander."
+  },
+  {
+    "q": "Puis-je annuler ou retourner une commande ?",
+    "a": "Vous pouvez annuler une commande tant que le vendeur ne l'a pas confirmée. En cas d'article défectueux ou non conforme, contactez le vendeur puis notre assistance dans les 7 jours suivant la réception. Voir la page Remboursement."
+  },
+  {
+    "q": "Comment ouvrir une boutique ?",
+    "a": "Rendez-vous sur « Vendeur », renseignez votre boutique (pays, ville), choisissez une formule puis créez votre compte. L'équipe Mwinda Market examine chaque demande et vous prévient par e-mail de l'acceptation ou du refus."
+  },
+  {
+    "q": "Combien coûte la vente sur Mwinda Market ?",
+    "a": "Quatre formules : Gratuit (0 $, 10 produits, commission de 5 %), Essentiel (15 $ par trimestre, 50 produits, 4 %), Pro (30 $ par trimestre, 200 produits, 3 %) et Premium (45 $ par trimestre, produits illimités, 2 %, badge « Vendeur certifié »)."
   },
   {
     "q": "Pourquoi n'arrive-je pas à me connecter à mon compte ?",
-    "a": "Essayez d'abord de réinitialiser votre mot de passe via le lien « Mot de passe oublié ». Si le problème persiste, videz le cache de votre navigateur et réessayez."
+    "a": "Essayez d'abord de réinitialiser votre mot de passe via le lien « Mot de passe oublié ». Si le problème persiste, videz le cache de votre navigateur et réessayez, ou écrivez-nous à contact@mwindamarket.com."
   }
 ];

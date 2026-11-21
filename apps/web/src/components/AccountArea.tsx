@@ -8,7 +8,7 @@ import { ConversationList, Thread, type Conv } from './Chat';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { e164, type Address } from './CheckoutArea';
 import { useCountries } from './Geo';
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DashboardShell, Empty, Field, Input, PageHeading, StatCard, Table, Td, Textarea, Th, type NavGroup } from './ui';
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DashboardShell, Empty, PageLoader, Field, Input, PageHeading, StatCard, Table, Td, Textarea, Th, type NavGroup } from './ui';
 
 interface SessionRow { id: string; kind: string; createdAt: string; lastUsedAt: string; userAgent: string | null; ip: string | null; current: boolean }
 
@@ -54,7 +54,7 @@ export function AccountArea() {
   }, [user, loadSessions, loadAddresses, loadOrders]);
 
   const gate = (node: React.ReactNode) => <div className="ui ui-shell flex items-center justify-center p-6">{node}</div>;
-  if (!ready) return gate(<p className="text-sm text-muted-foreground">Chargement…</p>);
+  if (!ready) return <PageLoader />;
   if (!user) {
     return gate(
       <Card className="w-full max-w-sm text-center">

@@ -8,7 +8,8 @@ import { api, errorMessage, useAuth } from './AuthProvider';
 import { e164 } from './CheckoutArea';
 import { useCountries } from './Geo';
 import { PlanCards, type Plan } from './PlanCards';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, Input, Select, Textarea, cn } from './ui';
+import { Header, Footer } from './Chrome';
+import { Button, PageLoader, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, Input, Select, Textarea, cn } from './ui';
 
 const STEPS = ['Votre boutique', 'Votre plan', 'Votre compte'];
 
@@ -85,11 +86,19 @@ export function SellerArea() {
     notify('Connexion réussie !');
   }
 
-  if (!ready || (user && hasShop === null)) return <p className="empty-collection">Chargement…</p>;
+  // Un vendeur déjà connecté est redirigé vers sa boutique : on n'affiche jamais la page de présentation, seulement le chargement.
+  if (!ready || (user && (hasShop === null || hasShop))) return <PageLoader />;
   const chosen = plans.find((p) => p.code === plan);
   const stepsShown = user ? STEPS.slice(0, 2) : STEPS;
 
   return (
+    <>
+    <Header active="" />
+    <div className="page-header" data-theme="vendeur">
+      <h1>Devenez vendeur sur Mwinda Market</h1>
+      <p>Ouvrez votre boutique en ligne et vendez vos produits à des milliers de clients, dans votre pays et partout en Afrique.</p>
+    </div>
+    <div className="container" style={{ paddingTop: '3rem', paddingBottom: '4rem' }}>
     <div className="ui mx-auto grid w-full max-w-6xl gap-8 py-2 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div className="hidden content-start gap-6 lg:grid">
         <div>
@@ -173,5 +182,8 @@ export function SellerArea() {
         )}
       </Card>
     </div>
+    </div>
+    <Footer />
+    </>
   );
 }

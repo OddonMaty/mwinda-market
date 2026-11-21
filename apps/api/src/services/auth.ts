@@ -32,7 +32,7 @@ interface UserRow {
   phone: string | null; country_code: string | null; city_id: string | null; locale: string; status: string;
 }
 
-const publicUrl = (c: EnvConfig) => webOrigins(c)[0] ?? '';
+export const publicUrl = (c: EnvConfig) => webOrigins(c)[0] ?? '';
 const asLocale = (l: string): Locale => (l === 'en' ? 'en' : 'fr');
 
 // Hash factice pour égaliser le temps de réponse quand le compte n'existe pas.

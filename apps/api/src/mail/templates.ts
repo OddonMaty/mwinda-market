@@ -23,3 +23,14 @@ export function passwordChanged(locale: Locale, to: string): Mail {
     ? { to, subject: 'Your password was changed', text: `Your Mwinda Market password was just changed. If this wasn't you, reset it immediately and contact us.${sign.en}` }
     : { to, subject: 'Votre mot de passe a été modifié', text: `Le mot de passe de votre compte Mwinda Market vient d'être modifié. Si ce n'était pas vous, réinitialisez-le immédiatement et contactez-nous.${sign.fr}` };
 }
+
+export function shopApproved(locale: Locale, to: string, shopName: string, link: string): Mail {
+  return locale === 'en'
+    ? { to, subject: `Your shop "${shopName}" has been accepted`, text: `Good news: your shop "${shopName}" has been accepted on Mwinda Market.\nYou can now publish your products and answer your customers' questions.\nAccess your shop: ${link}${sign.en}` }
+    : { to, subject: `Votre boutique « ${shopName} » a été acceptée`, text: `Bonne nouvelle : votre boutique « ${shopName} » a été acceptée sur Mwinda Market.\nVous pouvez dès maintenant publier vos produits et répondre aux questions de vos clients.\nAccéder à votre boutique : ${link}${sign.fr}` };
+}
+export function shopRejected(locale: Locale, to: string, shopName: string, reason: string | null): Mail {
+  return locale === 'en'
+    ? { to, subject: `Your shop "${shopName}" was not accepted`, text: `We reviewed your request to open "${shopName}" on Mwinda Market and could not accept it.\nReason: ${reason || 'not specified'}\nYou can write to us at contact@mwindamarket.com to discuss it.${sign.en}` }
+    : { to, subject: `Votre boutique « ${shopName} » n’a pas été acceptée`, text: `Nous avons examiné votre demande d’ouverture de « ${shopName} » sur Mwinda Market et n’avons pas pu l’accepter.\nMotif : ${reason || 'non précisé'}\nVous pouvez nous écrire à contact@mwindamarket.com pour en discuter.${sign.fr}` };
+}

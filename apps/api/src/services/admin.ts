@@ -2,6 +2,8 @@ import { USD_RATES } from '@saotech/shared';
 import { AppError } from '../errors.js';
 import { newId } from '../lib/crypto.js';
 import type { Db } from '../db/client.js';
+import type { Mailer } from '../mail/mailer.js';
+import * as tpl from '../mail/templates.js';
 import { ORDER_FLOW, planDto, type CommerceService, type PlanRow } from './commerce.js';
 
 export type AdminRole = 'moderator' | 'finance' | 'superadmin';
@@ -53,7 +55,7 @@ export class PlatformService {
 }
 
 export class AdminService extends PlatformService {
-  constructor(db: Db, private commerce: CommerceService) { super(db); }
+  constructor(db: Db, private commerce: CommerceService, private notifier?: { mailer: Mailer; baseUrl: string }) { super(db); }
 
   async roles(userId: string): Promise<AdminRole[]> {
     return (await this.db.query<{ role: AdminRole }>('SELECT role FROM admin_roles WHERE user_id = $1', [userId])).map((r) => r.role);
@@ -119,7 +121,9 @@ export class AdminService extends PlatformService {
   }
 
   async updateShop(actor: string, id: string, b: { status?: 'pending' | 'active' | 'suspended' | 'rejected'; reason?: string; plan?: string; planMonths?: number }) {
-    if (!(await this.db.query('SELECT 1 FROM shops WHERE id = $1', [id]))[0]) throw new AppError(404, 'not_found', 'Boutique introuvable.');
+    const before = (await this.db.query<{ status: string; name: string; email: string | null; locale: string | null }>(
+      'SELECT s.status, s.name, u.email, u.locale FROM shops s LEFT JOIN users u ON u.id = s.owner_id WHERE s.id = $1', [id]))[0];
+    if (!before) throw new AppError(404, 'not_found', 'Boutique introuvable.');
     if (b.status) await this.db.query('UPDATE shops SET status = $2::varchar, reject_reason = CASE WHEN $2::text = \'rejected\' THEN $3::text ELSE NULL END WHERE id = $1', [id, b.status, b.reason?.trim() || null]);
     if (b.plan) {
       if (!(await this.db.query('SELECT 1 FROM plans WHERE code = $1', [b.plan]))[0]) throw new AppError(404, 'not_found', 'Plan introuvable.');
@@ -127,6 +131,17 @@ export class AdminService extends PlatformService {
       await this.db.query("UPDATE shops SET plan = $2, plan_expires_at = CASE WHEN $3::int IS NULL THEN NULL ELSE now() + ($3::int * interval '1 month') END WHERE id = $1", [id, b.plan, months]);
     }
     await this.audit(actor, 'shop.update', 'shop', id, b);
+    await this.notifyOwner(before, b);
+  }
+
+  /** Prévient le vendeur par e-mail quand sa boutique est acceptée (avec le lien) ou refusée (avec le motif). Un échec d'envoi ne bloque jamais la décision. */
+  private async notifyOwner(before: { status: string; name: string; email: string | null; locale: string | null }, b: { status?: string; reason?: string }) {
+    if (!this.notifier || !before.email || !b.status || b.status === before.status) return;
+    const locale = before.locale === 'en' ? 'en' : 'fr';
+    try {
+      if (b.status === 'active' && (before.status === 'pending' || before.status === 'rejected')) await this.notifier.mailer.send(tpl.shopApproved(locale, before.email, before.name, `${this.notifier.baseUrl}/vendeur/tableau`));
+      else if (b.status === 'rejected') await this.notifier.mailer.send(tpl.shopRejected(locale, before.email, before.name, b.reason?.trim() || null));
+    } catch { /* e-mail non envoyé : la décision reste enregistrée */ }
   }
 
   // ---------- Produits ----------

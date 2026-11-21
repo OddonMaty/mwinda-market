@@ -224,7 +224,7 @@ const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { tim
   await ap.click('button:has-text("Pays & villes")');
   await ap.waitForSelector('tr:has-text("Kenya")');
   await ap.click('button:has-text("Textes légaux")');
-  await ap.click('tr:has-text("Conditions générales de vente") button:has-text("Modifier")');
+  await ap.click('tr:has-text("Conditions générales d’utilisation") button:has-text("Modifier")');
   await ap.fill('[name=title]', 'Conditions de test');
   await ap.fill('[name=body]', '## Article 1\n\nTexte rédigé depuis l\'administration.');
   await ap.click('button:has-text("Publier")');

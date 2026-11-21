@@ -4,18 +4,12 @@ import { SearchBar } from './SearchBar';
 import { AccountButton } from './AccountButton';
 import { CartButton } from './CartButton';
 import { CountrySelector } from './CountrySelector';
-import { DEPARTMENTS } from '@saotech/shared';
 import { collectionHref } from '../lib';
 
 type Active = 'home' | 'collection' | 'about' | 'contact' | 'faq' | '';
 
 /** Bouton de navigation (rendu identique à l'ancien site) ; sans `to` : page pas encore portée. */
 const Nav = NavButton;
-
-const MENU = ['electronique', 'vetements', 'maison', 'construction', 'agriculture'].map((slug) => {
-  const d = DEPARTMENTS.find((x) => x.slug === slug)!;
-  return { dep: d.slug, icon: d.icon, title: d.name, items: d.categories.slice(0, 6) };
-});
 
 export function Header({ active }: { active: Active }) {
   const is = (n: Active) => (active === n ? ' active' : '');
@@ -53,17 +47,7 @@ export function Header({ active }: { active: Active }) {
       <nav className="navigation">
         <div className="container">
           <Nav to="/" className={`nav-item${is('home')}`}>Accueil</Nav>
-          <div className="nav-dropdown mega-menu-wrapper">
-            <Nav to={collectionHref()} className={`nav-item${is('collection')}`}>Nos produits <i className="fas fa-chevron-down" /></Nav>
-            <div className="mega-menu">
-              {MENU.map((col) => (
-                <div className="mega-menu-column" key={col.title}>
-                  <Nav to={collectionHref(col.dep)} className="mega-menu-heading"><i className={`fas ${col.icon}`} /> {col.title}</Nav>
-                  {col.items.map((c) => <Nav to={collectionHref(col.dep, c)} key={c}>{c}</Nav>)}
-                </div>
-              ))}
-            </div>
-          </div>
+          <Nav to={collectionHref()} className={`nav-item${is('collection')}`}>Nos produits</Nav>
           <Nav to="/a-propos" className={`nav-item${is('about')}`}>À propos</Nav>
           <Nav to="/contact" className={`nav-item${is('contact')}`}>Contact</Nav>
           <Nav to="/faq" className={`nav-item${is('faq')}`}>FAQ</Nav>
@@ -74,8 +58,8 @@ export function Header({ active }: { active: Active }) {
 }
 
 const FOOTER_COLS: [string, [string, string?][]][] = [
-  ['Service Client', [['Contactez-nous', '/contact'], ['Aide & conseils', '/faq'], ['Livraison & Retours', '/livraison'], ['Conditions générales', '/conditions'], ['Conditions vendeur', '/conditions-vendeur'], ['Politique de remboursement', '/remboursement']]],
-  ['Informations', [['À propos de nous', '/a-propos'], ['Mon compte'], ['Paiements & Retours', '/paiements'], ['Tarifs vendeurs', '/tarifs'], ['Voir les catalogues', '/collection']]],
+  ['Service Client', [['Contactez-nous', '/contact'], ['Aide & conseils', '/faq'], ['Livraison', '/livraison'], ['Conditions générales', '/conditions'], ['Conditions vendeur', '/conditions-vendeur'], ['Retours et remboursements', '/remboursement']]],
+  ['Informations', [['À propos de nous', '/a-propos'], ['Mon compte'], ['Paiements', '/paiements'], ['Tarifs vendeurs', '/tarifs'], ['Voir les catalogues', '/collection']]],
   ['À propos', [['Qui sommes-nous', '/a-propos'], ['Responsabilité sociale', '/responsabilite-sociale'], ['Carrières', '/carrieres'], ['Politique de confidentialité', '/confidentialite']]],
 ];
 

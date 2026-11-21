@@ -348,13 +348,14 @@ describe('Boutiques, produits, commandes', () => {
 
 describe('Validation des boutiques, messagerie, recherche, taux', () => {
   let adminCookie = '';
+  let mailer: MemoryMailer;
   before(async () => {
     db = createPgliteDb(new PGlite());
     await migrate(db, fileURLToPath(new URL('../migrations', import.meta.url)));
     const clock = () => Date.now();
     app = await buildApp(
       { NODE_ENV: 'test', PORT: 4002, HOST: '127.0.0.1', WEB_ORIGIN: ORIGIN, DATABASE_URL: 'unused', API_SECRET: 'test_secret_must_be_at_least_16_chars', MAIL_FROM: 'test@x' },
-      { db, mailer: new MemoryMailer(), limiter: new MemoryRateLimiter(clock) },
+      { db, mailer: (mailer = new MemoryMailer()), limiter: new MemoryRateLimiter(clock) },
     );
     adminCookie = await user();
     await db.query("INSERT INTO admin_roles(user_id, role) SELECT id, 'superadmin' FROM users WHERE email = (SELECT email FROM users ORDER BY created_at DESC LIMIT 1)");
@@ -374,11 +375,18 @@ describe('Validation des boutiques, messagerie, recherche, taux', () => {
     await call('POST', '/admin/notifications/read', { cookie: adminCookie });
     assert.equal((await call('GET', '/admin/notifications', { cookie: adminCookie })).json.unread, 0);
     const id = shop.json.shop.id as string;
+    const ownerEmail = (await db.query<{ email: string }>('SELECT u.email FROM shops s JOIN users u ON u.id = s.owner_id WHERE s.id = $1', [id]))[0]!.email;
     assert.equal((await call('PATCH', `/admin/shops/${id}`, { cookie: adminCookie, body: { status: 'rejected', reason: 'Pièce illisible' } })).status, 200);
+    const refusedMail = mailer.last(ownerEmail)!;
+    assert.match(refusedMail.subject, /pas été acceptée/);
+    assert.match(refusedMail.text, /Motif : Pièce illisible/);
     const refused = await call('GET', '/seller/shop', { cookie: c });
     assert.equal(refused.json.shop.status, 'rejected');
     assert.equal(refused.json.shop.rejectReason, 'Pièce illisible');
     await call('PATCH', `/admin/shops/${id}`, { cookie: adminCookie, body: { status: 'active' } });
+    const okMail = mailer.last(ownerEmail)!;
+    assert.match(okMail.subject, /a été acceptée/);
+    assert.match(okMail.text, new RegExp(`${ORIGIN.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/vendeur/tableau`));
     assert.equal((await call('POST', '/seller/products', { cookie: c, body: PRODUCT })).status, 201);
   });
 
