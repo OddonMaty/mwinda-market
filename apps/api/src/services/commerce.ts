@@ -161,8 +161,8 @@ export class CommerceService {
 
   // ---------- Boutique du vendeur ----------
   async getShop(userId: string) {
-    const r = await this.db.query<{ id: string; name: string; slug: string; phone: string | null; description: string | null; plan: string; plan_expires_at: Date | null; status: string; is_official: boolean; country_code: string | null; city: string | null }>(
-      `SELECT s.id, s.name, s.slug, s.phone, s.description, s.plan, s.plan_expires_at, s.status, s.is_official, s.country_code, c.name AS city
+    const r = await this.db.query<{ id: string; name: string; slug: string; phone: string | null; description: string | null; plan: string; plan_expires_at: Date | null; status: string; is_official: boolean; country_code: string | null; city: string | null; reject_reason: string | null }>(
+      `SELECT s.id, s.name, s.slug, s.phone, s.description, s.plan, s.plan_expires_at, s.status, s.is_official, s.country_code, c.name AS city, s.reject_reason
          FROM shops s LEFT JOIN cities c ON c.id = s.city_id WHERE s.owner_id = $1`, [userId]);
     const s = r[0];
     if (!s) return null;
@@ -171,7 +171,7 @@ export class CommerceService {
     const used = await this.db.query<{ n: string }>("SELECT count(*) AS n FROM products WHERE shop_id = $1 AND status = 'active'", [s.id]);
     const pending = await this.db.query<{ plan: string }>("SELECT plan FROM plan_requests WHERE shop_id = $1 AND status = 'pending' ORDER BY created_at DESC LIMIT 1", [s.id]);
     return {
-      id: s.id, name: s.name, slug: s.slug, phone: s.phone, description: s.description, status: s.status, isOfficial: s.is_official, countryCode: s.country_code, city: s.city,
+      id: s.id, name: s.name, slug: s.slug, phone: s.phone, description: s.description, status: s.status, rejectReason: s.reject_reason, isOfficial: s.is_official, countryCode: s.country_code, city: s.city,
       plan: plan.code, planName: plan.name, certified: s.is_official || plan.certified, planExpiresAt: s.plan_expires_at, commissionBps: s.is_official ? 0 : plan.commission_bps,
       maxProducts: plan.max_products, productCount: Number(used[0]?.n ?? 0), pendingPlan: pending[0]?.plan ?? null,
     };
@@ -189,8 +189,10 @@ export class CommerceService {
       const slug = n === 0 ? base : `${base}-${n + 1}`;
       const taken = await this.db.query('SELECT 1 FROM shops WHERE slug = $1', [slug]);
       if (taken[0]) continue;
-      await this.db.query('INSERT INTO shops(id,owner_id,name,slug,city_id,country_code,phone,description) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+      await this.db.query('INSERT INTO shops(id,owner_id,name,slug,city_id,country_code,phone,description,status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,\'pending\')',
         [newId(), user.id, b.name.trim(), slug, city[0]?.id ?? null, country, b.phone ?? user.phone, b.description ?? null]);
+      await this.db.query('INSERT INTO notifications(kind,title,body,ref) VALUES ($1,$2,$3,$4)',
+        ['shop.created', `Nouvelle boutique à valider : ${b.name.trim()}`, `${user.first_name} ${user.last_name} (${user.email}) · ${country}`, slug]);
       return (await this.getShop(user.id))!;
     }
     throw new AppError(409, 'slug_taken', 'Nom de boutique indisponible.');
@@ -364,5 +366,76 @@ export class CommerceService {
       netUsd: round2(Number(delivered?.gross ?? 0) - Number(delivered?.commission ?? 0)), inProgressUsd: round2(inProgress),
       pendingLines: Number(by('pending')?.lines ?? 0), deliveredLines: Number(delivered?.lines ?? 0),
     };
+  }
+
+  // ---------- Messagerie acheteur ↔ vendeur ----------
+  /** Ouvre (ou reprend) la discussion de l'acheteur avec la boutique du produit et y poste le premier message. */
+  async startConversation(userId: string, productId: number, body: string) {
+    const p = (await this.db.query<{ shop_id: string; owner_id: string | null }>(
+      "SELECT p.shop_id, s.owner_id FROM products p JOIN shops s ON s.id = p.shop_id WHERE p.id = $1 AND p.status = 'active' AND s.status = 'active'", [productId]))[0];
+    if (!p) throw new AppError(404, 'not_found', 'Produit introuvable.');
+    if (p.owner_id === null) throw new AppError(400, 'official_shop', 'Cet article est vendu par Mwinda Market : écrivez-nous depuis la page Contact.');
+    if (p.owner_id === userId) throw new AppError(400, 'own_shop', 'Vous ne pouvez pas écrire à votre propre boutique.');
+    const existing = (await this.db.query<{ id: string }>('SELECT id FROM conversations WHERE buyer_id = $1 AND shop_id = $2', [userId, p.shop_id]))[0];
+    const id = existing ? Number(existing.id) : Number((await this.db.query<{ id: string }>('INSERT INTO conversations(buyer_id, shop_id) VALUES ($1,$2) RETURNING id', [userId, p.shop_id]))[0]!.id);
+    await this.addMessage(id, 'buyer', body, productId);
+    return { id };
+  }
+
+  /** Discussion déjà ouverte par l'acheteur avec la boutique de ce produit (ou null). */
+  async findConversation(userId: string, productId: number) {
+    const r = (await this.db.query<{ id: string }>('SELECT c.id FROM conversations c JOIN products p ON p.shop_id = c.shop_id WHERE c.buyer_id = $1 AND p.id = $2', [userId, productId]))[0];
+    return { id: r ? Number(r.id) : null };
+  }
+
+  private async side(userId: string, conversationId: number): Promise<{ side: 'buyer' | 'seller'; shopId: string }> {
+    const c = (await this.db.query<{ buyer_id: string; shop_id: string; owner_id: string | null }>(
+      'SELECT c.buyer_id, c.shop_id, s.owner_id FROM conversations c JOIN shops s ON s.id = c.shop_id WHERE c.id = $1', [conversationId]))[0];
+    if (!c || (c.buyer_id !== userId && c.owner_id !== userId)) throw new AppError(404, 'not_found', 'Discussion introuvable.');
+    return { side: c.buyer_id === userId ? 'buyer' : 'seller', shopId: c.shop_id };
+  }
+
+  private async addMessage(conversationId: number, sender: 'buyer' | 'seller', body: string, productId?: number) {
+    await this.db.query('INSERT INTO messages(conversation_id, sender, body, product_id) VALUES ($1,$2,$3,$4)', [conversationId, sender, body.trim(), productId ?? null]);
+    await this.db.query(`UPDATE conversations SET last_message_at = now(), ${sender === 'buyer' ? 'buyer_read_at' : 'shop_read_at'} = now() WHERE id = $1`, [conversationId]);
+  }
+
+  async postMessage(userId: string, conversationId: number, body: string) {
+    const { side } = await this.side(userId, conversationId);
+    await this.addMessage(conversationId, side, body);
+    return { ok: true };
+  }
+
+  async listMessages(userId: string, conversationId: number) {
+    const { side } = await this.side(userId, conversationId);
+    await this.db.query(`UPDATE conversations SET ${side === 'buyer' ? 'buyer_read_at' : 'shop_read_at'} = now() WHERE id = $1`, [conversationId]);
+    const rows = await this.db.query<{ id: string; sender: string; body: string; product_id: string | null; product_name: string | null; created_at: Date }>(
+      'SELECT m.id, m.sender, m.body, m.product_id, p.name AS product_name, m.created_at FROM messages m LEFT JOIN products p ON p.id = m.product_id WHERE m.conversation_id = $1 ORDER BY m.id', [conversationId]);
+    return { side, messages: rows.map((m) => ({ id: Number(m.id), mine: m.sender === side, sender: m.sender, body: m.body, productId: m.product_id ? Number(m.product_id) : null, productName: m.product_name, createdAt: m.created_at })) };
+  }
+
+  async listConversations(userId: string, as: 'buyer' | 'seller') {
+    const rows = await this.db.query<{ id: string; other: string; last_message_at: Date; last_body: string | null; unread: string }>(
+      as === 'buyer'
+        ? `SELECT c.id, s.name AS other, c.last_message_at,
+                  (SELECT body FROM messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1) AS last_body,
+                  (SELECT count(*) FROM messages WHERE conversation_id = c.id AND sender = 'seller' AND created_at > c.buyer_read_at) AS unread
+             FROM conversations c JOIN shops s ON s.id = c.shop_id WHERE c.buyer_id = $1 ORDER BY c.last_message_at DESC LIMIT 100`
+        : `SELECT c.id, u.first_name || ' ' || u.last_name AS other, c.last_message_at,
+                  (SELECT body FROM messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1) AS last_body,
+                  (SELECT count(*) FROM messages WHERE conversation_id = c.id AND sender = 'buyer' AND created_at > c.shop_read_at) AS unread
+             FROM conversations c JOIN shops s ON s.id = c.shop_id JOIN users u ON u.id = c.buyer_id WHERE s.owner_id = $1 ORDER BY c.last_message_at DESC LIMIT 100`, [userId]);
+    return rows.map((c) => ({ id: Number(c.id), other: c.other, lastMessageAt: c.last_message_at, lastBody: c.last_body, unread: Number(c.unread) }));
+  }
+
+  /** Suggestions de recherche : produits actifs dont le nom, la catégorie ou la boutique correspondent. */
+  async suggest(q: string) {
+    const like = `%${q.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    const rows = await this.db.query<{ id: string; name: string; price_usd: string; category: string; department: string; image: string | null }>(
+      `SELECT p.id, p.name, p.price_usd, p.category, p.department, (SELECT url FROM product_images WHERE product_id = p.id AND position = 0) AS image
+         FROM products p JOIN shops s ON s.id = p.shop_id
+        WHERE p.status = 'active' AND s.status = 'active' AND (p.name ILIKE $1 OR p.category ILIKE $1 OR p.description ILIKE $1 OR s.name ILIKE $1)
+        ORDER BY (p.name ILIKE $1) DESC, p.id DESC LIMIT 8`, [like]);
+    return rows.map((p) => ({ id: Number(p.id), name: p.name, priceUsd: Number(p.price_usd), category: p.category, department: p.department, image: p.image }));
   }
 }

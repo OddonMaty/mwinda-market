@@ -29,5 +29,6 @@ app.get('/__make-admin', async (req) => {
   await db.query("INSERT INTO admin_roles(user_id, role) SELECT id, 'superadmin' FROM users WHERE email = $1 ON CONFLICT DO NOTHING", [email]);
   return { ok: true };
 });
+app.get('/__approve-shops', async () => { await db.query("UPDATE shops SET status = 'active' WHERE status = 'pending'"); return { ok: true }; });
 await app.listen({ port: config.PORT, host: '127.0.0.1' });
 console.log(`e2e api on ${config.PORT}`);

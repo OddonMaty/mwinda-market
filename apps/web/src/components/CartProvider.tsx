@@ -7,6 +7,7 @@ import { Price } from './Locale';
 
 import type { Product } from '../data/catalogue';
 import { useAuth } from './AuthProvider';
+import { useChat } from './Chat';
 
 export interface CartItem { id: number; name: string; price: number; image: string; quantity: number; color: string; size: string }
 
@@ -34,6 +35,7 @@ const KEY = 'cart';
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { notify, user, openLogin } = useAuth();
+  const chat = useChat();
   const [items, setItems] = useState<CartItem[]>([]);
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -89,6 +91,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   <div className="cart-item-name">{item.name}</div>
                   <div className="cart-item-qty">Qté : <input type="number" value={item.quantity} min={1} onChange={(e) => setQty(item.id, Number(e.target.value))} style={{ width: 40 }} /></div>
                   <div className="cart-item-price"><Price usd={item.price * item.quantity} /></div>
+                  <button type="button" className="cart-ask" onClick={() => chat.ask({ productId: item.id, productName: item.name })}><i className="fas fa-comment-dots" /> Poser une question</button>
                   <button type="button" onClick={() => remove(item.id)} style={{ background: 'none', border: 'none', color: 'var(--primary-dark)', cursor: 'pointer', fontSize: '0.75rem' }}>Retirer</button>
                 </div>
               </div>

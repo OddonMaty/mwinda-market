@@ -3,3 +3,4 @@ export * from './button';
 export * from './form';
 export * from './card';
 export * from './shell';
+export * from './feedback';

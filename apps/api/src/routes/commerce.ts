@@ -21,6 +21,7 @@ const ProductBody = z.object({
   department: z.enum(DEPARTMENT_SLUGS), category: text(80), colors: list, sizes: list, inStock: z.boolean().default(true), images: z.array(imageUrl).max(5).default([]),
 }).refine((p) => p.originalPriceUsd == null || p.originalPriceUsd > p.priceUsd, { message: 'original_price_must_exceed_price', path: ['originalPriceUsd'] });
 const IdParam = z.object({ id: z.string().regex(/^[0-9A-Za-z]{1,26}$/) });
+const ConvId = z.object({ id: z.coerce.number().int().positive() });
 
 type Parse = <T extends z.ZodTypeAny>(schema: T, data: unknown) => z.infer<T>;
 interface Ctx { svc: CommerceService; authenticate: (req: FastifyRequest) => Promise<void>; parse: Parse }
@@ -66,5 +67,14 @@ export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }:
   r.put('/seller/products/:id', pre, async (req) => { await svc.updateProduct(user(req).id, Number(parse(IdParam, req.params).id), parse(ProductBody, req.body)); return { ok: true }; });
   r.delete('/seller/products/:id', pre, async (req) => { await svc.archiveProduct(user(req).id, Number(parse(IdParam, req.params).id)); return { ok: true }; });
   r.post('/seller/images', { preHandler: authenticate, bodyLimit: 2_300_000 }, async (req, reply) => reply.code(201).send(await svc.uploadImage(user(req).id, parse(UploadBody, req.body).data)));
+  r.get('/products/suggest', async (req) => ({ suggestions: await svc.suggest(parse(z.object({ q: z.string().trim().min(2).max(80) }), req.query).q) }));
+  r.post('/conversations', pre, async (req, reply) => {
+    const b = parse(z.object({ productId: z.coerce.number().int().positive(), message: text(1000) }), req.body);
+    return reply.code(201).send(await svc.startConversation(user(req).id, b.productId, b.message));
+  });
+  r.get('/conversations/lookup', pre, async (req) => svc.findConversation(user(req).id, parse(z.object({ productId: z.coerce.number().int().positive() }), req.query).productId));
+  r.get('/conversations', pre, async (req) => ({ conversations: await svc.listConversations(user(req).id, parse(z.object({ as: z.enum(['buyer', 'seller']).default('buyer') }), req.query).as) }));
+  r.get('/conversations/:id/messages', pre, async (req) => svc.listMessages(user(req).id, parse(ConvId, req.params).id));
+  r.post('/conversations/:id/messages', pre, async (req) => svc.postMessage(user(req).id, parse(ConvId, req.params).id, parse(z.object({ message: text(1000) }), req.body).message));
   r.get('/seller/orders', pre, async (req) => ({ orders: await svc.listShopOrders(user(req).id) }));
 }

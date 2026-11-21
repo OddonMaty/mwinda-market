@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingBag, MapPin, UserRound, ShieldCheck, Store, LogOut, Plus, Package, Truck, CheckCircle2, Clock, Trash2, Laptop, KeyRound } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, MapPin, UserRound, ShieldCheck, Store, LogOut, Plus, Package, Truck, CheckCircle2, Clock, Trash2, Laptop, KeyRound, MessageCircle } from 'lucide-react';
 import { Price } from './Locale';
+import { ConversationList, Thread, type Conv } from './Chat';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { e164, type Address } from './CheckoutArea';
 import { useCountries } from './Geo';
@@ -16,11 +17,12 @@ const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Conf
 const TONE: Record<string, 'success' | 'warning' | 'danger' | 'default'> = { pending: 'warning', confirmed: 'default', shipped: 'default', delivered: 'success', cancelled: 'danger' };
 const day = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 const fmt = (d: string) => new Date(d).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
-type Tab = 'dashboard' | 'orders' | 'addresses' | 'profile' | 'security';
+type Tab = 'dashboard' | 'orders' | 'messages' | 'addresses' | 'profile' | 'security';
 
 export function AccountArea() {
   const { user, ready, openLogin, logout, notify, refresh } = useAuth();
   const [tab, setTab] = useState<Tab>('dashboard');
+  const [conv, setConv] = useState<Conv | null>(null);
   const [filter, setFilter] = useState('all');
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
@@ -110,7 +112,7 @@ export function AccountArea() {
   const fullName = `${user.firstName} ${user.lastName}`.trim() || user.email;
   const groups: NavGroup[] = [
     { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard }] },
-    { title: 'Achats', items: [{ key: 'orders', label: 'Mes commandes', icon: ShoppingBag, badge: orders?.length || undefined }, { key: 'addresses', label: 'Mes adresses', icon: MapPin }] },
+    { title: 'Achats', items: [{ key: 'orders', label: 'Mes commandes', icon: ShoppingBag, badge: orders?.length || undefined }, { key: 'messages', label: 'Mes messages', icon: MessageCircle }, { key: 'addresses', label: 'Mes adresses', icon: MapPin }] },
     { title: 'Paramètres', items: [{ key: 'profile', label: 'Mon profil', icon: UserRound }, { key: 'security', label: 'Sécurité et appareils', icon: ShieldCheck }] },
   ];
   const visible = (orders ?? []).filter((o) => filter === 'all' || o.status === filter);
@@ -184,6 +186,15 @@ export function AccountArea() {
           {orders === null ? <p className="text-sm text-muted-foreground">Chargement de vos commandes…</p>
             : visible.length === 0 ? <Empty icon={ShoppingBag} title="Aucune commande" text="Vos achats apparaîtront ici." action={<Button asChild><Link href="/collection">Découvrir les produits</Link></Button>} />
             : visible.map(orderCard)}
+        </div>
+      )}
+
+      {tab === 'messages' && (
+        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+          <Card className="overflow-hidden"><CardHeader><CardTitle>Mes discussions</CardTitle><CardDescription>Vos questions aux vendeurs, avant et après commande.</CardDescription></CardHeader>
+            <div className="max-h-[480px] overflow-y-auto"><ConversationList as="buyer" activeId={conv?.id} onOpen={setConv} /></div></Card>
+          <Card className="overflow-hidden"><div className="border-b px-5 py-3 text-sm font-semibold">{conv ? conv.other : 'Sélectionnez une discussion'}</div>
+            {conv ? <Thread key={conv.id} conversationId={conv.id} className="h-[440px]" /> : <p className="p-8 text-center text-sm text-muted-foreground">Choisissez une discussion pour la lire et répondre.</p>}</Card>
         </div>
       )}
 

@@ -36,6 +36,13 @@ async function user(): Promise<string> {
   return r.cookie;
 }
 
+/** Ouvre une boutique puis la valide comme le ferait l'administrateur (une nouvelle boutique est « en attente »). */
+async function openShop(opts: { cookie: string; body: unknown }) {
+  const r = await call('POST', '/seller/shop', opts);
+  await db.query("UPDATE shops SET status = 'active' WHERE status = 'pending'");
+  return r;
+}
+
 const SHIP = { shippingPhone: '+243907261113', shippingCity: 'Bukavu', shippingAddress: 'Avenue du Lac, Nyawera' };
 const PRODUCT = { name: 'Casque test', description: 'Un casque.', priceUsd: 40, department: 'electronique', category: 'Audio', colors: ['Noir'], sizes: [], inStock: true, images: ['https://example.com/a.jpg'] };
 
@@ -71,7 +78,7 @@ describe('Boutiques, produits, commandes', () => {
 
   it('catalogue public : un produit vendeur apparaît puis disparaît une fois archivé', async () => {
     const c = await user();
-    await call('POST', '/seller/shop', { cookie: c, body: { name: 'Boutique Vitrine' } });
+    await openShop({ cookie: c, body: { name: 'Boutique Vitrine' } });
     const id = (await call('POST', '/seller/products', { cookie: c, body: PRODUCT })).json.id as number;
     const shown = (await call('GET', '/products')).json.products.find((p: { id: number }) => p.id === id);
     assert.equal(shown.rating, 0);
@@ -124,7 +131,7 @@ describe('Boutiques, produits, commandes', () => {
   it('vendeur : une seule boutique, produits avec 5 photos maximum, https obligatoire', async () => {
     const c = await user();
     assert.equal((await call('GET', '/seller/products', { cookie: c })).status, 403); // pas encore de boutique
-    const shop = await call('POST', '/seller/shop', { cookie: c, body: { name: 'TechPlus Bukavu', citySlug: 'bukavu' } });
+    const shop = await openShop({ cookie: c, body: { name: 'TechPlus Bukavu', citySlug: 'bukavu' } });
     assert.equal(shop.status, 201);
     assert.equal(shop.json.shop.slug, 'techplus-bukavu');
     assert.equal((await call('POST', '/seller/shop', { cookie: c, body: { name: 'Autre' } })).status, 409);
@@ -150,8 +157,8 @@ describe('Boutiques, produits, commandes', () => {
   it('vendeur : ne peut ni modifier ni archiver le produit d\'un autre', async () => {
     const a = await user();
     const b = await user();
-    await call('POST', '/seller/shop', { cookie: a, body: { name: 'Boutique A' } });
-    await call('POST', '/seller/shop', { cookie: b, body: { name: 'Boutique B' } });
+    await openShop({ cookie: a, body: { name: 'Boutique A' } });
+    await openShop({ cookie: b, body: { name: 'Boutique B' } });
     const id = (await call('POST', '/seller/products', { cookie: a, body: PRODUCT })).json.id as number;
     assert.equal((await call('PUT', `/seller/products/${id}`, { cookie: b, body: PRODUCT })).status, 404);
     assert.equal((await call('DELETE', `/seller/products/${id}`, { cookie: b })).status, 404);
@@ -160,7 +167,7 @@ describe('Boutiques, produits, commandes', () => {
   it('vendeur : voit uniquement les lignes de commande de sa boutique', async () => {
     const seller = await user();
     const buyer = await user();
-    await call('POST', '/seller/shop', { cookie: seller, body: { name: 'Boutique Vente' } });
+    await openShop({ cookie: seller, body: { name: 'Boutique Vente' } });
     const id = (await call('POST', '/seller/products', { cookie: seller, body: PRODUCT })).json.id as number;
     const order = await call('POST', '/orders', { cookie: buyer, body: { items: [{ id, quantity: 3 }, { id: 1, quantity: 1 }], ...SHIP } });
     assert.equal(order.status, 201);
@@ -174,7 +181,7 @@ describe('Boutiques, produits, commandes', () => {
   it('produit archivé : plus commandable', async () => {
     const seller = await user();
     const buyer = await user();
-    await call('POST', '/seller/shop', { cookie: seller, body: { name: 'Boutique Archive' } });
+    await openShop({ cookie: seller, body: { name: 'Boutique Archive' } });
     const id = (await call('POST', '/seller/products', { cookie: seller, body: PRODUCT })).json.id as number;
     await call('DELETE', `/seller/products/${id}`, { cookie: seller });
     assert.equal((await call('POST', '/orders', { cookie: buyer, body: { items: [{ id, quantity: 1 }], ...SHIP } })).status, 400);
@@ -183,7 +190,7 @@ describe('Boutiques, produits, commandes', () => {
   it('photos : envoi depuis le téléphone, lecture publique, formats et taille contrôlés', async () => {
     const c = await user();
     assert.equal((await call('POST', '/seller/images', { cookie: c, body: { data: png() } })).status, 403); // pas de boutique
-    await call('POST', '/seller/shop', { cookie: c, body: { name: 'Boutique Photos' } });
+    await openShop({ cookie: c, body: { name: 'Boutique Photos' } });
     const up = await call('POST', '/seller/images', { cookie: c, body: { data: png() } });
     assert.equal(up.status, 201);
     assert.match(up.json.url, /^\/api\/v1\/images\/[0-9A-Z]{26}$/);
@@ -200,8 +207,8 @@ describe('Boutiques, produits, commandes', () => {
   it('photos : produit avec photos envoyées ; celles d\'une autre boutique sont refusées', async () => {
     const a = await user();
     const b = await user();
-    await call('POST', '/seller/shop', { cookie: a, body: { name: 'Boutique Alpha' } });
-    await call('POST', '/seller/shop', { cookie: b, body: { name: 'Boutique Beta' } });
+    await openShop({ cookie: a, body: { name: 'Boutique Alpha' } });
+    await openShop({ cookie: b, body: { name: 'Boutique Beta' } });
     const mine = (await call('POST', '/seller/images', { cookie: a, body: { data: png() } })).json.url as string;
     const created = await call('POST', '/seller/products', { cookie: a, body: { ...PRODUCT, images: [mine, 'https://example.com/b.jpg'] } });
     assert.equal(created.status, 201);
@@ -228,10 +235,10 @@ describe('Boutiques, produits, commandes', () => {
 
   it('boutique : le vendeur choisit son pays et sa ville', async () => {
     const c = await user();
-    const shop = (await call('POST', '/seller/shop', { cookie: c, body: { name: 'Nairobi Tech', countryCode: 'KE', citySlug: 'nairobi' } })).json.shop;
+    const shop = (await openShop({ cookie: c, body: { name: 'Nairobi Tech', countryCode: 'KE', citySlug: 'nairobi' } })).json.shop;
     assert.equal(shop.countryCode, 'KE');
     assert.equal(shop.city, 'Nairobi');
-    const bad = await call('POST', '/seller/shop', { cookie: await user(), body: { name: 'Pays inconnu', countryCode: 'FR' } });
+    const bad = await openShop({ cookie: await user(), body: { name: 'Pays inconnu', countryCode: 'FR' } });
     assert.equal(bad.status, 400);
   });
 
@@ -244,7 +251,7 @@ describe('Boutiques, produits, commandes', () => {
 
   it('plan gratuit : limite de produits et demande de plan payant validée par l\'administration', async () => {
     const c = await user();
-    await call('POST', '/seller/shop', { cookie: c, body: { name: 'Limite Shop' } });
+    await openShop({ cookie: c, body: { name: 'Limite Shop' } });
     for (let i = 0; i < 10; i++) assert.equal((await call('POST', '/seller/products', { cookie: c, body: { ...PRODUCT, name: `P${i}` } })).status, 201);
     const over = await call('POST', '/seller/products', { cookie: c, body: PRODUCT });
     assert.equal(over.status, 403);
@@ -262,7 +269,7 @@ describe('Boutiques, produits, commandes', () => {
 
   it('certification : seulement pour le plan Premium actif (et la boutique officielle)', async () => {
     const c = await user();
-    await call('POST', '/seller/shop', { cookie: c, body: { name: 'Certif Shop' } });
+    await openShop({ cookie: c, body: { name: 'Certif Shop' } });
     const made = await call('POST', '/seller/products', { cookie: c, body: { ...PRODUCT, name: 'Produit certifie' } });
     const id = made.json.id as number;
     const flag = async () => (await call('GET', `/products/${id}`)).json.product.certified;
@@ -278,7 +285,7 @@ describe('Boutiques, produits, commandes', () => {
 
   it('plan payant expiré : retour au plan gratuit', async () => {
     const c = await user();
-    await call('POST', '/seller/shop', { cookie: c, body: { name: 'Expire Shop' } });
+    await openShop({ cookie: c, body: { name: 'Expire Shop' } });
     await db.query("UPDATE shops SET plan = 'pro', plan_expires_at = now() - interval '1 day' WHERE name = 'Expire Shop'");
     const shop = (await call('GET', '/seller/shop', { cookie: c })).json.shop;
     assert.deepEqual([shop.plan, shop.commissionBps], ['free', 500]);
@@ -286,7 +293,7 @@ describe('Boutiques, produits, commandes', () => {
 
   it('commande : commission figée selon le plan, suivi vendeur puis réception acheteur', async () => {
     const seller = await user();
-    await call('POST', '/seller/shop', { cookie: seller, body: { name: 'Suivi Shop' } });
+    await openShop({ cookie: seller, body: { name: 'Suivi Shop' } });
     await db.query("UPDATE shops SET plan = 'premium', plan_expires_at = now() + interval '3 months' WHERE name = 'Suivi Shop'");
     const pid = (await call('POST', '/seller/products', { cookie: seller, body: { ...PRODUCT, priceUsd: 100 } })).json.id as number;
     const buyer = await user();
@@ -307,7 +314,7 @@ describe('Boutiques, produits, commandes', () => {
 
   it('commande : l\'acheteur annule tant que le vendeur n\'a pas confirmé', async () => {
     const seller = await user();
-    await call('POST', '/seller/shop', { cookie: seller, body: { name: 'Annul Shop' } });
+    await openShop({ cookie: seller, body: { name: 'Annul Shop' } });
     const pid = (await call('POST', '/seller/products', { cookie: seller, body: PRODUCT })).json.id as number;
     const buyer = await user();
     const num = (await call('POST', '/orders', { cookie: buyer, body: { items: [{ id: pid, quantity: 1 }], ...SHIP } })).json.order.number as string;
@@ -327,7 +334,7 @@ describe('Boutiques, produits, commandes', () => {
     assert.equal((await call('PATCH', `/admin/users/${vid}`, { cookie: a.cookie, body: { status: 'suspended' } })).status, 200);
     assert.equal((await call('GET', '/auth/me', { cookie: victim })).status, 401);
     assert.equal((await call('PATCH', `/admin/users/${a.id}`, { cookie: a.cookie, body: { status: 'suspended' } })).status, 400);
-    assert.equal((await call('GET', '/pages/conditions')).status, 404);
+    assert.match((await call('GET', '/pages/conditions')).json.page.title, /Conditions générales/);
     assert.equal((await call('PUT', '/admin/pages/conditions', { cookie: a.cookie, body: { title: 'Conditions', body: 'Texte.' } })).status, 200);
     assert.equal((await call('GET', '/pages/conditions')).json.page.title, 'Conditions');
     assert.equal((await call('PUT', '/admin/pages/nimporte', { cookie: a.cookie, body: { title: 'x', body: 'y' } })).status, 400);
@@ -336,5 +343,84 @@ describe('Boutiques, produits, commandes', () => {
     assert.equal((await call('POST', '/admin/cities', { cookie: a.cookie, body: { countryCode: 'CD', name: 'Kindu' } })).status, 200);
     assert.equal((await call('PATCH', '/admin/countries/KE', { cookie: a.cookie, body: { active: false } })).status, 200);
     assert.equal((await call('POST', '/seller/shop', { cookie: await user(), body: { name: 'Hors service', countryCode: 'KE' } })).status, 400);
+  });
+});
+
+describe('Validation des boutiques, messagerie, recherche, taux', () => {
+  let adminCookie = '';
+  before(async () => {
+    db = createPgliteDb(new PGlite());
+    await migrate(db, fileURLToPath(new URL('../migrations', import.meta.url)));
+    const clock = () => Date.now();
+    app = await buildApp(
+      { NODE_ENV: 'test', PORT: 4002, HOST: '127.0.0.1', WEB_ORIGIN: ORIGIN, DATABASE_URL: 'unused', API_SECRET: 'test_secret_must_be_at_least_16_chars', MAIL_FROM: 'test@x' },
+      { db, mailer: new MemoryMailer(), limiter: new MemoryRateLimiter(clock) },
+    );
+    adminCookie = await user();
+    await db.query("INSERT INTO admin_roles(user_id, role) SELECT id, 'superadmin' FROM users WHERE email = (SELECT email FROM users ORDER BY created_at DESC LIMIT 1)");
+  });
+  after(async () => { await app.close(); await db.close(); });
+
+  it('nouvelle boutique : en attente, l’administrateur est notifié, puis accepte ou refuse', async () => {
+    const c = await user();
+    const shop = await call('POST', '/seller/shop', { cookie: c, body: { name: 'Boutique Neuve' } });
+    assert.equal(shop.json.shop.status, 'pending');
+    // en attente : impossible de publier
+    assert.equal((await call('POST', '/seller/products', { cookie: c, body: PRODUCT })).status, 403);
+    const n = await call('GET', '/admin/notifications', { cookie: adminCookie });
+    assert.equal(n.status, 200);
+    assert.equal(n.json.unread, 1);
+    assert.match(n.json.notifications[0].title, /Boutique Neuve/);
+    await call('POST', '/admin/notifications/read', { cookie: adminCookie });
+    assert.equal((await call('GET', '/admin/notifications', { cookie: adminCookie })).json.unread, 0);
+    const id = shop.json.shop.id as string;
+    assert.equal((await call('PATCH', `/admin/shops/${id}`, { cookie: adminCookie, body: { status: 'rejected', reason: 'Pièce illisible' } })).status, 200);
+    const refused = await call('GET', '/seller/shop', { cookie: c });
+    assert.equal(refused.json.shop.status, 'rejected');
+    assert.equal(refused.json.shop.rejectReason, 'Pièce illisible');
+    await call('PATCH', `/admin/shops/${id}`, { cookie: adminCookie, body: { status: 'active' } });
+    assert.equal((await call('POST', '/seller/products', { cookie: c, body: PRODUCT })).status, 201);
+  });
+
+  it('messagerie : l’acheteur écrit au vendeur depuis un produit, le vendeur répond', async () => {
+    const seller = await user();
+    await openShop({ cookie: seller, body: { name: 'Boutique Chat' } });
+    const pid = (await call('POST', '/seller/products', { cookie: seller, body: PRODUCT })).json.id as number;
+    const buyer = await user();
+    assert.equal((await call('POST', '/conversations', { body: { productId: pid, message: 'Disponible ?' } })).status, 401);
+    assert.equal((await call('POST', '/conversations', { cookie: seller, body: { productId: pid, message: 'Moi-même' } })).status, 400);
+    const conv = await call('POST', '/conversations', { cookie: buyer, body: { productId: pid, message: 'Est-il disponible ?' } });
+    assert.equal(conv.status, 201);
+    const cid = conv.json.id as number;
+    // une seconde question reprend la même discussion
+    assert.equal((await call('POST', '/conversations', { cookie: buyer, body: { productId: pid, message: 'Livrez-vous à Uvira ?' } })).json.id, cid);
+    const sellerList = (await call('GET', '/conversations?as=seller', { cookie: seller })).json.conversations;
+    assert.equal(sellerList.length, 1);
+    assert.equal(sellerList[0].unread, 2);
+    const thread = await call('GET', `/conversations/${cid}/messages`, { cookie: seller });
+    assert.equal(thread.json.messages.length, 2);
+    assert.equal(thread.json.messages[0].productName, 'Casque test');
+    assert.equal((await call('GET', '/conversations?as=seller', { cookie: seller })).json.conversations[0].unread, 0);
+    await call('POST', `/conversations/${cid}/messages`, { cookie: seller, body: { message: 'Oui, en stock.' } });
+    const mine = (await call('GET', `/conversations/${cid}/messages`, { cookie: buyer })).json;
+    assert.equal(mine.messages.at(-1).body, 'Oui, en stock.');
+    assert.equal(mine.messages.at(-1).mine, false);
+    // un tiers ne voit rien
+    assert.equal((await call('GET', `/conversations/${cid}/messages`, { cookie: await user() })).status, 404);
+  });
+
+  it('recherche : suggestions sur le nom, la catégorie ou la boutique', async () => {
+    assert.equal((await call('GET', '/products/suggest?q=c')).status, 400);
+    const r = await call('GET', '/products/suggest?q=casque');
+    assert.ok(r.json.suggestions.some((s: { name: string }) => s.name === 'Casque test'));
+    assert.deepEqual((await call('GET', '/products/suggest?q=zzzzintrouvable')).json.suggestions, []);
+  });
+
+  it('taux de change : base dollar, valeurs de secours si la source est injoignable', async () => {
+    const r = await call('GET', '/rates');
+    assert.equal(r.status, 200);
+    assert.equal(r.json.base, 'USD');
+    assert.equal(r.json.rates.USD, 1);
+    assert.ok(r.json.rates.CDF > 100);
   });
 });

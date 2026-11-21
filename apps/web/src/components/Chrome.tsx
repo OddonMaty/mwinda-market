@@ -30,7 +30,7 @@ export function Header({ active }: { active: Active }) {
           <div className="top-bar-right">
             <span className="hidden-mobile">La place de marché africaine · Lancement en RDC, bientôt partout en Afrique</span>
             <CountrySelector />
-            <span>FR / CDF</span>
+            <span>Français</span>
           </div>
         </div>
       </div>

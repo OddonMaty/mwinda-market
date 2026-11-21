@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import 'flag-icons/css/flag-icons.min.css';
 import { LocaleProvider } from '../components/Locale';
 import { AuthProvider } from '../components/AuthProvider';
+import { ChatProvider } from '../components/Chat';
 import { CartProvider } from '../components/CartProvider';
 
 export const metadata: Metadata = {
@@ -28,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body><AuthProvider><LocaleProvider><CartProvider>{children}</CartProvider></LocaleProvider></AuthProvider></body>
+      <body><AuthProvider><LocaleProvider><ChatProvider><CartProvider>{children}</CartProvider></ChatProvider></LocaleProvider></AuthProvider></body>
     </html>
   );
 }

@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { BarChart3, Users as UsersIcon, Store, Package, ShoppingBag, Crown, Inbox, Globe2, FileText, ScrollText, Search as SearchIcon, ShieldCheck, Wallet, Percent } from 'lucide-react';
+import { BarChart3, Users as UsersIcon, Store, Package, ShoppingBag, Crown, Inbox, Globe2, FileText, ScrollText, Search as SearchIcon, ShieldCheck, Wallet, Percent, Bell } from 'lucide-react';
 import { formatUsd } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Empty, Field, Input, Select, StatCard, Table as UTable, Td, Textarea, Th, DashboardShell, type NavGroup } from './ui';
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Empty, Field, Input, Select, StatCard, Table as UTable, Td, Textarea, Th, DashboardShell, PageLoader, WelcomeDialog, type NavGroup } from './ui';
 
 type Tab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'plans' | 'requests' | 'countries' | 'pages' | 'audit';
 const NAV: NavGroup[] = [
@@ -60,25 +60,28 @@ export function AdminArea() {
   const [roles, setRoles] = useState<string[] | null>(null);
   const [tab, setTab] = useState<Tab>('dashboard');
   const [pending, setPending] = useState(0);
+  const [shopsPending, setShopsPending] = useState(0);
+  const [welcome, setWelcome] = useState(true);
 
   useEffect(() => {
     if (!user) { setRoles(null); return; }
     void api<{ roles: string[] }>('/admin/me').then((r) => setRoles(r.ok ? r.data.roles : []));
-    void api<{ stats: { planRequests: number } }>('/admin/stats').then((r) => r.ok && setPending(r.data.stats.planRequests));
+    void api<{ stats: { planRequests: number; shopsPending: number } }>('/admin/stats').then((r) => { if (r.ok) { setPending(r.data.stats.planRequests); setShopsPending(r.data.stats.shopsPending); } });
   }, [user]);
 
   const gate = (node: React.ReactNode) => <div className="ui ui-shell flex items-center justify-center p-6">{node}</div>;
-  if (!ready || (user && roles === null)) return gate(<p className="text-sm text-muted-foreground">Chargement…</p>);
+  if (!ready || (user && roles === null)) return <PageLoader />;
   if (!user) return gate(<Card className="w-full max-w-sm text-center"><CardHeader className="items-center"><ShieldCheck className="size-8 text-primary" /><CardTitle>Espace administrateur</CardTitle><CardDescription>Connectez-vous avec un compte administrateur.</CardDescription></CardHeader><CardContent><Button className="w-full" onClick={() => openLogin('signin', '/admin')}>Se connecter</Button></CardContent></Card>);
   if (!roles || roles.length === 0) return gate(<Empty icon={ShieldCheck} title="Accès réservé" text="Cet espace est réservé à l’équipe d’administration." action={<Button asChild variant="outline"><a href="/">Retour à la boutique</a></Button>} />);
 
   const isSuper = roles.includes('superadmin');
   const fail = (r: { data: { code?: string; message?: string } }) => notify(r.data.message ?? errorMessage(r.data.code));
-  const groups = NAV.map((g) => ({ ...g, items: g.items.map((i) => (i.key === 'requests' ? { ...i, badge: pending } : i)) }));
+  const groups = NAV.map((g) => ({ ...g, items: g.items.map((i) => (i.key === 'requests' ? { ...i, badge: pending } : i.key === 'shops' ? { ...i, badge: shopsPending || undefined } : i)) }));
   const roleLabel = isSuper ? 'Super-administrateur' : roles.map((r) => ({ moderator: 'Modérateur', finance: 'Finance' }[r] ?? r)).join(', ');
 
   return (
-    <DashboardShell space="Administration" subtitle={roleLabel} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email, email: user.email }}>
+    <DashboardShell space="Administration" subtitle={roleLabel} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email, email: user.email }} topRight={<NotificationBell onOpenShops={() => setTab('shops')} />}>
+      {welcome && <WelcomeDialog title={`Bienvenue, ${user.firstName || 'administrateur'} !`} text={shopsPending > 0 ? `${shopsPending} boutique${shopsPending > 1 ? 's attendent' : ' attend'} votre validation. Acceptez ou refusez chaque demande depuis l’onglet Boutiques.` : 'Tout est à jour : aucune boutique n’attend de validation. Bon travail !'} action="Voir l’administration" onClose={() => setWelcome(false)} />}
       {tab === 'dashboard' && <Dashboard />}
       {tab === 'users' && <Users isSuper={isSuper} notify={notify} fail={fail} />}
       {tab === 'shops' && <Shops notify={notify} fail={fail} />}
@@ -90,6 +93,41 @@ export function AdminArea() {
       {tab === 'pages' && <Pages notify={notify} fail={fail} />}
       {tab === 'audit' && <Audit isSuper={isSuper} />}
     </DashboardShell>
+  );
+}
+
+interface Notif { id: number; title: string; body: string | null; read: boolean; createdAt: string }
+/** Cloche de l'administration : prévient dès qu'une boutique demande son ouverture. */
+function NotificationBell({ onOpenShops }: { onOpenShops: () => void }) {
+  const [data, setData] = useState<{ unread: number; notifications: Notif[] }>({ unread: 0, notifications: [] });
+  const [open, setOpen] = useState(false);
+  const load = useCallback(async () => { const r = await api<{ unread: number; notifications: Notif[] }>('/admin/notifications'); if (r.ok) setData(r.data); }, []);
+  useEffect(() => { void load(); const t = setInterval(() => { if (!document.hidden) void load(); }, 20000); return () => clearInterval(t); }, [load]);
+  async function toggle() {
+    const next = !open; setOpen(next);
+    if (next && data.unread > 0) { await api('/admin/notifications/read', { method: 'POST' }); setTimeout(() => void load(), 1500); }
+  }
+  return (
+    <div className="relative">
+      <Button variant="ghost" size="sm" onClick={() => void toggle()} aria-label="Notifications" data-notif-bell className="relative">
+        <Bell />{data.unread > 0 && <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground" data-notif-count>{data.unread}</span>}
+      </Button>
+      {open && (
+        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border bg-card shadow-xl">
+          <p className="border-b px-4 py-2.5 text-sm font-semibold">Notifications</p>
+          <ul className="max-h-80 overflow-y-auto">
+            {data.notifications.length === 0 && <li className="p-4 text-sm text-muted-foreground">Aucune notification.</li>}
+            {data.notifications.map((n) => (
+              <li key={n.id}><button type="button" className="block w-full border-b px-4 py-3 text-left text-sm last:border-0 hover:bg-muted/50" onClick={() => { setOpen(false); onOpenShops(); }}>
+                <span className="flex items-center gap-2 font-medium">{!n.read && <span className="size-2 rounded-full bg-primary" />}{n.title}</span>
+                {n.body && <span className="block text-xs text-muted-foreground">{n.body}</span>}
+                <span className="block text-[11px] text-muted-foreground">{new Date(n.createdAt).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              </button></li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -171,7 +209,15 @@ function Shops({ notify, fail }: P) {
               <Select className="h-9 min-w-[8rem]" value={s.plan} onChange={(e) => void patch(s.id, { plan: e.target.value })}>{plans?.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}</Select>
               {s.plan !== 'free' && <div className="mt-1 text-xs text-muted-foreground">jusqu’au {day(s.planExpiresAt)}</div>}
             </Td>
-            <Td><Select className="h-9 min-w-[8rem]" value={s.status} onChange={(e) => void patch(s.id, { status: e.target.value })}><option value="active">Actif</option><option value="pending">En attente</option><option value="suspended">Suspendu</option></Select></Td>
+            <Td>
+              {s.status === 'pending' && !s.isOfficial && (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => void patch(s.id, { status: 'active' })}>Accepter</Button>
+                  <Button size="sm" variant="outline" onClick={() => { const reason = window.prompt('Motif du refus (facultatif) :', ''); if (reason !== null) void patch(s.id, { status: 'rejected', reason }); }}>Refuser</Button>
+                </div>
+              )}
+              {!(s.status === 'pending' && !s.isOfficial) && <Select className="h-9 min-w-[8rem]" value={s.status} onChange={(e) => void patch(s.id, { status: e.target.value })}><option value="active">Actif</option><option value="pending">En attente</option><option value="suspended">Suspendu</option><option value="rejected">Refusé</option></Select>}
+            </Td>
           </tr>
         ))}
       </Table>
@@ -234,7 +280,7 @@ function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
   }
   return (
     <>
-      <p className="mb-4 max-w-2xl text-sm text-muted-foreground">Les prix sont en dollars par trimestre (affichés en FC aux vendeurs). La commission s&apos;applique aux commandes passées après la modification.</p>
+      <p className="mb-4 max-w-2xl text-sm text-muted-foreground">Les prix sont en dollars par trimestre (la monnaie locale n’est affichée qu’à titre indicatif). La commission s&apos;applique aux commandes passées après la modification.</p>
       <Table head={['Plan', 'Prix / trimestre', 'Commission', 'Produits max', 'Actif', '']} empty={rows?.length === 0}>
         {rows?.map((p) => (
           <tr key={p.code}><Td>{p.name} <span className="text-xs text-muted-foreground">({p.code})</span></Td><Td>{p.priceUsd} $ · {formatUsd(p.priceUsd)}</Td><Td>{p.commissionBps / 100} %</Td><Td>{p.maxProducts ?? 'Illimité'}</Td><Td>{p.active ? 'Oui' : 'Non'}</Td>

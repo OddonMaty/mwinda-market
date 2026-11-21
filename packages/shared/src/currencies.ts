@@ -8,9 +8,9 @@ export const USD_RATES: Readonly<Record<string, number>> = {
 const SYMBOLS: Record<string, string> = { CDF: 'FC', XAF: 'FCFA', XOF: 'FCFA', ZAR: 'R', NGN: '₦', GHS: 'GH₵', KES: 'KSh', UGX: 'USh', TZS: 'TSh', RWF: 'FRw', MAD: 'DH', DZD: 'DA', EGP: 'E£', ZWL: 'ZiG' };
 
 /** Montant local (arrondi) d'un prix en USD ; null si la monnaie est le dollar ou inconnue. */
-export function toLocal(usd: number, currency: string | null | undefined): { amount: number; symbol: string } | null {
+export function toLocal(usd: number, currency: string | null | undefined, rates: Readonly<Record<string, number>> = USD_RATES): { amount: number; symbol: string } | null {
   if (!currency || currency === 'USD') return null;
-  const rate = USD_RATES[currency];
+  const rate = rates[currency] ?? USD_RATES[currency];
   if (!rate) return null;
   const raw = usd * rate;
   return { amount: raw >= 100 ? Math.round(raw) : Math.round(raw * 100) / 100, symbol: SYMBOLS[currency] ?? currency };

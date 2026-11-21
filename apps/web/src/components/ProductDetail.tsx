@@ -5,6 +5,7 @@ import { productImageUrl } from '../lib';
 import { Price } from './Locale';
 
 import { useCart } from './CartProvider';
+import { useChat } from './Chat';
 import { Countdown } from './Countdown';
 import { NavButton } from './NavButton';
 import { ProductCard, Stars } from './ProductCard';
@@ -15,6 +16,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
   const [size, setSize] = useState(product.sizes[0] ?? '');
   const [qty, setQty] = useState(1);
   const cart = useCart();
+  const chat = useChat();
   const [tab, setTab] = useState<'description' | 'shipping' | 'faq'>('description');
   const allImages = [product.image, ...(product.images ?? [])].filter(Boolean);
   const [main, setMain] = useState(product.image);
@@ -105,6 +107,9 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
             </div>
             <button type="button" className="btn btn-primary add-to-cart" onClick={() => { cart.add(product, qty, { color, size }); setQty(1); }}>
               <i className="fas fa-shopping-cart" /> Ajouter au panier
+            </button>
+            <button type="button" className="btn btn-dark buy-now" onClick={() => chat.ask({ productId: Number(product.id), productName: product.name, shopName: product.shopName })}>
+              <i className="fas fa-comments" /> Acheter
             </button>
             <button type="button" className="btn btn-outline"><i className="fas fa-heart" /></button>
           </div>

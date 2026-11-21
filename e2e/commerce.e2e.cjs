@@ -3,6 +3,8 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const WEB = process.env.WEB ?? 'http://localhost:3000';
 
+const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { timeout: 5000 }); } catch { /* pas de message de bienvenue */ } };
+
 (async () => {
   const browser = await chromium.launch();
   const seller = await browser.newContext();
@@ -26,6 +28,14 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await sp.fill('#sellerRegisterForm [name=password]', pwd);
   await sp.click('#sellerRegisterForm button[type=submit]');
   await sp.waitForURL('**/vendeur/tableau');
+  await sp.waitForSelector(`text=TechPlus ${stamp}`);
+  // Bienvenue (fermable), puis boutique en attente de validation : impossible de publier avant l'accord de l'admin
+  await sp.waitForSelector('text=est en cours de validation');
+  await dismiss(sp);
+  await sp.waitForSelector('text=Boutique en attente de validation');
+  await fetch('http://localhost:4000/__approve-shops'); // l'administrateur accepte (testé plus bas dans l'interface)
+  await sp.reload();
+  await dismiss(sp);
   await sp.waitForSelector(`text=TechPlus ${stamp}`);
   await sp.click('button:has-text("Ajouter un produit")');
   await sp.fill('[name=name]', 'Casque e2e');
@@ -116,6 +126,7 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
 
   // ---- Vendeur : confirme puis expédie, voit sa commission
   await sp.goto(`${WEB}/vendeur/tableau`);
+  await dismiss(sp);
   await sp.waitForSelector('text=Plan Gratuit · commission 5 %');
   await sp.click('button:has-text("Commandes")');
   await sp.waitForSelector(`text=Commande ${num}`);
@@ -142,6 +153,49 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await tp.click('[data-plan=premium] button:has-text("Choisir ce plan")');
   await tp.waitForSelector('text=Demande en attente');
 
+  // ---- Acheter : bulle de conversation avec le vendeur, réponse du vendeur
+  await bp.goto(`${WEB}/collection?q=Casque+e2e`);
+  await bp.click('.product-card:has-text("Casque e2e")');
+  await bp.waitForSelector('h1:has-text("Casque e2e")');
+  await bp.click('button.buy-now');
+  await bp.waitForSelector('.chat-panel textarea');
+  await bp.fill('.chat-panel textarea', 'Est-il disponible ?');
+  await bp.click('.chat-send');
+  await bp.waitForSelector('.chat-msg.mine:has-text("Est-il disponible ?")');
+  await sp.goto(`${WEB}/vendeur/tableau`);
+  await dismiss(sp);
+  await sp.click('button:has-text("Messages")');
+  await sp.click('.chat-list li button');
+  await sp.waitForSelector('.chat-msg:has-text("Est-il disponible ?")');
+  await sp.fill('textarea[name=chatMessage]', 'Oui, en stock.');
+  await sp.click('.chat-send');
+  await bp.waitForSelector('.chat-msg.theirs:has-text("Oui, en stock.")', { timeout: 15000 });
+  // Panier : « Poser une question » ouvre la même discussion
+  await bp.click('.add-to-cart');
+  await bp.click('.header-btn:has(.fa-shopping-cart)');
+  await bp.click('#cartDrawer.active .cart-ask');
+  await bp.waitForSelector('.chat-msg.theirs:has-text("Oui, en stock.")');
+
+  // ---- Recherche : suggestions reliées au catalogue
+  await bp.goto(`${WEB}/`);
+  await bp.fill('#searchInput', 'casq');
+  await bp.waitForSelector('.search-suggest .search-sug-row:has-text("Casque e2e")');
+  await bp.click('.search-suggest .search-sug-row:has-text("Casque e2e")');
+  await bp.waitForURL('**/produit/*');
+
+  // ---- Pays : drapeau + monnaie, valeur locale à côté du prix en dollars
+  await bp.goto(`${WEB}/collection`);
+  await bp.click('.country-select-btn');
+  await bp.waitForSelector('.country-select-menu .fi-ke');
+  await bp.click('.country-select-menu button:has-text("Kenya")');
+  await bp.waitForSelector('.country-select-btn .fi-ke');
+  assert.match(await bp.textContent('.country-select-btn'), /KES/);
+  await bp.waitForSelector('.product-card .price-local:has-text("KSh")');
+
+  // ---- Nouvelle boutique : l'administrateur est notifié et accepte
+  const shop2 = await bp.evaluate(async () => (await fetch('/api/v1/seller/shop', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Boutique Neuve E2E' }) })).status);
+  assert.equal(shop2, 201);
+
   // ---- Administration : un compte non-admin est refusé, puis un admin gère tout
   const ap0 = await buyer.newPage();
   await ap0.goto(`${WEB}/admin`);
@@ -155,7 +209,14 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
   await fetch('http://localhost:4000/__make-admin?email=' + encodeURIComponent(aemail));
   await ap.evaluate(async (e) => fetch('/api/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: e, password: 'Un-bon-mot-de-passe-42', client: 'web' }) }), aemail);
   await ap.goto(`${WEB}/admin`);
+  await dismiss(ap);
   await ap.waitForSelector('text=Commissions gagnées');
+  await ap.click('[data-notif-bell]');
+  await ap.waitForSelector('text=Nouvelle boutique à valider : Boutique Neuve E2E');
+  await ap.click('text=Nouvelle boutique à valider : Boutique Neuve E2E');
+  await ap.waitForSelector('tr:has-text("Boutique Neuve E2E") button:has-text("Accepter")');
+  await ap.click('tr:has-text("Boutique Neuve E2E") button:has-text("Accepter")');
+  await ap.waitForSelector('text=Boutique mise à jour');
   await ap.click('button:has-text("Demandes de plan")');
   await ap.waitForSelector(`tr:has-text("TechPlus ${stamp}")`);
   await ap.click(`tr:has-text("TechPlus ${stamp}") button:has-text("Approuver")`);
@@ -174,6 +235,7 @@ const WEB = process.env.WEB ?? 'http://localhost:3000';
 
   // ---- Plan activé : le vendeur voit Premium (commission 2 %)
   await sp.goto(`${WEB}/vendeur/tableau`);
+  await dismiss(sp);
   await sp.waitForSelector('text=Plan Premium · commission 2 %');
 
   await bp.screenshot({ path: process.env.SHOT ?? '/tmp/e2e-commerce.png', fullPage: true });

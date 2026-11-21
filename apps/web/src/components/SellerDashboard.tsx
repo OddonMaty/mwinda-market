@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingBag, Settings, Plus, Wallet, Percent, Clock, Boxes, Pencil, Trash2, LogOut, Crown, ShieldCheck, ExternalLink, Truck, CheckCheck } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Settings, Plus, Wallet, Percent, Clock, Boxes, Pencil, Trash2, LogOut, Crown, ShieldCheck, ExternalLink, Truck, CheckCheck, MessageCircle, X } from 'lucide-react';
 import { DEPARTMENTS, departmentName } from '@saotech/shared';
 import { formatUsd, productImageUrl } from '../lib';
+import { ConversationList, Thread, type Conv } from './Chat';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { PhotoPicker } from './PhotoPicker';
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DashboardShell, Empty, Field, Input, PageHeading, Select, StatCard, Table, Td, Textarea, Th, type NavGroup } from './ui';
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DashboardShell, Empty, Field, PageLoader, WelcomeDialog, Input, PageHeading, Select, StatCard, Table, Td, Textarea, Th, type NavGroup } from './ui';
 
-interface Shop { certified: boolean; id: string; name: string; description?: string | null; phone?: string | null; isOfficial: boolean; status: string; countryCode: string | null; city: string | null; plan: string; planName: string; planExpiresAt: string | null; commissionBps: number; maxProducts: number | null; productCount: number; pendingPlan: string | null }
+interface Shop { rejectReason?: string | null; certified: boolean; id: string; name: string; description?: string | null; phone?: string | null; isOfficial: boolean; status: string; countryCode: string | null; city: string | null; plan: string; planName: string; planExpiresAt: string | null; commissionBps: number; maxProducts: number | null; productCount: number; pendingPlan: string | null }
 interface Stats { salesUsd: number; commissionUsd: number; netUsd: number; inProgressUsd: number; pendingLines: number; deliveredLines: number }
 interface SProduct { id: number; name: string; description: string; priceUsd: number; originalPriceUsd: number | null; department: string; category: string; colors: string[]; sizes: string[]; inStock: boolean; images: string[] }
 interface SOrder { number: string; status: string; createdAt: string; customer: string; city: string; phone: string; address: string; totalUsd: number; commissionUsd: number; netUsd: number; items: { name: string; quantity: number; unitPriceUsd: number; color: string; size: string }[] }
@@ -18,7 +19,7 @@ const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Conf
 const TONE: Record<string, 'success' | 'warning' | 'danger' | 'default'> = { pending: 'warning', confirmed: 'default', shipped: 'default', delivered: 'success', cancelled: 'danger' };
 const csv = (v: FormDataEntryValue | null): string[] => String(v ?? '').split(',').map((x) => x.trim()).filter(Boolean);
 const toUsd = (v: FormDataEntryValue | null): number => Math.round(Number(v) * 100) / 100;
-type Tab = 'dashboard' | 'products' | 'orders' | 'shop';
+type Tab = 'dashboard' | 'products' | 'orders' | 'messages' | 'shop';
 
 export function SellerDashboard() {
   const router = useRouter();
@@ -33,6 +34,8 @@ export function SellerDashboard() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [orderFilter, setOrderFilter] = useState('all');
+  const [welcome, setWelcome] = useState(true);
+  const [conv, setConv] = useState<Conv | null>(null);
 
   const load = useCallback(async () => {
     const s = await api<{ shop: Shop | null }>('/seller/shop');
@@ -50,7 +53,7 @@ export function SellerDashboard() {
     void load();
   }, [ready, user, load, router]);
 
-  if (!ready || !user || !shop) return <div className="ui ui-shell flex items-center justify-center"><p className="text-sm text-muted-foreground">Chargement…</p></div>;
+  if (!ready || !user || !shop) return <PageLoader />;
 
   function openForm(p: SProduct | null) { setTab('products'); setForm({ open: true, editing: p }); setPromo(!!p?.originalPriceUsd); setPhotos(p?.images ?? []); setDep(p?.department ?? ''); }
 
@@ -100,7 +103,7 @@ export function SellerDashboard() {
   const toDo = orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').length;
   const groups: NavGroup[] = [
     { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard }] },
-    { title: 'Ma boutique', items: [{ key: 'products', label: 'Produits', icon: Package, badge: products.length || undefined }, { key: 'orders', label: 'Commandes', icon: ShoppingBag, badge: toDo || undefined }] },
+    { title: 'Ma boutique', items: [{ key: 'products', label: 'Produits', icon: Package, badge: products.length || undefined }, { key: 'orders', label: 'Commandes', icon: ShoppingBag, badge: toDo || undefined }, { key: 'messages', label: 'Messages', icon: MessageCircle }] },
     { title: 'Paramètres', items: [{ key: 'shop', label: 'Boutique et plan', icon: Settings }] },
   ];
   const planLine = `${shop.productCount} produit${shop.productCount > 1 ? 's' : ''} sur ${shop.maxProducts ?? 'illimité'}${shop.planExpiresAt ? ` · valable jusqu’au ${new Date(shop.planExpiresAt).toLocaleDateString('fr-FR')}` : ''}`;
@@ -114,6 +117,31 @@ export function SellerDashboard() {
         <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex"><Link href="/compte">Mon compte</Link></Button>
         <Button variant="ghost" size="sm" onClick={() => void logout()}><LogOut /><span className="hidden sm:inline">Déconnexion</span></Button>
       </>}>
+
+      {welcome && (
+        <WelcomeDialog
+          title={`Bienvenue, ${user.firstName || 'cher vendeur'} !`}
+          text={shop.status === 'pending' ? `Votre boutique « ${shop.name} » est en cours de validation par l’équipe Mwinda Market. Vous pourrez publier vos produits dès son acceptation.` : shop.status === 'rejected' ? `Votre demande d’ouverture pour « ${shop.name} » n’a pas été acceptée. Consultez le motif dans votre tableau de bord.` : `Votre espace vendeur « ${shop.name} » est prêt. Publiez vos produits, suivez vos commandes et répondez aux questions de vos clients.`}
+          onClose={() => setWelcome(false)} />
+      )}
+      {!shop.isOfficial && shop.status === 'pending' && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" role="status"><Clock className="mt-0.5 size-4 shrink-0" /><p><b>Boutique en attente de validation.</b> L’équipe Mwinda Market examine votre demande : vous serez autorisé à publier des produits dès qu’elle sera acceptée.</p></div>
+      )}
+      {!shop.isOfficial && shop.status === 'rejected' && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-900" role="alert"><X className="mt-0.5 size-4 shrink-0" /><p><b>Votre demande de boutique a été refusée.</b>{shop.rejectReason ? ` Motif : ${shop.rejectReason}` : ''} Contactez-nous à contact@mwindamarket.com pour toute question.</p></div>
+      )}
+      {!shop.isOfficial && shop.status === 'suspended' && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-900" role="alert"><X className="mt-0.5 size-4 shrink-0" /><p><b>Votre boutique est suspendue.</b> Contactez-nous à contact@mwindamarket.com.</p></div>
+      )}
+
+      {tab === 'messages' && (
+        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+          <Card className="overflow-hidden"><CardHeader><CardTitle>Questions des clients</CardTitle><CardDescription>Répondez avant la commande pour la sécuriser.</CardDescription></CardHeader>
+            <div className="max-h-[480px] overflow-y-auto"><ConversationList as="seller" activeId={conv?.id} onOpen={setConv} /></div></Card>
+          <Card className="overflow-hidden"><div className="border-b px-5 py-3 text-sm font-semibold">{conv ? conv.other : 'Sélectionnez une discussion'}</div>
+            {conv ? <Thread key={conv.id} conversationId={conv.id} className="h-[440px]" /> : <p className="p-8 text-center text-sm text-muted-foreground">Choisissez une discussion pour lire et répondre.</p>}</Card>
+        </div>
+      )}
 
       {tab === 'dashboard' && (
         <div className="grid gap-6">

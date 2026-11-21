@@ -18,6 +18,7 @@ const PageBody = z.object({ title: z.string().trim().min(1).max(150), body: z.st
 
 export function publicPlatformRoutes(r: FastifyInstance, svc: AdminService, parse: Parse): void {
   r.get('/countries', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=600'); return { countries: await svc.countries() }; });
+  r.get('/rates', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=600, stale-while-revalidate=3600'); return svc.rates(); });
   r.get('/pages/:slug', async (req, reply) => {
     reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300');
     return { page: await svc.page(parse(z.object({ slug: z.enum(LEGAL_SLUGS) }), req.params).slug) };
@@ -46,7 +47,7 @@ export function adminRoutes(r: FastifyInstance, { svc, authenticate, parse }: Ct
 
   r.get('/admin/shops', guard('moderator'), async (req) => ({ shops: await svc.shops(parse(Query, req.query).q) }));
   r.patch('/admin/shops/:id', guard('moderator'), async (req) => {
-    const b = parse(z.object({ status: z.enum(['pending', 'active', 'suspended']).optional(), plan: z.string().max(20).optional(), planMonths: z.number().int().min(1).max(36).optional() }), req.body);
+    const b = parse(z.object({ status: z.enum(['pending', 'active', 'suspended', 'rejected']).optional(), reason: z.string().trim().max(500).optional(), plan: z.string().max(20).optional(), planMonths: z.number().int().min(1).max(36).optional() }), req.body);
     if (b.plan) await guard('finance').preHandler(req); // changer le plan d'une boutique relève aussi de la finance
     await svc.updateShop(me(req), parse(Id, req.params).id, b);
     return ok;
@@ -74,6 +75,8 @@ export function adminRoutes(r: FastifyInstance, { svc, authenticate, parse }: Ct
   r.patch('/admin/countries/:code', guard(), async (req) => { await svc.setCountryActive(me(req), parse(z.object({ code: z.string().length(2).toUpperCase() }), req.params).code, parse(z.object({ active: z.boolean() }), req.body).active); return ok; });
   r.post('/admin/cities', guard('moderator'), async (req) => { const b = parse(z.object({ countryCode: z.string().length(2).toUpperCase(), name: z.string().trim().min(2).max(100) }), req.body); await svc.addCity(me(req), b.countryCode, b.name); return ok; });
 
+  r.get('/admin/notifications', guard('moderator'), async () => svc.notifications());
+  r.post('/admin/notifications/read', guard('moderator'), async () => { await svc.readNotifications(); return ok; });
   r.get('/admin/pages', guard('moderator'), async () => ({ pages: await svc.pages() }));
   r.put('/admin/pages/:slug', guard('moderator'), async (req) => { const b = parse(PageBody, req.body); await svc.savePage(me(req), parse(z.object({ slug: z.enum(LEGAL_SLUGS) }), req.params).slug, b.title, b.body); return ok; });
   r.delete('/admin/pages/:slug', guard('moderator'), async (req) => { await svc.deletePage(me(req), parse(z.object({ slug: z.enum(LEGAL_SLUGS) }), req.params).slug); return ok; });

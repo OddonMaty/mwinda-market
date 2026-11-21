@@ -1,3 +1,4 @@
+import { USD_RATES } from '@saotech/shared';
 import { AppError } from '../errors.js';
 import { newId } from '../lib/crypto.js';
 import type { Db } from '../db/client.js';
@@ -17,6 +18,31 @@ export class PlatformService {
     const cities = await this.db.query<{ country_code: string; name: string; slug: string }>(
       'SELECT r.country_code, c.name, c.slug FROM cities c JOIN regions r ON r.id = c.region_id WHERE r.country_code = ANY($1::text[]) ORDER BY c.name', [rows.map((r) => r.code)]);
     return rows.map((c) => ({ code: c.code, name: c.name, phonePrefix: c.phone_prefix, currency: c.currency_code, cities: cities.filter((x) => x.country_code === c.code).map((x) => ({ name: x.name, slug: x.slug })) }));
+  }
+
+
+  /** Taux de change : unités de monnaie locale pour 1 USD. Rafraîchis au plus toutes les 12 h depuis une source publique, sinon dernières valeurs connues, sinon valeurs de secours. */
+  async rates() {
+    type R = { code: string; rate: string; updated_at: Date };
+    let rows = await this.db.query<R>('SELECT code, rate, updated_at FROM exchange_rates');
+    const newest = rows.reduce((m, r) => Math.max(m, new Date(r.updated_at).getTime()), 0);
+    if (rows.length === 0 || Date.now() - newest > 12 * 3600_000) {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(4000) });
+        const json = (await res.json()) as { result?: string; rates?: Record<string, number> };
+        if (json.result === 'success' && json.rates) {
+          const entries = Object.entries(json.rates).filter(([c, v]) => /^[A-Z]{3}$/.test(c) && Number.isFinite(v) && v > 0);
+          if (entries.length > 20) {
+            await this.db.query('INSERT INTO exchange_rates(code, rate, updated_at) SELECT k, v::numeric, now() FROM unnest($1::text[], $2::float8[]) AS t(k, v) ON CONFLICT (code) DO UPDATE SET rate = EXCLUDED.rate, updated_at = now()', [entries.map((e) => e[0]), entries.map((e) => e[1])]);
+            rows = await this.db.query<R>('SELECT code, rate, updated_at FROM exchange_rates');
+          }
+        }
+      } catch { /* source injoignable : on garde les derniers taux */ }
+    }
+    const rates: Record<string, number> = { ...USD_RATES };
+    for (const r of rows) rates[r.code] = Number(r.rate);
+    const updatedAt = rows.length ? new Date(rows.reduce((m, r) => Math.max(m, new Date(r.updated_at).getTime()), 0)).toISOString() : null;
+    return { base: 'USD', rates, updatedAt, source: rows.length ? 'live' : 'fallback' };
   }
 
   async page(slug: string) {
@@ -92,9 +118,9 @@ export class AdminService extends PlatformService {
     return rows.map((s) => ({ id: s.id, name: s.name, slug: s.slug, status: s.status, plan: s.plan, planExpiresAt: s.plan_expires_at, isOfficial: s.is_official, countryCode: s.country_code, city: s.city, owner: s.owner, products: Number(s.products), createdAt: s.created_at }));
   }
 
-  async updateShop(actor: string, id: string, b: { status?: 'pending' | 'active' | 'suspended'; plan?: string; planMonths?: number }) {
+  async updateShop(actor: string, id: string, b: { status?: 'pending' | 'active' | 'suspended' | 'rejected'; reason?: string; plan?: string; planMonths?: number }) {
     if (!(await this.db.query('SELECT 1 FROM shops WHERE id = $1', [id]))[0]) throw new AppError(404, 'not_found', 'Boutique introuvable.');
-    if (b.status) await this.db.query('UPDATE shops SET status = $2 WHERE id = $1', [id, b.status]);
+    if (b.status) await this.db.query('UPDATE shops SET status = $2::varchar, reject_reason = CASE WHEN $2::text = \'rejected\' THEN $3::text ELSE NULL END WHERE id = $1', [id, b.status, b.reason?.trim() || null]);
     if (b.plan) {
       if (!(await this.db.query('SELECT 1 FROM plans WHERE code = $1', [b.plan]))[0]) throw new AppError(404, 'not_found', 'Plan introuvable.');
       const months = b.plan === 'free' ? null : (b.planMonths ?? 3);
@@ -195,6 +221,15 @@ export class AdminService extends PlatformService {
     if (!r[0]) throw new AppError(409, 'city_exists', 'Cette ville existe déjà.');
     await this.audit(actor, 'city.add', 'city', `${countryCode}:${slug}`);
   }
+
+  // ---------- Notifications ----------
+  async notifications() {
+    const rows = await this.db.query<{ id: string; kind: string; title: string; body: string | null; ref: string | null; read: boolean; created_at: Date }>('SELECT id, kind, title, body, ref, read, created_at FROM notifications ORDER BY id DESC LIMIT 30');
+    const unread = Number((await this.db.query<{ n: string }>('SELECT count(*) AS n FROM notifications WHERE read = false'))[0]?.n ?? 0);
+    return { unread, notifications: rows.map((n) => ({ id: Number(n.id), kind: n.kind, title: n.title, body: n.body, ref: n.ref, read: n.read, createdAt: n.created_at })) };
+  }
+
+  async readNotifications() { await this.db.query('UPDATE notifications SET read = true WHERE read = false'); }
 
   // ---------- Pages légales ----------
   async pages() {
