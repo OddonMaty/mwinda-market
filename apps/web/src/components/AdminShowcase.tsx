@@ -9,7 +9,7 @@ import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitl
 
 interface Slide {
   id: string; productId: number | null; tag: string; title: string; text: string; image: string; priceUsd: number | null; priceOverride: number | null; link: string | null;
-  active: boolean; startsAt: string | null; endsAt: string | null; shop: string | null; plan: string | null; eligible: boolean; live: boolean; reason: string | null;
+  active: boolean; placement: 'hero' | 'home'; startsAt: string | null; endsAt: string | null; shop: string | null; plan: string | null; eligible: boolean; live: boolean; reason: string | null;
 }
 interface Candidate { id: number; name: string; priceUsd: number; image: string | null; shop: string; plan: string; eligible: boolean; demo: boolean }
 interface Demo { demoTotal: number; demoActive: number; realActive: number }
@@ -17,11 +17,11 @@ interface P { notify: (m: string) => void; fail: (r: { data: { code?: string; me
 
 const REASON: Record<string, string> = { inactive: 'Désactivée', hors_periode: 'Hors période', produit_indisponible: 'Produit indisponible', boutique_inactive: 'Boutique inactive', plan_non_eligible: 'Abonnement non éligible' };
 
-/** « Vitrine » : l'administrateur décide quoi promouvoir sur le carrousel de l'accueil, selon l'abonnement du vendeur. */
+/** « Promotions » : l'administrateur choisit les produits promus (accueil, carrousel). Réservé aux vendeurs à abonnement payant. */
 export function Showcase({ notify, fail }: P) {
   const [slides, setSlides] = useState<Slide[] | null>(null);
   const [demo, setDemo] = useState<Demo | null>(null);
-  const [adding, setAdding] = useState<'product' | 'banner' | null>(null);
+  const [adding, setAdding] = useState<'hero' | 'home' | 'banner' | null>(null);
   const [edit, setEdit] = useState<Slide | null>(null);
 
   const reload = useCallback(async () => {
@@ -63,15 +63,16 @@ export function Showcase({ notify, fail }: P) {
     <div className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Carrousel de la page d’accueil</CardTitle>
-          <CardDescription>Vous choisissez ce qui est mis en avant. Seuls les produits dont l’abonnement du vendeur inclut la mise en avant (ou la boutique officielle) peuvent y figurer ; si l’abonnement expire, la diapositive disparaît toute seule.</CardDescription>
+          <CardTitle>Promotions des produits</CardTitle>
+          <CardDescription>Les vendeurs ayant choisi un abonnement payant ont droit aux promotions sur la plateforme ; c’est vous qui choisissez quels produits sont promus : dans le carrousel de l’accueil (avec un prix affiché si vous le souhaitez) ou dans la section « À la une ». Si l’abonnement d’un vendeur expire, sa promotion s’arrête toute seule.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={() => { setAdding('product'); setEdit(null); }}>+ Mettre un produit en avant</Button>
+            <Button type="button" onClick={() => { setAdding('hero'); setEdit(null); }}>+ Promouvoir dans le carrousel</Button>
+            <Button type="button" variant="outline" onClick={() => { setAdding('home'); setEdit(null); }}>+ Promouvoir « À la une »</Button>
             <Button type="button" variant="outline" onClick={() => { setAdding('banner'); setEdit(null); }}>+ Bannière libre</Button>
           </div>
-          {slides && slides.length === 0 && <p className="text-sm text-muted-foreground">Aucune diapositive : l’accueil affiche une bannière de présentation de la marque.</p>}
+          {slides && slides.length === 0 && <p className="text-sm text-muted-foreground">Aucune promotion : l’accueil affiche une bannière de présentation de la marque.</p>}
           <div className="grid gap-3">
             {slides?.map((s, i) => (
               <div key={s.id} className="flex flex-wrap items-center gap-3 rounded-xl border p-3">
@@ -82,6 +83,7 @@ export function Showcase({ notify, fail }: P) {
                     {s.productId ? `Produit #${s.productId} · ${s.shop} · ${s.plan}` : 'Bannière libre'} · {s.priceUsd != null ? formatUsd(s.priceUsd) : 'sans prix'}{s.priceOverride != null ? ' (prix imposé)' : ''}
                   </p>
                 </div>
+                <Badge variant="outline">{s.placement === 'home' ? 'À la une' : 'Carrousel'}</Badge>
                 {s.live ? <Badge variant="success">En ligne</Badge> : <Badge variant={s.reason === 'plan_non_eligible' ? 'danger' : 'secondary'}>{REASON[s.reason ?? ''] ?? 'Hors ligne'}</Badge>}
                 <div className="flex items-center gap-1">
                   <Button type="button" variant="ghost" size="sm" aria-label="Monter" disabled={i === 0} onClick={() => void move(i, -1)}><ArrowUp className="size-4" /></Button>
@@ -96,7 +98,7 @@ export function Showcase({ notify, fail }: P) {
         </CardContent>
       </Card>
 
-      {adding === 'product' && <ProductPicker notify={notify} fail={fail} onDone={() => { setAdding(null); void reload(); }} />}
+      {(adding === 'hero' || adding === 'home') && <ProductPicker placement={adding} notify={notify} fail={fail} onDone={() => { setAdding(null); void reload(); }} />}
       {adding === 'banner' && <SlideForm key="new-banner" notify={notify} fail={fail} onDone={() => { setAdding(null); void reload(); }} />}
       {edit && <SlideForm key={edit.id} slide={edit} notify={notify} fail={fail} onDone={() => { setEdit(null); void reload(); }} />}
 
@@ -115,7 +117,7 @@ export function Showcase({ notify, fail }: P) {
   );
 }
 
-function ProductPicker({ notify, fail, onDone }: P & { onDone: () => void }) {
+function ProductPicker({ placement, notify, fail, onDone }: P & { placement: 'hero' | 'home'; onDone: () => void }) {
   const [q, setQ] = useState('');
   const [rows, setRows] = useState<Candidate[] | null>(null);
   useEffect(() => {
@@ -123,13 +125,13 @@ function ProductPicker({ notify, fail, onDone }: P & { onDone: () => void }) {
     return () => clearTimeout(t);
   }, [q]);
   async function pick(c: Candidate) {
-    const r = await api('/admin/hero', { method: 'POST', body: { productId: c.id, tag: 'À la une' } });
+    const r = await api('/admin/hero', { method: 'POST', body: { productId: c.id, tag: 'À la une', placement } });
     if (!r.ok) return fail(r);
-    notify('Produit ajouté au carrousel'); onDone();
+    notify('Promotion ajoutée'); onDone();
   }
   return (
     <Card>
-      <CardHeader><CardTitle>Choisir un produit</CardTitle><CardDescription>Les produits éligibles (abonnement Pro ou Premium, ou boutique officielle) sont en tête de liste.</CardDescription></CardHeader>
+      <CardHeader><CardTitle>{placement === 'home' ? 'Promouvoir « À la une »' : 'Promouvoir dans le carrousel'}</CardTitle><CardDescription>Seuls les produits de la boutique officielle ou d’un vendeur à abonnement payant peuvent être promus ; ils sont en tête de liste.</CardDescription></CardHeader>
       <CardContent className="grid gap-3">
         <Input placeholder="Rechercher un produit…" value={q} onChange={(e) => setQ(e.target.value)} />
         <UTable>
@@ -138,7 +140,7 @@ function ProductPicker({ notify, fail, onDone }: P & { onDone: () => void }) {
             {rows?.map((c) => (
               <tr key={c.id}>
                 <Td>{c.name} {c.demo && <Badge variant="secondary">Démo</Badge>}</Td><Td>{c.shop}</Td>
-                <Td><Badge variant={c.eligible ? 'success' : 'secondary'}>{c.plan}{c.eligible ? '' : ' · non éligible'}</Badge></Td><Td>{formatUsd(c.priceUsd)}</Td>
+                <Td><Badge variant={c.eligible ? 'success' : 'secondary'}>{c.plan}{c.eligible ? '' : ' · gratuit, non éligible'}</Badge></Td><Td>{formatUsd(c.priceUsd)}</Td>
                 <Td className="text-right"><Button type="button" size="sm" variant="outline" disabled={!c.eligible} onClick={() => void pick(c)}>Ajouter</Button></Td>
               </tr>
             ))}
@@ -183,7 +185,7 @@ function SlideForm({ slide, notify, fail, onDone }: P & { slide?: Slide; onDone:
   const local = (d: string | null) => (d ? new Date(new Date(d).getTime() - new Date(d).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');
   return (
     <Card>
-      <CardHeader><CardTitle>{slide ? 'Modifier la diapositive' : 'Nouvelle bannière'}</CardTitle>
+      <CardHeader><CardTitle>{slide ? 'Modifier la promotion' : 'Nouvelle bannière'}</CardTitle>
         <CardDescription>{linked ? 'Laissez un champ vide pour reprendre automatiquement le titre, la photo et le prix du produit.' : 'Une bannière libre n’est liée à aucun produit : indiquez un titre, une image et, si besoin, un lien.'}</CardDescription></CardHeader>
       <CardContent>
         <form className="grid gap-4" onSubmit={(e) => void save(e)}>

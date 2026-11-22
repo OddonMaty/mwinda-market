@@ -87,6 +87,18 @@ describe('Carrousel, stockage, produits de démonstration', () => {
     assert.ok(!(await call('GET', '/hero')).json.slides.some((s: { href: string }) => s.href === `/produit/${p}`));
   });
 
+  it('promotions « À la une » : choisies par l\'administrateur, mêmes règles d\'abonnement', async () => {
+    const a = await user();
+    await db.query("INSERT INTO admin_roles(user_id, role) VALUES ($1, 'superadmin')", [a.id]);
+    assert.deepEqual((await call('GET', '/promotions')).json.products, []);
+    const r = await call('POST', '/admin/hero', { cookie: a.cookie, body: { productId: 3, placement: 'home', tag: 'Promo' } });
+    assert.equal(r.status, 201);
+    assert.equal((await call('POST', '/admin/hero', { cookie: a.cookie, body: { productId: 3, placement: 'home' } })).status, 409);
+    assert.deepEqual((await call('GET', '/promotions')).json.products, [{ productId: 3, tag: 'Promo' }]);
+    assert.ok(!(await call('GET', '/hero')).json.slides.some((s: { href: string }) => s.href === '/produit/3'));
+    assert.equal((await call('POST', '/admin/hero', { cookie: a.cookie, body: { placement: 'home', title: 'x' } })).status, 400);
+  });
+
   it('produits de démonstration : retrait puis rétablissement, carrousel coupé', async () => {
     const a = await user();
     await db.query("INSERT INTO admin_roles(user_id, role) VALUES ($1, 'superadmin')", [a.id]);

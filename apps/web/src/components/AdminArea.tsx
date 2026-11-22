@@ -7,14 +7,14 @@ import { api, errorMessage, useAuth } from './AuthProvider';
 import { Showcase } from './AdminShowcase';
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Empty, Field, Input, Select, StatCard, Table as UTable, Td, Textarea, Th, DashboardShell, PageLoader, WelcomeDialog, type NavGroup } from './ui';
 
-type Tab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'plans' | 'requests' | 'countries' | 'pages' | 'audit' | 'showcase';
+type Tab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'plans' | 'requests' | 'countries' | 'pages' | 'audit' | 'promotions';
 const NAV: NavGroup[] = [
   { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: BarChart3 }] },
   { title: 'Gestion', items: [
     { key: 'users', label: 'Utilisateurs', icon: UsersIcon }, { key: 'shops', label: 'Boutiques', icon: Store },
     { key: 'products', label: 'Produits', icon: Package }, { key: 'orders', label: 'Commandes', icon: ShoppingBag },
+    { key: 'promotions', label: 'Promotions', icon: Sparkles },
   ] },
-  { title: 'Vitrine', items: [{ key: 'showcase', label: 'Carrousel & démo', icon: Sparkles }] },
   { title: 'Abonnements', items: [{ key: 'plans', label: 'Plans', icon: Crown }, { key: 'requests', label: 'Demandes de plan', icon: Inbox }] },
   { title: 'Configuration', items: [{ key: 'countries', label: 'Pays & villes', icon: Globe2 }, { key: 'pages', label: 'Textes légaux', icon: FileText }, { key: 'audit', label: 'Journal d’audit', icon: ScrollText }] },
 ];
@@ -93,7 +93,7 @@ export function AdminArea() {
       {tab === 'requests' && <Requests notify={notify} fail={fail} />}
       {tab === 'countries' && <Countries isSuper={isSuper} notify={notify} fail={fail} />}
       {tab === 'pages' && <Pages notify={notify} fail={fail} />}
-      {tab === 'showcase' && <Showcase notify={notify} fail={fail} />}
+      {tab === 'promotions' && <Showcase notify={notify} fail={fail} />}
       {tab === 'audit' && <Audit isSuper={isSuper} />}
     </DashboardShell>
   );
@@ -306,7 +306,7 @@ function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
               </div>
               <Field label="Avantages" hint="Un avantage par ligne"><Textarea name="features" rows={4} defaultValue={edit.features.join('\n')} /></Field>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="certified" defaultChecked={edit.certified} disabled={edit.code === 'free'} />Certification « Vendeur certifié » incluse</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="heroEligible" defaultChecked={edit.heroEligible} disabled={edit.code === 'free'} />Éligible à la mise en avant sur l’accueil (carrousel)</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="heroEligible" defaultChecked={edit.heroEligible} disabled={edit.code === 'free'} />Éligible aux promotions (accueil et carrousel, sur sélection de l’administrateur)</label>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="active" defaultChecked={edit.active} disabled={edit.code === 'free'} />Plan proposé aux vendeurs</label>
               <div className="flex gap-2"><Button type="submit">Enregistrer</Button><Button type="button" variant="outline" onClick={() => setEdit(null)}>Annuler</Button></div>
             </form>

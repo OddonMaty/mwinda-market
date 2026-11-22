@@ -19,7 +19,7 @@ const HeroBody = z.object({
   productId: z.number().int().positive().nullable().optional(), tag: z.string().trim().max(40).optional(), title: z.string().trim().max(120).optional(), text: z.string().trim().max(300).optional(),
   image: imgUrl.optional(), priceUsd: z.number().positive().max(1_000_000).nullable().optional(),
   link: z.string().trim().max(300).regex(/^(\/(?!\/)|https:\/\/)/, 'link_invalid').nullable().optional(), active: z.boolean().optional(),
-  startsAt: z.string().datetime().nullable().optional(), endsAt: z.string().datetime().nullable().optional(),
+  placement: z.enum(['hero', 'home']).optional(), startsAt: z.string().datetime().nullable().optional(), endsAt: z.string().datetime().nullable().optional(),
 });
 const PageBody = z.object({ title: z.string().trim().min(1).max(150), body: z.string().trim().min(1).max(60000) });
 
@@ -27,6 +27,7 @@ export function publicPlatformRoutes(r: FastifyInstance, svc: AdminService, pars
   r.get('/countries', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=600'); return { countries: await svc.countries() }; });
   r.get('/rates', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=600, stale-while-revalidate=3600'); return svc.rates(); });
   r.get('/hero', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { slides: await svc.publicHero() }; });
+  r.get('/promotions', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { products: await svc.promotedProducts() }; });
   r.get('/pages/:slug', async (req, reply) => {
     reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300');
     return { page: await svc.page(parse(z.object({ slug: z.enum(LEGAL_SLUGS) }), req.params).slug) };

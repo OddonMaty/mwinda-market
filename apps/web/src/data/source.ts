@@ -53,3 +53,15 @@ export async function getHeroSlides(): Promise<HeroSlideData[]> {
     return [];
   }
 }
+
+/** Produits promus « À la une » par l'administration (identifiants, dans l'ordre choisi). */
+export async function getPromotedIds(): Promise<number[]> {
+  const api = process.env.API_URL ?? 'http://localhost:4000';
+  try {
+    const res = await fetch(`${api}/v1/promotions`, { next: { revalidate: 10 }, signal: AbortSignal.timeout(4000) });
+    if (!res.ok) throw new Error(String(res.status));
+    return ((await res.json()) as { products: { productId: number }[] }).products.map((p) => p.productId);
+  } catch {
+    return [];
+  }
+}

@@ -177,7 +177,7 @@ export class AdminService extends PlatformService {
     return {
       id: r.id.trim(), productId: linked ? Number(r.product_id) : null, tag: r.tag, title: r.title || r.p_name || '', text: r.text,
       image: r.image_url || r.p_image || '', priceUsd: price, priceOverride: r.price_usd != null ? Number(r.price_usd) : null,
-      link: r.link, href: r.link || (linked ? `/produit/${r.product_id}` : '/collection'), position: r.position, active: r.active,
+      placement: r.placement, link: r.link, href: r.link || (linked ? `/produit/${r.product_id}` : '/collection'), position: r.position, active: r.active,
       startsAt: r.starts_at, endsAt: r.ends_at, shop: r.shop_name, plan: r.shop_official ? 'Officielle' : r.plan_name, eligible,
       live: r.active && inWindow && productOk,
       reason: !r.active ? 'inactive' : !inWindow ? 'hors_periode' : !linked ? null : r.p_status !== 'active' ? 'produit_indisponible' : r.shop_status !== 'active' ? 'boutique_inactive' : !eligible ? 'plan_non_eligible' : null,
@@ -185,9 +185,15 @@ export class AdminService extends PlatformService {
   }
 
   async publicHero() {
-    const rows = await this.db.query<HeroRow>(`${AdminService.HERO_SQL} WHERE h.active ORDER BY h.position, h.created_at`);
+    const rows = await this.db.query<HeroRow>(`${AdminService.HERO_SQL} WHERE h.active AND h.placement = 'hero' ORDER BY h.position, h.created_at`);
     return rows.map((r) => this.heroDto(r)).filter((d) => d.live && d.image).slice(0, AdminService.HERO_MAX)
       .map((d) => ({ id: d.id, tag: d.tag, title: d.title, text: d.text, image: d.image, priceUsd: d.priceUsd, href: d.href }));
+  }
+
+  /** Produits promus « À la une » sur l'accueil (identifiants, dans l'ordre choisi par l'administrateur). */
+  async promotedProducts() {
+    const rows = await this.db.query<HeroRow>(`${AdminService.HERO_SQL} WHERE h.active AND h.placement = 'home' AND h.product_id IS NOT NULL ORDER BY h.position, h.created_at`);
+    return rows.map((r) => this.heroDto(r)).filter((d) => d.live && d.productId != null).slice(0, 12).map((d) => ({ productId: d.productId!, tag: d.tag }));
   }
 
   async heroSlides() {
@@ -218,13 +224,15 @@ export class AdminService extends PlatformService {
   async createHeroSlide(actor: string, b: HeroInput) {
     const n = Number((await this.db.query<{ n: string }>('SELECT count(*) AS n FROM hero_slides'))[0]?.n ?? 0);
     if (n >= AdminService.HERO_MAX * 2) throw new AppError(409, 'hero_full', 'Trop de diapositives : supprimez-en avant d\'en ajouter.');
-    if (b.productId == null && (!b.image || !b.title)) throw new AppError(400, 'validation_error', 'Une bannière libre demande un titre et une image.');
+    if (b.placement === 'home' && b.productId == null) throw new AppError(400, 'validation_error', 'Une promotion « À la une » concerne un produit.');
+    if (b.placement !== 'home' && b.productId == null && (!b.image || !b.title)) throw new AppError(400, 'validation_error', 'Une bannière libre demande un titre et une image.');
     await this.checkHeroProduct(b.productId);
+    if (b.productId != null && (await this.db.query('SELECT 1 FROM hero_slides WHERE product_id = $1 AND placement = $2', [b.productId, b.placement ?? 'hero']))[0]) throw new AppError(409, 'already_promoted', 'Ce produit est déjà promu à cet emplacement.');
     const id = newId();
     const pos = Number((await this.db.query<{ m: string | null }>('SELECT max(position) + 1 AS m FROM hero_slides'))[0]?.m ?? 0);
     await this.db.query(
-      'INSERT INTO hero_slides(id, product_id, tag, title, text, image_url, price_usd, link, position, active, starts_at, ends_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)',
-      [id, b.productId ?? null, b.tag ?? '', b.title ?? '', b.text ?? '', b.image ?? '', b.priceUsd ?? null, b.link ?? null, pos, b.active ?? true, b.startsAt ?? null, b.endsAt ?? null]);
+      'INSERT INTO hero_slides(id, product_id, tag, title, text, image_url, price_usd, link, position, active, starts_at, ends_at, placement) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)',
+      [id, b.productId ?? null, b.tag ?? '', b.title ?? '', b.text ?? '', b.image ?? '', b.priceUsd ?? null, b.link ?? null, pos, b.active ?? true, b.startsAt ?? null, b.endsAt ?? null, b.placement ?? 'hero']);
     await this.audit(actor, 'hero.create', 'hero_slide', id, b);
     return { id };
   }
@@ -386,8 +394,8 @@ export class AdminService extends PlatformService {
 }
 
 interface HeroRow {
-  id: string; product_id: string | null; tag: string; title: string; text: string; image_url: string; price_usd: string | null; link: string | null; position: number; active: boolean;
+  id: string; product_id: string | null; tag: string; title: string; text: string; image_url: string; price_usd: string | null; link: string | null; position: number; active: boolean; placement: string;
   starts_at: Date | null; ends_at: Date | null; p_name: string | null; p_price: string | null; p_status: string | null; p_image: string | null;
   shop_name: string | null; shop_status: string | null; shop_official: boolean | null; plan_name: string | null; plan_eligible: boolean | null;
 }
-export interface HeroInput { productId?: number | null; tag?: string; title?: string; text?: string; image?: string; priceUsd?: number | null; link?: string | null; active?: boolean; startsAt?: string | null; endsAt?: string | null }
+export interface HeroInput { productId?: number | null; tag?: string; title?: string; text?: string; image?: string; priceUsd?: number | null; link?: string | null; active?: boolean; startsAt?: string | null; endsAt?: string | null; placement?: 'hero' | 'home' }

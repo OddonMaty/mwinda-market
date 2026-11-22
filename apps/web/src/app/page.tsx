@@ -4,7 +4,7 @@ import { CategorySidebar } from '../components/CategorySidebar';
 import { Countdown } from '../components/Countdown';
 import { NewProducts, HomeCatalog } from '../components/HomeCatalog';
 import { ProductCard } from '../components/ProductCard';
-import { getHeroSlides, getProducts } from '../data/source';
+import { getHeroSlides, getProducts, getPromotedIds } from '../data/source';
 import { formatUsd, isProductNew, productImageUrl } from '../lib';
 import { MobileCatStrip } from '../components/MobileCatStrip';
 
@@ -13,7 +13,8 @@ export const revalidate = 10;
 const FALLBACK: Slide = { id: 'brand', tag: 'Mwinda Market', title: 'La place de marché des vendeurs africains', text: 'Des boutiques locales près de chez vous, livrées dans votre ville.', image: '', priceLabel: '', href: '/collection' };
 
 export default async function HomePage() {
-  const [products, heroData] = await Promise.all([getProducts(), getHeroSlides()]);
+  const [products, heroData, promotedIds] = await Promise.all([getProducts(), getHeroSlides(), getPromotedIds()]);
+  const promoted = promotedIds.map((id) => products.find((p) => p.id === id)).filter((p): p is NonNullable<typeof p> => !!p);
   const slides: Slide[] = heroData.length ? heroData.map((h) => ({ id: h.id, tag: h.tag, title: h.title, text: h.text, image: productImageUrl(h.image, 1400, 600), priceLabel: h.priceUsd != null ? `À partir de ${formatUsd(h.priceUsd)}` : '', href: h.href })) : [FALLBACK];
   const now = Date.now();
   const newProducts = products.filter((p) => isProductNew(p, now));
@@ -37,6 +38,15 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {promoted.length > 0 && (
+        <section className="products-section">
+          <div className="container">
+            <div className="section-header"><div><p className="section-tag">Sélection Mwinda</p><h2>À la une</h2></div></div>
+            <div className="products-grid">{promoted.map((p) => <ProductCard key={p.id} product={p} now={now} />)}</div>
+          </div>
+        </section>
+      )}
 
       <section className="products-section">
         <div className="container"><NewProducts products={newProducts} now={now} /></div>

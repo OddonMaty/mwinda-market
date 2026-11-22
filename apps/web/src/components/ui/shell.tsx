@@ -39,7 +39,7 @@ export function DashboardShell({ space, subtitle, groups, active, onSelect, user
   const side = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center gap-2 border-b px-5">
-        <Link href="/" className="flex items-center"><img src="/images/brand/mwinda-h-light.png" alt="Mwinda Market" className="h-8 w-auto" /></Link>
+        <Link href="/" className="flex items-center"><img src="/images/brand/mwinda-h-light.png" alt="Mwinda Market" className="h-11 w-auto" /></Link>
       </div>
       <div className="px-5 pt-4"><p className="text-xs font-semibold uppercase tracking-wider text-primary">{space}</p>{subtitle && <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>}</div>
       {nav}
