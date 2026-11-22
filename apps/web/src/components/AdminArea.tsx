@@ -139,13 +139,13 @@ function Dashboard() {
   if (!s) return <p className="text-sm text-muted-foreground">Chargement…</p>;
   return (
     <div className="grid gap-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Utilisateurs" value={s.users} icon={UsersIcon} />
         <StatCard label="Boutiques vendeurs" value={s.shops} icon={Store} hint={s.shopsPending ? `${s.shopsPending} en attente` : undefined} />
         <StatCard label="Produits en ligne" value={s.products} icon={Package} />
         <StatCard label="Commandes" value={s.orders} icon={ShoppingBag} />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
         <StatCard label="Ventes livrées" value={formatUsd(s.salesUsd)} icon={Wallet} />
         <StatCard label="Commissions gagnées" value={formatUsd(s.commissionUsd)} icon={Percent} />
         <StatCard label="Demandes de plan à traiter" value={s.planRequests} icon={Inbox} />

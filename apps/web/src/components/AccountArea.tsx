@@ -124,10 +124,10 @@ export function AccountArea() {
         <Badge variant={TONE[o.status] ?? 'secondary'}>{STATUS[o.status] ?? o.status}</Badge>
       </div>
       <Table>
-        <thead><tr><Th>Article</Th><Th>Boutique</Th><Th>Qté</Th><Th>Prix</Th><Th>État</Th></tr></thead>
+        <thead><tr><Th>Article</Th><Th className="hidden sm:table-cell">Boutique</Th><Th>Qté</Th><Th>Prix</Th><Th>État</Th></tr></thead>
         <tbody>
           {o.items.map((i, k) => (
-            <tr key={k}><Td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</Td><Td>{i.shop}</Td><Td>{i.quantity}</Td><Td><Price usd={i.unitPriceUsd * i.quantity} /></Td><Td><Badge variant={TONE[i.status] ?? 'secondary'}>{STATUS[i.status] ?? i.status}</Badge></Td></tr>
+            <tr key={k}><Td>{i.name}{i.color ? ` — ${i.color}` : ''}{i.size ? ` — ${i.size}` : ''}</Td><Td className="hidden sm:table-cell">{i.shop}</Td><Td>{i.quantity}</Td><Td><Price usd={i.unitPriceUsd * i.quantity} /></Td><Td><Badge variant={TONE[i.status] ?? 'secondary'}>{STATUS[i.status] ?? i.status}</Badge></Td></tr>
           ))}
         </tbody>
       </Table>
@@ -146,9 +146,9 @@ export function AccountArea() {
   return (
     <DashboardShell space="Mon compte" subtitle={user.email} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: fullName, email: user.email }}
       topRight={<>
-        {user.roles.length > 0 && <Button asChild variant="outline" size="sm"><a href="/admin"><ShieldCheck />Administration</a></Button>}
-        <Button asChild variant="outline" size="sm"><Link href="/vendeur"><Store />Espace vendeur</Link></Button>
-        <Button variant="ghost" size="sm" onClick={() => void logout()}><LogOut />Déconnexion</Button>
+        {user.roles.length > 0 && <Button asChild variant="outline" size="sm"><a href="/admin"><ShieldCheck /><span className="hidden sm:inline">Administration</span></a></Button>}
+        <Button asChild variant="outline" size="sm"><Link href="/vendeur"><Store /><span className="hidden sm:inline">Espace vendeur</span></Link></Button>
+        <Button variant="ghost" size="sm" onClick={() => void logout()}><LogOut /><span className="hidden sm:inline">Déconnexion</span></Button>
       </>}>
       {tab === 'dashboard' && (
         <div className="grid gap-6">
@@ -192,10 +192,10 @@ export function AccountArea() {
 
       {tab === 'messages' && (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          <Card className="overflow-hidden"><CardHeader><CardTitle>Mes discussions</CardTitle><CardDescription>Vos questions aux vendeurs, avant et après commande.</CardDescription></CardHeader>
+          <Card className={`overflow-hidden${conv ? ' hidden lg:block' : ''}`}><CardHeader><CardTitle>Mes discussions</CardTitle><CardDescription>Vos questions aux vendeurs, avant et après commande.</CardDescription></CardHeader>
             <div className="max-h-[480px] overflow-y-auto"><ConversationList as="buyer" activeId={conv?.id} onOpen={setConv} /></div></Card>
-          <Card className="overflow-hidden"><div className="border-b px-5 py-3 text-sm font-semibold">{conv ? conv.other : 'Sélectionnez une discussion'}</div>
-            {conv ? <Thread key={conv.id} conversationId={conv.id} className="h-[440px]" /> : <p className="p-8 text-center text-sm text-muted-foreground">Choisissez une discussion pour la lire et répondre.</p>}</Card>
+          <Card className={`overflow-hidden${conv ? '' : ' hidden lg:block'}`}><div className="flex items-center gap-2 border-b px-5 py-3 text-sm font-semibold">{conv && <button type="button" className="-ml-2 rounded-lg px-2 py-1 text-primary lg:hidden" onClick={() => setConv(null)}>← Retour</button>}<span className="truncate">{conv ? conv.other : 'Sélectionnez une discussion'}</span></div>
+            {conv ? <Thread key={conv.id} conversationId={conv.id} className="h-[calc(100dvh-17rem)] min-h-[320px] lg:h-[440px]" /> : <p className="p-8 text-center text-sm text-muted-foreground">Choisissez une discussion pour la lire et répondre.</p>}</Card>
         </div>
       )}
 

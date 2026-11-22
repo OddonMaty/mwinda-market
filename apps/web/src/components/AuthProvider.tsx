@@ -161,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       </div>
 
       {toasts.map((t, i) => (
-        <div key={t.id} style={{ position: 'fixed', bottom: 20 + i * 64, right: 20, backgroundColor: '#E68723', color: 'white', padding: '1rem 1.5rem', borderRadius: 2, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)', zIndex: 1000, opacity: t.out ? 0 : 1, transition: 'opacity .3s' }}>{t.text}</div>
+        <div key={t.id} className="toast-item" style={{ ['--i' as string]: i, position: 'fixed', bottom: 20 + i * 64, right: 20, backgroundColor: '#E68723', color: 'white', padding: '1rem 1.5rem', borderRadius: 2, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)', zIndex: 1000, opacity: t.out ? 0 : 1, transition: 'opacity .3s' }}>{t.text}</div>
       ))}
     </AuthContext.Provider>
   );

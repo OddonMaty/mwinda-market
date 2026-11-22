@@ -123,7 +123,7 @@ export function SellerDashboard() {
   return (
     <DashboardShell space="Espace vendeur" subtitle={shop.name} groups={groups} active={tab} onSelect={(k) => { setTab(k as Tab); setForm({ open: false, editing: null }); }} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email, email: user.email }}
       topRight={<>
-        <Button size="sm" onClick={() => openForm(null)}><Plus />Ajouter un produit</Button>
+        <Button size="sm" onClick={() => openForm(null)}><Plus /><span className="sm:hidden">Ajouter</span><span className="hidden sm:inline">Ajouter un produit</span></Button>
         <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex"><Link href="/compte">Mon compte</Link></Button>
         <Button variant="ghost" size="sm" onClick={() => void logout()}><LogOut /><span className="hidden sm:inline">Déconnexion</span></Button>
       </>}>
@@ -146,10 +146,10 @@ export function SellerDashboard() {
 
       {tab === 'messages' && (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          <Card className="overflow-hidden"><CardHeader><CardTitle>Questions des clients</CardTitle><CardDescription>Répondez avant la commande pour la sécuriser.</CardDescription></CardHeader>
+          <Card className={`overflow-hidden${conv ? ' hidden lg:block' : ''}`}><CardHeader><CardTitle>Questions des clients</CardTitle><CardDescription>Répondez avant la commande pour la sécuriser.</CardDescription></CardHeader>
             <div className="max-h-[480px] overflow-y-auto"><ConversationList as="seller" activeId={conv?.id} onOpen={setConv} /></div></Card>
-          <Card className="overflow-hidden"><div className="border-b px-5 py-3 text-sm font-semibold">{conv ? conv.other : 'Sélectionnez une discussion'}</div>
-            {conv ? <Thread key={conv.id} conversationId={conv.id} className="h-[440px]" /> : <p className="p-8 text-center text-sm text-muted-foreground">Choisissez une discussion pour lire et répondre.</p>}</Card>
+          <Card className={`overflow-hidden${conv ? '' : ' hidden lg:block'}`}><div className="flex items-center gap-2 border-b px-5 py-3 text-sm font-semibold">{conv && <button type="button" className="-ml-2 rounded-lg px-2 py-1 text-primary lg:hidden" onClick={() => setConv(null)}>← Retour</button>}<span className="truncate">{conv ? conv.other : 'Sélectionnez une discussion'}</span></div>
+            {conv ? <Thread key={conv.id} conversationId={conv.id} className="h-[calc(100dvh-17rem)] min-h-[320px] lg:h-[440px]" /> : <p className="p-8 text-center text-sm text-muted-foreground">Choisissez une discussion pour lire et répondre.</p>}</Card>
         </div>
       )}
 
@@ -165,7 +165,7 @@ export function SellerDashboard() {
             </div>
             {!shop.isOfficial && <Button asChild variant="dark"><Link href="/tarifs">Changer de plan</Link></Button>}
           </CardContent></Card>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
             <StatCard label="Gains nets (livrées)" value={formatUsd(stats?.netUsd ?? 0)} icon={Wallet} />
             <StatCard label="Commission payée" value={formatUsd(stats?.commissionUsd ?? 0)} icon={Percent} />
             <StatCard label="Commandes en cours" value={formatUsd(stats?.inProgressUsd ?? 0)} icon={Clock} hint={toDo ? `${toDo} à traiter` : undefined} />
@@ -221,8 +221,8 @@ export function SellerDashboard() {
             </Card>
           ) : (
             <>
-              <PageHeading description={planLine} actions={<Button onClick={() => openForm(null)}><Plus />Ajouter un produit</Button>} />
-              {products.length === 0 ? <Empty icon={Package} title="Aucun produit" text="Ajoutez votre premier produit pour commencer à vendre." action={<Button onClick={() => openForm(null)}><Plus />Ajouter un produit</Button>} /> : (
+              <PageHeading description={planLine} actions={<Button onClick={() => openForm(null)}><Plus /><span className="sm:hidden">Ajouter</span><span className="hidden sm:inline">Ajouter un produit</span></Button>} />
+              {products.length === 0 ? <Empty icon={Package} title="Aucun produit" text="Ajoutez votre premier produit pour commencer à vendre." action={<Button onClick={() => openForm(null)}><Plus /><span className="sm:hidden">Ajouter</span><span className="hidden sm:inline">Ajouter un produit</span></Button>} /> : (
                 <Card className="overflow-hidden">
                   <Table>
                     <thead className="bg-muted/40"><tr><Th></Th><Th>Produit</Th><Th>Rayon</Th><Th>Prix</Th><Th>Stock</Th><Th></Th></tr></thead>

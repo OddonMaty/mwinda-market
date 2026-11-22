@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { Menu, X, ArrowLeft, type LucideIcon } from 'lucide-react';
+import { Menu, X, ArrowLeft, Ellipsis, type LucideIcon } from 'lucide-react';
 import { cn } from './cn';
 
 export interface NavItem { key: string; label: string; icon: LucideIcon; badge?: number | string }
@@ -65,8 +65,23 @@ export function DashboardShell({ space, subtitle, groups, active, onSelect, user
           <h1 className="truncate text-lg font-semibold">{current?.label}</h1>
           <div className="ml-auto flex items-center gap-2">{topRight}</div>
         </header>
-        <main className="mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-8 sm:py-8">{children}</main>
+        <main className="mx-auto w-full min-w-0 max-w-[1200px] px-4 py-6 pb-24 sm:px-8 sm:py-8 lg:pb-8">{children}</main>
       </div>
+      {/* Barre d'onglets mobile : les 4 premières rubriques + « Plus » qui ouvre le menu complet */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-card pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_12px_rgba(0,0,0,.06)] lg:hidden" aria-label="Rubriques">
+        {all.slice(0, 4).map((it) => {
+          const Icon = it.icon; const on = it.key === active;
+          return (
+            <button key={it.key} type="button" onClick={() => onSelect(it.key)} className={cn('relative flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium', on ? 'text-primary' : 'text-muted-foreground')}>
+              <Icon className="size-5" /><span className="max-w-full truncate px-1">{it.label}</span>
+              {it.badge !== undefined && it.badge !== 0 && <span className="absolute left-[55%] top-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">{it.badge}</span>}
+            </button>
+          );
+        })}
+        <button type="button" onClick={() => setOpen(true)} className={cn('flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium', all.slice(4).some((i) => i.key === active) ? 'text-primary' : 'text-muted-foreground')}>
+          <Ellipsis className="size-5" /><span>Plus</span>
+        </button>
+      </nav>
     </div>
   );
 }
@@ -83,9 +98,9 @@ export function PageHeading({ title, description, actions }: { title?: string; d
 
 export function StatCard({ label, value, icon: Icon, hint }: { label: string; value: React.ReactNode; icon?: LucideIcon; hint?: string }) {
   return (
-    <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{label}</p>{Icon && <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon className="size-4" /></span>}</div>
-      <p className="mt-3 text-2xl font-semibold tracking-tight">{value}</p>
+    <div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+      <div className="flex items-center justify-between gap-2"><p className="text-xs text-muted-foreground sm:text-sm">{label}</p>{Icon && <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon className="size-4" /></span>}</div>
+      <p className="mt-2 text-xl font-semibold tracking-tight sm:mt-3 sm:text-2xl">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );

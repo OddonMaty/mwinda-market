@@ -30,3 +30,6 @@
 :where(.ui) img, :where(.ui) svg { display: block; max-width: 100%; }
 .ui input[type='checkbox'] { accent-color: hsl(var(--primary)); }
 .ui-shell { min-height: 100vh; background: hsl(var(--background)); }
+/* Mobile : une grille sans colonnes déclarées ne doit pas s'élargir au contenu le plus large */
+.ui .grid:not([class*='grid-cols']) { grid-template-columns: minmax(0, 1fr); }
+.ui .grid > *, .ui main > * { min-width: 0; }

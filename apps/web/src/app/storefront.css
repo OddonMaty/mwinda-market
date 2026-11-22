@@ -275,3 +275,20 @@
   .collection-layout > *, .products-area, .section-header > *, .filter-tabs { min-width: 0; }
   .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ===== Mobile phase 3 : bandeaux, notifications, panier ===== */
+@media (max-width: 768px) {
+  .page-header { padding: 1.75rem 0 1.5rem; }
+  .page-header h1 { font-size: 1.6rem; }
+  .page-header p { font-size: 0.95rem; }
+  .cart-content { height: 100dvh; }
+  .toast-item { left: 12px !important; right: 12px !important; bottom: calc(76px + env(safe-area-inset-bottom) + var(--i, 0) * 64px) !important; padding: 0.8rem 1rem !important; border-radius: 10px !important; font-size: 0.9rem; }
+}
+@media (max-width: 768px) {
+  .chat-panel { display: flex; flex-direction: column; }
+  .chat-panel .chat-thread { flex: 1; min-height: 0; height: auto; }
+  .chat-form { align-items: center; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); }
+  .chat-form textarea { min-height: 44px; font-size: 16px; }
+  .chat-send { flex: 0 0 44px; height: 44px; }
+}
+.chat-thread .chat-messages { flex: 1 1 0; height: auto; max-height: none; min-height: 0; }
