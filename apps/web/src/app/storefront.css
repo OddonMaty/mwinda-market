@@ -292,3 +292,40 @@
   .chat-send { flex: 0 0 44px; height: 44px; }
 }
 .chat-thread .chat-messages { flex: 1 1 0; height: auto; max-height: none; min-height: 0; }
+
+/* ===== Mobile phase 4 : zones tactiles et tablette ===== */
+@media (max-width: 768px) {
+  .country-select-btn { min-height: 44px; padding: 0 0.4rem; }
+  .filter-tabs .tab-btn, .home-sector-tabs .tab-btn { min-height: 40px; }
+  .sort-btn { min-height: 40px; }
+  .color-option, .size-option { min-height: 42px; }
+  .breadcrumb button, .breadcrumb a { padding: 0.65rem 0.2rem; }
+  .product-share button, .view-reviews { min-height: 40px; padding-top: 0.6rem; padding-bottom: 0.6rem; }
+  .hero-content .btn { min-height: 40px; }
+  .hero-dots button { position: relative; }
+  .hero-dots button::before { content: ''; position: absolute; inset: -14px -6px; }
+  /* Fiche produit : onglets défilants */
+  .tabs-header, .product-tabs > div:first-child { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .tab-header { flex: 0 0 auto; white-space: nowrap; min-height: 44px; }
+  /* Cartes produits : cœur et panier en 40 px, l'œil est inutile (toute la carte est cliquable) */
+  .product-actions-hover { opacity: 1; transform: none; right: 6px; top: 6px; gap: 6px; }
+  .product-actions-hover button { width: 40px; height: 40px; }
+  .product-actions-hover button:nth-child(2) { display: none; }
+}
+
+/* Tablette (portrait large et paysage) */
+@media (min-width: 600px) and (max-width: 1100px) {
+  .products-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 769px) and (max-width: 1100px) {
+  .header-content { gap: 1rem; flex-wrap: nowrap; }
+  .search-bar { flex: 1; min-width: 0; max-width: none; }
+  .header-btn { min-height: 44px; padding: 0 0.5rem; }
+  .country-select-btn { min-height: 40px; }
+  .collection-layout { grid-template-columns: 200px minmax(0, 1fr); gap: 1rem; }
+  .filter-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+  .filter-tabs::-webkit-scrollbar { display: none; }
+  .filter-tabs .tab-btn { flex: 0 0 auto; white-space: nowrap; min-height: 40px; }
+  .sort-btn { min-height: 40px; }
+  .container { padding-left: 1.5rem; padding-right: 1.5rem; }
+}

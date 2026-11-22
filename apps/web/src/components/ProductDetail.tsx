@@ -41,7 +41,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
           <div className="thumbnail-images">
             {allImages.length > 1 && allImages.map((img, i) => (
               <div key={img} className={`thumbnail${img === main ? ' active' : ''}`} onClick={() => setMain(img)}>
-                <img src={productImageUrl(img, 100, 100)} alt={`${product.name} — vue ${i + 1}`} />
+                <img src={productImageUrl(img, 100, 100)} alt={`${product.name} — vue ${i + 1}`} loading="lazy" decoding="async" />
               </div>
             ))}
           </div>

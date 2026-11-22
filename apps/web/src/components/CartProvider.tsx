@@ -86,7 +86,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               </div>
             ) : items.map((item) => (
               <div className="cart-item" key={item.id}>
-                <img src={productImageUrl(item.image, 150, 150)} alt={item.name} className="cart-item-image" />
+                <img src={productImageUrl(item.image, 150, 150)} alt={item.name} className="cart-item-image" loading="lazy" decoding="async" />
                 <div className="cart-item-info">
                   <div className="cart-item-name">{item.name}</div>
                   <div className="cart-item-qty">Qté : <input type="number" value={item.quantity} min={1} onChange={(e) => setQty(item.id, Number(e.target.value))} style={{ width: 40 }} /></div>

@@ -26,7 +26,7 @@ export function ProductCard({ product, now }: { product: Product; now: number })
   return (
     <div className="product-card" onClick={open}>
       <div className="product-image">
-        <img src={productImageUrl(product.image, 300, 300)} alt={product.name} />
+        <img src={productImageUrl(product.image, 300, 300)} alt={product.name} loading="lazy" decoding="async" />
         <div className="product-badges">
           {isProductNew(product, now) && <span className="product-badge">NOUVEAU</span>}
           {product.tags.includes('bestseller') && <span className="product-badge">BEST-SELLER</span>}
