@@ -9,9 +9,9 @@ const MAX_PHOTOS = 5;
 const MAX_SIDE = 1200;
 
 /** Réduit la photo (téléphones : 4 à 12 Mo) à ~150 Ko avant l'envoi. Renvoie du base64 JPEG. */
-async function compress(file: File): Promise<string> {
+export async function compress(file: File, maxSide = MAX_SIDE): Promise<string> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
-  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(bitmap.width * scale);
   canvas.height = Math.round(bitmap.height * scale);

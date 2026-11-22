@@ -32,6 +32,7 @@ export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }:
 
   r.get('/images/:id', async (req, reply) => {
     const img = await svc.getImage(parse(IdParam, req.params).id);
+    if ('redirect' in img) return reply.header('cache-control', 'public, max-age=86400').redirect(img.redirect, 302);
     return reply.header('content-type', img.type).header('cache-control', 'public, max-age=31536000, immutable').header('x-content-type-options', 'nosniff').send(img.bytes);
   });
 

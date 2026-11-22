@@ -1,18 +1,20 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { BarChart3, Users as UsersIcon, Store, Package, ShoppingBag, Crown, Inbox, Globe2, FileText, ScrollText, Search as SearchIcon, ShieldCheck, Wallet, Percent, Bell } from 'lucide-react';
+import { BarChart3, Users as UsersIcon, Store, Package, ShoppingBag, Crown, Inbox, Globe2, FileText, ScrollText, Search as SearchIcon, ShieldCheck, Wallet, Percent, Bell, Sparkles } from 'lucide-react';
 import { formatUsd } from '../lib';
 import { api, errorMessage, useAuth } from './AuthProvider';
+import { Showcase } from './AdminShowcase';
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Empty, Field, Input, Select, StatCard, Table as UTable, Td, Textarea, Th, DashboardShell, PageLoader, WelcomeDialog, type NavGroup } from './ui';
 
-type Tab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'plans' | 'requests' | 'countries' | 'pages' | 'audit';
+type Tab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'plans' | 'requests' | 'countries' | 'pages' | 'audit' | 'showcase';
 const NAV: NavGroup[] = [
   { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: BarChart3 }] },
   { title: 'Gestion', items: [
     { key: 'users', label: 'Utilisateurs', icon: UsersIcon }, { key: 'shops', label: 'Boutiques', icon: Store },
     { key: 'products', label: 'Produits', icon: Package }, { key: 'orders', label: 'Commandes', icon: ShoppingBag },
   ] },
+  { title: 'Vitrine', items: [{ key: 'showcase', label: 'Carrousel & démo', icon: Sparkles }] },
   { title: 'Abonnements', items: [{ key: 'plans', label: 'Plans', icon: Crown }, { key: 'requests', label: 'Demandes de plan', icon: Inbox }] },
   { title: 'Configuration', items: [{ key: 'countries', label: 'Pays & villes', icon: Globe2 }, { key: 'pages', label: 'Textes légaux', icon: FileText }, { key: 'audit', label: 'Journal d’audit', icon: ScrollText }] },
 ];
@@ -91,6 +93,7 @@ export function AdminArea() {
       {tab === 'requests' && <Requests notify={notify} fail={fail} />}
       {tab === 'countries' && <Countries isSuper={isSuper} notify={notify} fail={fail} />}
       {tab === 'pages' && <Pages notify={notify} fail={fail} />}
+      {tab === 'showcase' && <Showcase notify={notify} fail={fail} />}
       {tab === 'audit' && <Audit isSuper={isSuper} />}
     </DashboardShell>
   );
@@ -259,7 +262,7 @@ function Orders({ notify, fail }: P) {
   );
 }
 
-interface PlanRow { code: string; name: string; priceUsd: number; commissionBps: number; maxProducts: number | null; features: string[]; sort: number; active: boolean; certified: boolean }
+interface PlanRow { code: string; name: string; priceUsd: number; commissionBps: number; maxProducts: number | null; features: string[]; sort: number; active: boolean; certified: boolean; heroEligible: boolean }
 
 function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
   const [rows, reload] = useAdminData<PlanRow>('/admin/plans', 'plans');
@@ -271,7 +274,7 @@ function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
     const body = {
       name: String(f.get('name')).trim(), priceUsd: Number(f.get('priceUsd')), commissionBps: Math.round(Number(f.get('commission')) * 100),
       maxProducts: f.get('maxProducts') ? Number(f.get('maxProducts')) : null, features: String(f.get('features')).split('\n').map((x) => x.trim()).filter(Boolean),
-      sort: Number(f.get('sort') ?? 0), active: !!f.get('active'), certified: !!f.get('certified'),
+      sort: Number(f.get('sort') ?? 0), active: !!f.get('active'), certified: !!f.get('certified'), heroEligible: !!f.get('heroEligible'),
     };
     const code = edit.isNew ? String(f.get('code')).trim().toLowerCase() : edit.code;
     const r = await api(`/admin/plans/${code}`, { method: 'PUT', body });
@@ -287,7 +290,7 @@ function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
             <Td className="text-right"><Actions>{isSuper && <Button type="button" variant="ghost" size="sm" onClick={() => setEdit(p)}>Modifier</Button>}</Actions></Td></tr>
         ))}
       </Table>
-      {isSuper && !edit && <Button type="button" variant="outline" className="mt-4" onClick={() => setEdit({ code: '', name: '', priceUsd: 0, commissionBps: 300, maxProducts: null, features: [], sort: (rows?.length ?? 0), active: true, certified: false, isNew: true })}>+ Nouveau plan</Button>}
+      {isSuper && !edit && <Button type="button" variant="outline" className="mt-4" onClick={() => setEdit({ code: '', name: '', priceUsd: 0, commissionBps: 300, maxProducts: null, features: [], sort: (rows?.length ?? 0), active: true, certified: false, heroEligible: false, isNew: true })}>+ Nouveau plan</Button>}
       {edit && (
         <Card className="mt-6 max-w-2xl" key={edit.code || 'new'}>
           <CardHeader><CardTitle>{edit.isNew ? 'Nouveau plan' : `Modifier ${edit.name}`}</CardTitle></CardHeader>
@@ -303,6 +306,7 @@ function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
               </div>
               <Field label="Avantages" hint="Un avantage par ligne"><Textarea name="features" rows={4} defaultValue={edit.features.join('\n')} /></Field>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="certified" defaultChecked={edit.certified} disabled={edit.code === 'free'} />Certification « Vendeur certifié » incluse</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="heroEligible" defaultChecked={edit.heroEligible} disabled={edit.code === 'free'} />Éligible à la mise en avant sur l’accueil (carrousel)</label>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="active" defaultChecked={edit.active} disabled={edit.code === 'free'} />Plan proposé aux vendeurs</label>
               <div className="flex gap-2"><Button type="submit">Enregistrer</Button><Button type="button" variant="outline" onClick={() => setEdit(null)}>Annuler</Button></div>
             </form>

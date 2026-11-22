@@ -16,6 +16,8 @@ export const EnvSchema = z.object({
   WEB_ORIGIN_REGEX: z.string().optional(),
   SMTP_URL: z.string().optional(),
   MAIL_FROM: z.string().default('Mwinda Market <no-reply@mwindamarket.com>'),
+  /** Jeton Vercel Blob : active le stockage dédié des photos (sinon, stockage en base). */
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
   DATABASE_URL: z.string().min(1),
   API_SECRET: z.string().min(16, 'API_SECRET must be at least 16 characters long'),
 });

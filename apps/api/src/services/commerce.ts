@@ -1,3 +1,4 @@
+import type { ImageStore } from './storage.js';
 import { AppError } from '../errors.js';
 import { newId } from '../lib/crypto.js';
 import type { Db } from '../db/client.js';
@@ -22,10 +23,12 @@ function sniff(b: Buffer): 'image/jpeg' | 'image/png' | 'image/webp' | null {
   return null;
 }
 
-export interface PlanRow { code: string; name: string; price_usd: string; commission_bps: number; max_products: number | null; features: string[]; sort: number; active: boolean; certified: boolean }
-export const planDto = (p: PlanRow) => ({ code: p.code, name: p.name, priceUsd: Number(p.price_usd), commissionBps: p.commission_bps, maxProducts: p.max_products, features: p.features, sort: p.sort, active: p.active, certified: p.certified });
+export interface PlanRow { code: string; name: string; price_usd: string; commission_bps: number; max_products: number | null; features: string[]; sort: number; active: boolean; certified: boolean; hero_eligible: boolean }
+export const planDto = (p: PlanRow) => ({ code: p.code, name: p.name, priceUsd: Number(p.price_usd), commissionBps: p.commission_bps, maxProducts: p.max_products, features: p.features, sort: p.sort, active: p.active, certified: p.certified, heroEligible: p.hero_eligible });
 /** Plan réellement appliqué : un plan payant expiré (ou sans date) retombe sur le plan gratuit. */
 export const EFFECTIVE_PLAN_FOR = (plan: string, expires: string): string => `(CASE WHEN ${plan} <> 'free' AND (${expires}::timestamptz IS NULL OR ${expires}::timestamptz <= now()) THEN 'free' ELSE ${plan} END)`;
+
+export const OFFICIAL_SHOP_ID = '01OFFICIALSHOP000000000000';
 
 export const ORDER_FLOW = ['pending', 'confirmed', 'shipped', 'delivered'] as const;
 export type OrderStatus = (typeof ORDER_FLOW)[number];
@@ -37,7 +40,7 @@ const slugify = (s: string): string =>
 interface ProductRow { certified?: boolean; shop_name?: string; shop_country?: string | null; shop_country_name?: string | null; shop_city?: string | null; shop_city_slug?: string | null; rating?: string; reviews?: number; sku?: string | null; tags?: string[]; id: string; shop_id: string; name: string; description: string; price_usd: string; original_price_usd: string | null; department: string; category: string; colors: string[]; sizes: string[]; in_stock: boolean; status: string; created_at: Date }
 
 export class CommerceService {
-  constructor(private db: Db) {}
+  constructor(private db: Db, private store?: ImageStore) {}
 
   // ---------- Catalogue public ----------
   private publicDto(p: ProductRow, imgs: string[]) {
@@ -310,21 +313,39 @@ export class CommerceService {
 
   async uploadImage(userId: string, base64: string) {
     const s = await this.requireShop(userId);
+    return this.storeImage(s.id, base64, true);
+  }
+
+  /** Photo envoyée par l'administration (bannières du carrousel) : rattachée à la boutique officielle, sans quota. */
+  async uploadOfficialImage(base64: string) {
+    return this.storeImage(OFFICIAL_SHOP_ID, base64, false);
+  }
+
+  private async storeImage(shopId: string, base64: string, quota: boolean) {
     const bytes = Buffer.from(base64, 'base64');
     if (bytes.length === 0 || bytes.length > MAX_IMAGE_BYTES) throw new AppError(413, 'image_too_large', 'Photo trop lourde (1,5 Mo maximum).');
     const type = sniff(bytes);
     if (!type) throw new AppError(415, 'image_type_unsupported', 'Format non pris en charge (JPEG, PNG ou WebP).');
-    const count = await this.db.query<{ n: string }>('SELECT count(*) AS n FROM uploaded_images WHERE shop_id = $1', [s.id]);
-    if (Number(count[0]?.n) >= MAX_IMAGES_PER_SHOP) throw new AppError(409, 'image_quota', 'Limite de photos atteinte pour cette boutique.');
+    if (quota) {
+      const count = await this.db.query<{ n: string }>('SELECT count(*) AS n FROM uploaded_images WHERE shop_id = $1', [shopId]);
+      if (Number(count[0]?.n) >= MAX_IMAGES_PER_SHOP) throw new AppError(409, 'image_quota', 'Limite de photos atteinte pour cette boutique.');
+    }
     const id = newId();
-    await this.db.query('INSERT INTO uploaded_images(id, shop_id, content_type, bytes, size) VALUES ($1,$2,$3,$4,$5)', [id, s.id, type, bytes, bytes.length]);
+    if (this.store) {
+      let url: string;
+      try { url = await this.store.put(`shops/${shopId}/${id}`, bytes, type); } catch { throw new AppError(502, 'storage_unavailable', "Stockage des photos indisponible, réessayez."); }
+      await this.db.query('INSERT INTO uploaded_images(id, shop_id, content_type, url, size) VALUES ($1,$2,$3,$4,$5)', [id, shopId, type, url, bytes.length]);
+      return { url };
+    }
+    await this.db.query('INSERT INTO uploaded_images(id, shop_id, content_type, bytes, size) VALUES ($1,$2,$3,$4,$5)', [id, shopId, type, bytes, bytes.length]);
     return { url: `/api/v1/images/${id}` };
   }
 
-  async getImage(id: string) {
-    const r = await this.db.query<{ content_type: string; bytes: Buffer }>('SELECT content_type, bytes FROM uploaded_images WHERE id = $1', [id]);
+  async getImage(id: string): Promise<{ type: string; bytes: Buffer } | { type: string; redirect: string }> {
+    const r = await this.db.query<{ content_type: string; bytes: Buffer | null; url: string | null }>('SELECT content_type, bytes, url FROM uploaded_images WHERE id = $1', [id]);
     if (!r[0]) throw new AppError(404, 'not_found', 'Photo introuvable.');
-    return { type: r[0].content_type, bytes: r[0].bytes };
+    if (r[0].bytes) return { type: r[0].content_type, bytes: r[0].bytes };
+    return { type: r[0].content_type, redirect: r[0].url! };
   }
 
   private async writeImages(t: Db, productId: string | number, images: string[]) {

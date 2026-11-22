@@ -12,13 +12,21 @@ const Roles = z.object({ roles: z.array(z.enum(['moderator', 'finance', 'superad
 const PlanBody = z.object({
   name: z.string().trim().min(1).max(60), priceUsd: z.number().min(0).max(100000), commissionBps: z.number().int().min(0).max(3000),
   maxProducts: z.number().int().positive().max(1_000_000).nullable(), features: z.array(z.string().trim().min(1).max(120)).max(12).default([]),
-  sort: z.number().int().min(0).max(100).default(0), active: z.boolean().default(true), certified: z.boolean().default(false),
+  sort: z.number().int().min(0).max(100).default(0), active: z.boolean().default(true), certified: z.boolean().default(false), heroEligible: z.boolean().default(false),
+});
+const imgUrl = z.string().trim().max(500).refine((u) => u === '' || /^\/api\/v1\/images\/[0-9A-Za-z]{26}$/.test(u) || u.startsWith('https://'), 'https_or_uploaded_required');
+const HeroBody = z.object({
+  productId: z.number().int().positive().nullable().optional(), tag: z.string().trim().max(40).optional(), title: z.string().trim().max(120).optional(), text: z.string().trim().max(300).optional(),
+  image: imgUrl.optional(), priceUsd: z.number().positive().max(1_000_000).nullable().optional(),
+  link: z.string().trim().max(300).regex(/^(\/(?!\/)|https:\/\/)/, 'link_invalid').nullable().optional(), active: z.boolean().optional(),
+  startsAt: z.string().datetime().nullable().optional(), endsAt: z.string().datetime().nullable().optional(),
 });
 const PageBody = z.object({ title: z.string().trim().min(1).max(150), body: z.string().trim().min(1).max(60000) });
 
 export function publicPlatformRoutes(r: FastifyInstance, svc: AdminService, parse: Parse): void {
   r.get('/countries', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=600'); return { countries: await svc.countries() }; });
   r.get('/rates', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=600, stale-while-revalidate=3600'); return svc.rates(); });
+  r.get('/hero', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { slides: await svc.publicHero() }; });
   r.get('/pages/:slug', async (req, reply) => {
     reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300');
     return { page: await svc.page(parse(z.object({ slug: z.enum(LEGAL_SLUGS) }), req.params).slug) };
@@ -55,6 +63,17 @@ export function adminRoutes(r: FastifyInstance, { svc, authenticate, parse }: Ct
 
   r.get('/admin/products', guard('moderator'), async (req) => { const q = parse(Query, req.query); return { products: await svc.products(q.q, q.status) }; });
   r.patch('/admin/products/:id', guard('moderator'), async (req) => { await svc.setProductStatus(me(req), Number(parse(Id, req.params).id), parse(z.object({ status: z.enum(['active', 'archived']) }), req.body).status); return ok; });
+
+  r.get('/admin/hero', guard('moderator'), async () => ({ slides: await svc.heroSlides() }));
+  r.get('/admin/hero/candidates', guard('moderator'), async (req) => ({ products: await svc.heroCandidates(parse(Query, req.query).q) }));
+  r.post('/admin/hero', guard('moderator'), async (req, reply) => reply.code(201).send(await svc.createHeroSlide(me(req), parse(HeroBody, req.body))));
+  r.put('/admin/hero/order', guard('moderator'), async (req) => { await svc.reorderHero(me(req), parse(z.object({ ids: z.array(z.string().regex(/^[0-9A-Za-z]{1,26}$/)).max(40) }), req.body).ids); return ok; });
+  r.patch('/admin/hero/:id', guard('moderator'), async (req) => { await svc.updateHeroSlide(me(req), parse(Id, req.params).id, parse(HeroBody, req.body)); return ok; });
+  r.delete('/admin/hero/:id', guard('moderator'), async (req) => { await svc.deleteHeroSlide(me(req), parse(Id, req.params).id); return ok; });
+  r.post('/admin/images', { ...guard('moderator'), bodyLimit: 2_300_000 }, async (req, reply) => reply.code(201).send(await svc.heroImage(parse(z.object({ data: z.string().min(16).max(2_100_000) }), req.body).data)));
+  r.get('/admin/demo', guard('moderator'), async () => svc.demoStatus());
+  r.post('/admin/demo/hide', guard('moderator'), async (req) => { await svc.hideDemo(me(req)); return ok; });
+  r.post('/admin/demo/restore', guard('moderator'), async (req) => { await svc.restoreDemo(me(req)); return ok; });
 
   r.get('/admin/orders', guard('finance', 'moderator'), async (req) => { const q = parse(Query, req.query); return { orders: await svc.orders(q.q, q.status) }; });
   r.patch('/admin/orders/:number', guard('finance'), async (req) => {

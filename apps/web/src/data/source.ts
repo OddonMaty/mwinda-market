@@ -39,3 +39,17 @@ export async function getLegalPage(slug: string): Promise<LegalPageData | null> 
     return null;
   }
 }
+
+export interface HeroSlideData { id: string; tag: string; title: string; text: string; image: string; priceUsd: number | null; href: string }
+
+/** Diapositives du carrousel d'accueil, choisies par l'administration (vide si l'API est indisponible). */
+export async function getHeroSlides(): Promise<HeroSlideData[]> {
+  const api = process.env.API_URL ?? 'http://localhost:4000';
+  try {
+    const res = await fetch(`${api}/v1/hero`, { next: { revalidate: 10 }, signal: AbortSignal.timeout(4000) });
+    if (!res.ok) throw new Error(String(res.status));
+    return ((await res.json()) as { slides: HeroSlideData[] }).slides;
+  } catch {
+    return [];
+  }
+}

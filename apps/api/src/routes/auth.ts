@@ -113,7 +113,7 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
       await svc.revokeSession(req.auth!.user.id, parse(z.object({ id: z.string().length(26) }), req.params).id);
       return OK;
     });
-    const commerce = new CommerceService(deps.db);
+    const commerce = new CommerceService(deps.db, deps.store);
     const admin = new AdminService(deps.db, commerce, { mailer: deps.mailer, baseUrl: publicUrl(deps.config) });
     commerceRoutes(r, { svc: commerce, authenticate, parse });
     publicPlatformRoutes(r, admin, parse);

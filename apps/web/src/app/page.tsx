@@ -4,26 +4,17 @@ import { CategorySidebar } from '../components/CategorySidebar';
 import { Countdown } from '../components/Countdown';
 import { NewProducts, HomeCatalog } from '../components/HomeCatalog';
 import { ProductCard } from '../components/ProductCard';
-import { getProducts } from '../data/source';
-import { formatUsd, isProductNew } from '../lib';
+import { getHeroSlides, getProducts } from '../data/source';
+import { formatUsd, isProductNew, productImageUrl } from '../lib';
 import { MobileCatStrip } from '../components/MobileCatStrip';
-import type { Product } from '../data/catalogue';
 
 export const revalidate = 10;
 
-const u = (id: string) => `https://images.unsplash.com/photo-${id}?w=1400&h=600&fit=crop&auto=format`;
-
-const slides = (products: Product[]): Slide[] => {
-  const price = (id: number) => `À partir de ${formatUsd(products.find((p) => p.id === id)?.price ?? 0)}`;
-  return [
-  { tag: 'Nouveauté', title: ['Vinova SmartPhone', 'Pro 12'], text: '108MP de clarté. Vitesse 5G. Batterie toute la journée. Le seul téléphone dont vous avez besoin.', image: u('1511707171634-5f897ff02aa9'), priceLabel: price(1) },
-  { tag: 'Meilleure vente', title: ['Audio Master', 'Pro XR'], text: "40 heures d'autonomie, réduction active du bruit, un son de qualité studio pour votre quotidien.", image: u('1505740420928-5e560c06d30e'), priceLabel: price(2) },
-  { tag: 'Offre limitée', title: ['ProBook 15', 'Ultra'], text: 'Intel Core i9 · RTX 4070 · 32 Go de RAM. Conçu pour les créateurs qui ne font aucun compromis.', image: u('1496181133206-80ce9b88a853'), priceLabel: price(5) },
-  ];
-};
+const FALLBACK: Slide = { id: 'brand', tag: 'Mwinda Market', title: 'La place de marché des vendeurs africains', text: 'Des boutiques locales près de chez vous, livrées dans votre ville.', image: '', priceLabel: '', href: '/collection' };
 
 export default async function HomePage() {
-  const products = await getProducts();
+  const [products, heroData] = await Promise.all([getProducts(), getHeroSlides()]);
+  const slides: Slide[] = heroData.length ? heroData.map((h) => ({ id: h.id, tag: h.tag, title: h.title, text: h.text, image: productImageUrl(h.image, 1400, 600), priceLabel: h.priceUsd != null ? `À partir de ${formatUsd(h.priceUsd)}` : '', href: h.href })) : [FALLBACK];
   const now = Date.now();
   const newProducts = products.filter((p) => isProductNew(p, now));
   const deals = products.filter((p) => p.originalPrice && p.originalPrice > p.price).sort((a, b) => (b.discount ?? 0) - (a.discount ?? 0)).slice(0, 8);
@@ -32,7 +23,7 @@ export default async function HomePage() {
     <>
       <Header active="home" />
       <MobileCatStrip />
-      <div className="container home-hero-row"><CategorySidebar /><HeroSlider slides={slides(products)} /></div>
+      <div className="container home-hero-row"><CategorySidebar /><HeroSlider slides={slides} /></div>
 
       <section className="usp-band">
         <div className="container">

@@ -4,7 +4,7 @@ import { newId } from '../lib/crypto.js';
 import type { Db } from '../db/client.js';
 import type { Mailer } from '../mail/mailer.js';
 import * as tpl from '../mail/templates.js';
-import { ORDER_FLOW, planDto, type CommerceService, type PlanRow } from './commerce.js';
+import { EFFECTIVE_PLAN_FOR, ORDER_FLOW, planDto, type CommerceService, type PlanRow } from './commerce.js';
 
 export type AdminRole = 'moderator' | 'finance' | 'superadmin';
 export const LEGAL_SLUGS = ['conditions', 'confidentialite', 'conditions-vendeur', 'remboursement', 'livraison', 'paiements'] as const;
@@ -158,6 +158,122 @@ export class AdminService extends PlatformService {
     await this.audit(actor, `product.${status}`, 'product', String(id));
   }
 
+  // ---------- Carrousel d'accueil ----------
+  private static readonly HERO_MAX = 8;
+  private static readonly HERO_SQL = `SELECT h.*, p.name AS p_name, p.price_usd AS p_price, p.status AS p_status,
+      (SELECT url FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 1) AS p_image,
+      s.name AS shop_name, s.status AS shop_status, s.is_official AS shop_official, pl.name AS plan_name,
+      COALESCE(pl.hero_eligible, false) AS plan_eligible, ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} AS plan_code
+    FROM hero_slides h LEFT JOIN products p ON p.id = h.product_id LEFT JOIN shops s ON s.id = p.shop_id
+    LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')}`;
+
+  private heroDto(r: HeroRow) {
+    const linked = r.product_id != null;
+    const eligible = !linked || r.shop_official === true || r.plan_eligible === true;
+    const now = Date.now();
+    const inWindow = (!r.starts_at || new Date(r.starts_at).getTime() <= now) && (!r.ends_at || new Date(r.ends_at).getTime() > now);
+    const productOk = !linked || (r.p_status === 'active' && r.shop_status === 'active' && eligible);
+    const price = r.price_usd != null ? Number(r.price_usd) : linked ? Number(r.p_price) : null;
+    return {
+      id: r.id.trim(), productId: linked ? Number(r.product_id) : null, tag: r.tag, title: r.title || r.p_name || '', text: r.text,
+      image: r.image_url || r.p_image || '', priceUsd: price, priceOverride: r.price_usd != null ? Number(r.price_usd) : null,
+      link: r.link, href: r.link || (linked ? `/produit/${r.product_id}` : '/collection'), position: r.position, active: r.active,
+      startsAt: r.starts_at, endsAt: r.ends_at, shop: r.shop_name, plan: r.shop_official ? 'Officielle' : r.plan_name, eligible,
+      live: r.active && inWindow && productOk,
+      reason: !r.active ? 'inactive' : !inWindow ? 'hors_periode' : !linked ? null : r.p_status !== 'active' ? 'produit_indisponible' : r.shop_status !== 'active' ? 'boutique_inactive' : !eligible ? 'plan_non_eligible' : null,
+    };
+  }
+
+  async publicHero() {
+    const rows = await this.db.query<HeroRow>(`${AdminService.HERO_SQL} WHERE h.active ORDER BY h.position, h.created_at`);
+    return rows.map((r) => this.heroDto(r)).filter((d) => d.live && d.image).slice(0, AdminService.HERO_MAX)
+      .map((d) => ({ id: d.id, tag: d.tag, title: d.title, text: d.text, image: d.image, priceUsd: d.priceUsd, href: d.href }));
+  }
+
+  async heroSlides() {
+    const rows = await this.db.query<HeroRow>(`${AdminService.HERO_SQL} ORDER BY h.position, h.created_at`);
+    return rows.map((r) => this.heroDto(r));
+  }
+
+  /** Produits proposables au carrousel : actifs, boutique active, avec l'éligibilité de leur abonnement. */
+  async heroCandidates(q?: string) {
+    const rows = await this.db.query<{ id: string; name: string; price_usd: string; image: string | null; shop: string; official: boolean; plan_name: string; eligible: boolean; demo: boolean }>(
+      `SELECT p.id, p.name, p.price_usd, (SELECT url FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 1) AS image,
+              s.name AS shop, s.is_official AS official, pl.name AS plan_name, (s.is_official OR COALESCE(pl.hero_eligible,false)) AS eligible, p.is_demo AS demo
+         FROM products p JOIN shops s ON s.id = p.shop_id JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')}
+        WHERE p.status = 'active' AND s.status = 'active' AND p.name ILIKE $1
+        ORDER BY (s.is_official OR pl.hero_eligible) DESC, pl.sort DESC, p.created_at DESC LIMIT 30`, [like(q)]);
+    return rows.map((r) => ({ id: Number(r.id), name: r.name, priceUsd: Number(r.price_usd), image: r.image, shop: r.shop, plan: r.official ? 'Officielle' : r.plan_name, eligible: r.eligible, demo: r.demo }));
+  }
+
+  private async checkHeroProduct(productId: number | null | undefined) {
+    if (productId == null) return;
+    const r = await this.db.query<{ eligible: boolean }>(
+      `SELECT (s.is_official OR COALESCE(pl.hero_eligible,false)) AS eligible FROM products p JOIN shops s ON s.id = p.shop_id
+         JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.id = $1`, [productId]);
+    if (!r[0]) throw new AppError(404, 'not_found', 'Produit introuvable.');
+    if (!r[0].eligible) throw new AppError(409, 'plan_not_eligible', "L'abonnement de ce vendeur n'inclut pas la mise en avant sur l'accueil.");
+  }
+
+  async createHeroSlide(actor: string, b: HeroInput) {
+    const n = Number((await this.db.query<{ n: string }>('SELECT count(*) AS n FROM hero_slides'))[0]?.n ?? 0);
+    if (n >= AdminService.HERO_MAX * 2) throw new AppError(409, 'hero_full', 'Trop de diapositives : supprimez-en avant d\'en ajouter.');
+    if (b.productId == null && (!b.image || !b.title)) throw new AppError(400, 'validation_error', 'Une bannière libre demande un titre et une image.');
+    await this.checkHeroProduct(b.productId);
+    const id = newId();
+    const pos = Number((await this.db.query<{ m: string | null }>('SELECT max(position) + 1 AS m FROM hero_slides'))[0]?.m ?? 0);
+    await this.db.query(
+      'INSERT INTO hero_slides(id, product_id, tag, title, text, image_url, price_usd, link, position, active, starts_at, ends_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)',
+      [id, b.productId ?? null, b.tag ?? '', b.title ?? '', b.text ?? '', b.image ?? '', b.priceUsd ?? null, b.link ?? null, pos, b.active ?? true, b.startsAt ?? null, b.endsAt ?? null]);
+    await this.audit(actor, 'hero.create', 'hero_slide', id, b);
+    return { id };
+  }
+
+  async updateHeroSlide(actor: string, id: string, b: Partial<HeroInput>) {
+    const cur = (await this.db.query<{ product_id: string | null }>('SELECT product_id FROM hero_slides WHERE id = $1', [id]))[0];
+    if (!cur) throw new AppError(404, 'not_found', 'Diapositive introuvable.');
+    if (b.active !== false && 'productId' in b) await this.checkHeroProduct(b.productId);
+    else if (b.active === true && cur.product_id != null) await this.checkHeroProduct(Number(cur.product_id));
+    const cols: Record<string, unknown> = { product_id: b.productId, tag: b.tag, title: b.title, text: b.text, image_url: b.image, price_usd: b.priceUsd, link: b.link, active: b.active, starts_at: b.startsAt, ends_at: b.endsAt };
+    const set = Object.entries(cols).filter(([, v]) => v !== undefined);
+    if (set.length) await this.db.query(`UPDATE hero_slides SET ${set.map(([k], i) => `${k} = $${i + 2}`).join(', ')} WHERE id = $1`, [id, ...set.map(([, v]) => v)]);
+    await this.audit(actor, 'hero.update', 'hero_slide', id, b);
+  }
+
+  async deleteHeroSlide(actor: string, id: string) {
+    const r = await this.db.query('DELETE FROM hero_slides WHERE id = $1 RETURNING id', [id]);
+    if (!r[0]) throw new AppError(404, 'not_found', 'Diapositive introuvable.');
+    await this.audit(actor, 'hero.delete', 'hero_slide', id);
+  }
+
+  async reorderHero(actor: string, ids: string[]) {
+    await this.db.transaction(async (t) => { for (const [i, id] of ids.entries()) await t.query('UPDATE hero_slides SET position = $2 WHERE id = $1', [id, i]); });
+    await this.audit(actor, 'hero.reorder', 'hero_slide', 'all', ids);
+  }
+
+  async heroImage(base64: string) { return this.commerce.uploadOfficialImage(base64); }
+
+  // ---------- Produits de démonstration ----------
+  async demoStatus() {
+    const r = (await this.db.query<{ total: string; active: string; real_active: string }>(
+      `SELECT count(*) FILTER (WHERE is_demo) AS total, count(*) FILTER (WHERE is_demo AND status = 'active') AS active, count(*) FILTER (WHERE NOT is_demo AND status = 'active') AS real_active FROM products`))[0]!;
+    return { demoTotal: Number(r.total), demoActive: Number(r.active), realActive: Number(r.real_active) };
+  }
+
+  /** Archive tous les produits de démonstration (réversible) et coupe les diapositives qui y sont liées. */
+  async hideDemo(actor: string) {
+    await this.db.transaction(async (t) => {
+      await t.query("UPDATE products SET status = 'archived', updated_at = now() WHERE is_demo");
+      await t.query('UPDATE hero_slides SET active = FALSE WHERE product_id IN (SELECT id FROM products WHERE is_demo)');
+    });
+    await this.audit(actor, 'demo.hide', 'platform', 'demo');
+  }
+
+  async restoreDemo(actor: string) {
+    await this.db.query("UPDATE products SET status = 'active', updated_at = now() WHERE is_demo");
+    await this.audit(actor, 'demo.restore', 'platform', 'demo');
+  }
+
   // ---------- Commandes ----------
   async orders(q?: string, status?: string) {
     const rows = await this.db.query<{ number: string; status: string; subtotal_usd: string; created_at: Date; email: string; first_name: string; last_name: string; city: string; commission: string }>(
@@ -184,11 +300,11 @@ export class AdminService extends PlatformService {
     return (await this.db.query<PlanRow>('SELECT * FROM plans ORDER BY sort, price_usd')).map(planDto);
   }
 
-  async savePlan(actor: string, code: string, b: { name: string; priceUsd: number; commissionBps: number; maxProducts: number | null; features: string[]; sort: number; active: boolean; certified: boolean }) {
+  async savePlan(actor: string, code: string, b: { name: string; priceUsd: number; commissionBps: number; maxProducts: number | null; features: string[]; sort: number; active: boolean; certified: boolean; heroEligible: boolean }) {
     await this.db.query(
-      `INSERT INTO plans(code,name,price_usd,commission_bps,max_products,features,sort,active,certified) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-       ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, price_usd=EXCLUDED.price_usd, commission_bps=EXCLUDED.commission_bps, max_products=EXCLUDED.max_products, features=EXCLUDED.features, sort=EXCLUDED.sort, active=EXCLUDED.active, certified=EXCLUDED.certified`,
-      [code, b.name, b.priceUsd, b.commissionBps, b.maxProducts, b.features, b.sort, code === 'free' ? true : b.active, code === 'free' ? false : b.certified]);
+      `INSERT INTO plans(code,name,price_usd,commission_bps,max_products,features,sort,active,certified,hero_eligible) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, price_usd=EXCLUDED.price_usd, commission_bps=EXCLUDED.commission_bps, max_products=EXCLUDED.max_products, features=EXCLUDED.features, sort=EXCLUDED.sort, active=EXCLUDED.active, certified=EXCLUDED.certified, hero_eligible=EXCLUDED.hero_eligible`,
+      [code, b.name, b.priceUsd, b.commissionBps, b.maxProducts, b.features, b.sort, code === 'free' ? true : b.active, code === 'free' ? false : b.certified, code === 'free' ? false : b.heroEligible]);
     await this.audit(actor, 'plan.save', 'plan', code, b);
   }
 
@@ -268,3 +384,10 @@ export class AdminService extends PlatformService {
     return rows.map((a) => ({ action: a.action, targetType: a.target_type, targetId: a.target_id, createdAt: a.created_at, actor: a.email }));
   }
 }
+
+interface HeroRow {
+  id: string; product_id: string | null; tag: string; title: string; text: string; image_url: string; price_usd: string | null; link: string | null; position: number; active: boolean;
+  starts_at: Date | null; ends_at: Date | null; p_name: string | null; p_price: string | null; p_status: string | null; p_image: string | null;
+  shop_name: string | null; shop_status: string | null; shop_official: boolean | null; plan_name: string | null; plan_eligible: boolean | null;
+}
+export interface HeroInput { productId?: number | null; tag?: string; title?: string; text?: string; image?: string; priceUsd?: number | null; link?: string | null; active?: boolean; startsAt?: string | null; endsAt?: string | null }

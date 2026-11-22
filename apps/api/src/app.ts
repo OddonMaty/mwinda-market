@@ -1,3 +1,4 @@
+import type { ImageStore } from './services/storage.js';
 import fastify, { type FastifyInstance, type FastifyError } from 'fastify';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
@@ -16,6 +17,7 @@ export interface AppDeps {
   mailer?: Mailer;
   limiter?: RateLimiter;
   now?: () => Date;
+  store?: ImageStore;
 }
 
 export async function buildApp(config: EnvConfig, deps: AppDeps = {}): Promise<FastifyInstance> {
@@ -115,7 +117,7 @@ export async function buildApp(config: EnvConfig, deps: AppDeps = {}): Promise<F
   await app.register(healthRoutes);
 
   if (deps.db) {
-    const authDeps = { db: deps.db, mailer: deps.mailer ?? new NoopMailer(), limiter: deps.limiter ?? new MemoryRateLimiter(), config, now: deps.now };
+    const authDeps = { db: deps.db, mailer: deps.mailer ?? new NoopMailer(), limiter: deps.limiter ?? new MemoryRateLimiter(), config, now: deps.now, store: deps.store };
     await app.register((instance) => authRoutes(instance, authDeps));
   }
 

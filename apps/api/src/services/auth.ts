@@ -1,3 +1,4 @@
+import type { ImageStore } from './storage.js';
 import type { Db } from '../db/client.js';
 import type { EnvConfig } from '../config/env.js';
 import { webOrigins } from '../config/env.js';
@@ -15,6 +16,7 @@ export interface AuthDeps {
   limiter: RateLimiter;
   config: EnvConfig;
   now?: () => Date;
+  store?: ImageStore;
 }
 export interface ReqMeta { ip: string; userAgent?: string }
 
