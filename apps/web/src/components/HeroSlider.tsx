@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface Slide { tag: string; title: [string, string]; text: string; image: string; priceLabel: string }
 
@@ -9,9 +9,10 @@ export function HeroSlider({ slides }: { slides: Slide[] }) {
     const t = setInterval(() => setCur((c) => (c + 1) % slides.length), 5000);
     return () => clearInterval(t);
   }, [slides.length]);
+  const x0 = useRef<number | null>(null);
   const go = (n: number) => setCur((c) => (c + n + slides.length) % slides.length);
   return (
-    <section className="hero-slider">
+    <section className="hero-slider" onTouchStart={(e) => { x0.current = e.touches[0]?.clientX ?? null; }} onTouchEnd={(e) => { if (x0.current === null) return; const dx = (e.changedTouches[0]?.clientX ?? x0.current) - x0.current; x0.current = null; if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1); }}>
       {slides.map((s, i) => (
         <div key={s.tag} className={`hero-slide${i === cur ? ' active' : ''}`} style={{ backgroundImage: `url('${s.image}')` }}>
           <div className="hero-content">

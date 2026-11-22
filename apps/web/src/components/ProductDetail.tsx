@@ -20,6 +20,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
   const [tab, setTab] = useState<'description' | 'shipping' | 'faq'>('description');
   const allImages = [product.image, ...(product.images ?? [])].filter(Boolean);
   const [main, setMain] = useState(product.image);
+  const ask = () => chat.ask({ productId: Number(product.id), productName: product.name, shopName: product.shopName });
   const hasDiscount = !!product.originalPrice && product.originalPrice > product.price;
 
   return (
@@ -109,7 +110,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
             <button type="button" className="btn btn-primary add-to-cart" onClick={() => { cart.add(product, qty, { color, size }); setQty(1); }}>
               <i className="fas fa-shopping-cart" /> Ajouter au panier
             </button>
-            <button type="button" className="btn btn-dark buy-now" onClick={() => chat.ask({ productId: Number(product.id), productName: product.name, shopName: product.shopName })}>
+            <button type="button" className="btn btn-dark buy-now" onClick={ask}>
               <i className="fas fa-comments" /> Acheter
             </button>
             <button type="button" className="btn btn-outline"><i className="fas fa-heart" /></button>
@@ -117,9 +118,15 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
 
           <div className="product-share">
             <button type="button"><i className="fas fa-share-alt" /> Partager</button>
-            <button type="button"><i className="fas fa-comment-dots" /> Poser une question</button>
+            <button type="button" onClick={ask}><i className="fas fa-comment-dots" /> Poser une question</button>
           </div>
         </div>
+      </div>
+
+      <div className="m-buybar">
+        <button type="button" className="m-buybar-ask" onClick={ask} aria-label="Poser une question au vendeur"><i className="fas fa-comment-dots" /><span>Question</span></button>
+        <button type="button" className="m-buybar-cart" disabled={!product.inStock} onClick={() => { cart.add(product, qty, { color, size }); setQty(1); }}>Ajouter au panier</button>
+        <button type="button" className="m-buybar-buy" onClick={ask}>Acheter</button>
       </div>
 
       <div className="product-tabs">

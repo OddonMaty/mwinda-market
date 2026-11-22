@@ -6,6 +6,7 @@ import { NewProducts, HomeCatalog } from '../components/HomeCatalog';
 import { ProductCard } from '../components/ProductCard';
 import { getProducts } from '../data/source';
 import { formatUsd, isProductNew } from '../lib';
+import { MobileCatStrip } from '../components/MobileCatStrip';
 import type { Product } from '../data/catalogue';
 
 export const revalidate = 10;
@@ -30,6 +31,7 @@ export default async function HomePage() {
   return (
     <>
       <Header active="home" />
+      <MobileCatStrip />
       <div className="container home-hero-row"><CategorySidebar /><HeroSlider slides={slides(products)} /></div>
 
       <section className="usp-band">

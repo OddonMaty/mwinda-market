@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Product } from '../data/catalogue';
 import { collectionHref, formatUsd } from '../lib';
 import { useLocale } from './Locale';
@@ -34,6 +34,13 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sorts = ['Vedette', 'Meilleures ventes', 'Prix croissant', 'Prix décroissant', 'A-Z'];
+  const shown = useMemo(() => {
+    const l = price < 2500 ? products.filter((p) => p.price <= price) : [...products];
+    if (sort === 2) l.sort((a, b) => a.price - b.price);
+    else if (sort === 3) l.sort((a, b) => b.price - a.price);
+    else if (sort === 4) l.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    return l;
+  }, [products, price, sort]);
 
   return (
     <div className="container collection-container">
@@ -49,11 +56,13 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
       </div>
 
       <button type="button" className="filter-toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        <i className="fas fa-sliders-h" /> Filtres
+        <i className="fas fa-sliders-h" /> Filtres et localisation
       </button>
+      {sidebarOpen && <div className="m-backdrop m-filter-backdrop" onClick={() => setSidebarOpen(false)} />}
 
       <div className="collection-layout">
         <aside className={`sidebar${sidebarOpen ? ' sidebar-open' : ''}`}>
+          <div className="m-sheet-head m-filter-head"><b>Filtres</b><button type="button" onClick={() => setSidebarOpen(false)} aria-label="Fermer"><i className="fas fa-times" /></button></div>
           <div className="collection-cats"><CategorySidebar active={activeDep} /></div>
           <div className="filter-group location-filter">
             <h4>Localisation du vendeur</h4>
@@ -97,6 +106,7 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
             <h4>Boutique</h4>
             <label className="checkbox-label"><input type="checkbox" /><span>Produits vendeurs uniquement</span></label>
           </div>
+          <div className="m-filter-foot"><button type="button" className="btn btn-primary" onClick={() => setSidebarOpen(false)}>Voir {shown.length} produit{shown.length > 1 ? 's' : ''}</button></div>
         </aside>
 
         <div className="products-area">
@@ -111,9 +121,9 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
             </div>
           </div>
           <div className="products-grid">
-            {products.length === 0
+            {shown.length === 0
               ? <p className="empty-collection">{query ? `Aucun résultat pour « ${query} ». Essayez un autre mot-clé.` : 'Aucun produit dans cette catégorie pour le moment.'}</p>
-              : products.map((p) => <ProductCard key={p.id} product={p} now={now} />)}
+              : shown.map((p) => <ProductCard key={p.id} product={p} now={now} />)}
           </div>
         </div>
       </div>
