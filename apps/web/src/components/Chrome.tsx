@@ -5,6 +5,7 @@ import { AccountButton } from './AccountButton';
 import { CartButton } from './CartButton';
 import { CountrySelector } from './CountrySelector';
 import { collectionHref } from '../lib';
+import { MobileNav } from './MobileNav';
 
 type Active = 'home' | 'collection' | 'about' | 'contact' | 'faq' | '';
 
@@ -31,9 +32,11 @@ export function Header({ active }: { active: Active }) {
 
       <header className="header">
         <div className="container header-content">
+          <MobileNav />
           <Link href="/" className="logo">
             <img src="/images/brand/mwinda-h-light.png" alt="Mwinda Market" className="logo-img" />
           </Link>
+          <div className="m-country"><CountrySelector /></div>
           <SearchBar />
           <div className="header-actions">
             <NavButton to="/vendeur" className="header-btn"><i className="fas fa-store" /><span className="hidden-mobile">Vendeur</span></NavButton>

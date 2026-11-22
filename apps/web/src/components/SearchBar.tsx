@@ -53,7 +53,7 @@ export function SearchBar({ initial = '' }: { initial?: string }) {
         autoComplete="off"
         role="combobox"
         aria-expanded={open && (items.length > 0 || rayons.length > 0)}
-        placeholder="Rechercher un produit, une marque, une catégorie…"
+        placeholder="Rechercher un produit, une marque…"
         value={value}
         onChange={(e) => { setValue(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
