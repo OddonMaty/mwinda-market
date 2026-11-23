@@ -211,8 +211,8 @@ export class CommerceService {
 
   // ---------- Boutique du vendeur ----------
   async getShop(userId: string) {
-    const r = await this.db.query<{ id: string; name: string; slug: string; phone: string | null; description: string | null; plan: string; plan_expires_at: Date | null; status: string; is_official: boolean; country_code: string | null; city: string | null; reject_reason: string | null }>(
-      `SELECT s.id, s.name, s.slug, s.phone, s.description, s.plan, s.plan_expires_at, s.status, s.is_official, s.country_code, c.name AS city, s.reject_reason
+    const r = await this.db.query<{ id: string; name: string; slug: string; phone: string | null; whatsapp: string | null; notify_whatsapp: boolean; description: string | null; plan: string; plan_expires_at: Date | null; status: string; is_official: boolean; country_code: string | null; city: string | null; reject_reason: string | null }>(
+      `SELECT s.id, s.name, s.slug, s.phone, s.whatsapp, s.notify_whatsapp, s.description, s.plan, s.plan_expires_at, s.status, s.is_official, s.country_code, c.name AS city, s.reject_reason
          FROM shops s LEFT JOIN cities c ON c.id = s.city_id WHERE s.owner_id = $1`, [userId]);
     const s = r[0];
     if (!s) return null;
@@ -221,14 +221,15 @@ export class CommerceService {
     const used = await this.db.query<{ n: string }>("SELECT count(*) AS n FROM products WHERE shop_id = $1 AND status = 'active'", [s.id]);
     const pending = await this.db.query<{ plan: string }>("SELECT plan FROM plan_requests WHERE shop_id = $1 AND status = 'pending' ORDER BY created_at DESC LIMIT 1", [s.id]);
     return {
-      id: s.id, name: s.name, slug: s.slug, phone: s.phone, description: s.description, status: s.status, rejectReason: s.reject_reason, isOfficial: s.is_official, countryCode: s.country_code, city: s.city,
+      id: s.id, name: s.name, slug: s.slug, phone: s.phone, whatsapp: s.whatsapp, notifyWhatsapp: s.notify_whatsapp, description: s.description, status: s.status, rejectReason: s.reject_reason, isOfficial: s.is_official, countryCode: s.country_code, city: s.city,
       plan: plan.code, planName: plan.name, certified: s.is_official || plan.certified, planExpiresAt: s.plan_expires_at, commissionBps: s.is_official ? 0 : plan.commission_bps,
       maxProducts: plan.max_products, productCount: Number(used[0]?.n ?? 0), pendingPlan: pending[0]?.plan ?? null,
     };
   }
 
-  async createShop(user: UserRow, b: { name: string; phone?: string; description?: string; countryCode?: string; citySlug?: string }) {
+  async createShop(user: UserRow, b: { name: string; phone?: string; whatsapp?: string; description?: string; countryCode?: string; citySlug?: string }) {
     if (await this.getShop(user.id)) throw new AppError(409, 'shop_exists', 'Vous avez déjà une boutique.');
+    if (!user.email && !b.whatsapp && !user.phone) throw new AppError(400, 'contact_required', 'Indiquez un numéro WhatsApp pour être joint.');
     const country = (b.countryCode ?? user.country_code ?? 'CD').toUpperCase();
     if (!(await this.db.query('SELECT 1 FROM countries WHERE code = $1 AND active', [country]))[0]) throw new AppError(400, 'country_not_supported', 'Pays non disponible.');
     const city = b.citySlug
@@ -239,19 +240,21 @@ export class CommerceService {
       const slug = n === 0 ? base : `${base}-${n + 1}`;
       const taken = await this.db.query('SELECT 1 FROM shops WHERE slug = $1', [slug]);
       if (taken[0]) continue;
-      await this.db.query('INSERT INTO shops(id,owner_id,name,slug,city_id,country_code,phone,description,status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,\'pending\')',
-        [newId(), user.id, b.name.trim(), slug, city[0]?.id ?? null, country, b.phone ?? user.phone, b.description ?? null]);
+      // Un vendeur sans e-mail est joint par WhatsApp : son numéro de compte sert alors par défaut.
+      const whatsapp = b.whatsapp ?? (user.email ? null : user.phone);
+      await this.db.query('INSERT INTO shops(id,owner_id,name,slug,city_id,country_code,phone,whatsapp,description,status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,\'pending\')',
+        [newId(), user.id, b.name.trim(), slug, city[0]?.id ?? null, country, b.phone ?? user.phone, whatsapp, b.description ?? null]);
       await this.db.query('INSERT INTO notifications(kind,title,body,ref) VALUES ($1,$2,$3,$4)',
-        ['shop.created', `Nouvelle boutique à valider : ${b.name.trim()}`, `${user.first_name} ${user.last_name} (${user.email}) · ${country}`, slug]);
+        ['shop.created', `Nouvelle boutique à valider : ${b.name.trim()}`, `${user.first_name} ${user.last_name} (${user.email ?? user.phone}) · ${country}`, slug]);
       return (await this.getShop(user.id))!;
     }
     throw new AppError(409, 'slug_taken', 'Nom de boutique indisponible.');
   }
 
-  async updateShop(userId: string, b: { name?: string; phone?: string; description?: string }) {
+  async updateShop(userId: string, b: { name?: string; phone?: string; whatsapp?: string | null; notifyWhatsapp?: boolean; description?: string }) {
     const s = await this.getShop(userId);
     if (!s) throw new AppError(403, 'no_shop', 'Créez votre boutique d’abord.');
-    await this.db.query('UPDATE shops SET name = COALESCE($2, name), phone = COALESCE($3, phone), description = COALESCE($4, description) WHERE id = $1', [s.id, b.name?.trim() ?? null, b.phone ?? null, b.description ?? null]);
+    await this.db.query('UPDATE shops SET name = COALESCE($2, name), phone = COALESCE($3, phone), description = COALESCE($4, description), whatsapp = CASE WHEN $5 THEN $6 ELSE whatsapp END, notify_whatsapp = COALESCE($7, notify_whatsapp) WHERE id = $1', [s.id, b.name?.trim() ?? null, b.phone ?? null, b.description ?? null, b.whatsapp !== undefined, b.whatsapp ?? null, b.notifyWhatsapp ?? null]);
     return (await this.getShop(userId))!;
   }
 
@@ -439,6 +442,47 @@ export class CommerceService {
       netUsd: round2(Number(delivered?.gross ?? 0) - Number(delivered?.commission ?? 0)), inProgressUsd: round2(inProgress),
       pendingLines: Number(by('pending')?.lines ?? 0), deliveredLines: Number(delivered?.lines ?? 0),
     };
+  }
+
+  // ---------- Gains et retraits ----------
+  static readonly MIN_WITHDRAWAL_USD = 10;
+
+  private async balance(db: Db, shopId: string) {
+    const r = (await db.query<{ net: string; pending: string; paid: string }>(
+      `SELECT (SELECT COALESCE(SUM(unit_price_usd * quantity * (10000 - commission_bps) / 10000.0),0) FROM order_items WHERE shop_id = $1 AND status = 'delivered') AS net,
+              (SELECT COALESCE(SUM(amount_usd),0) FROM withdrawals WHERE shop_id = $1 AND status = 'pending') AS pending,
+              (SELECT COALESCE(SUM(amount_usd),0) FROM withdrawals WHERE shop_id = $1 AND status = 'paid') AS paid`, [shopId]))[0]!;
+    const net = round2(Number(r.net)), pending = round2(Number(r.pending)), paid = round2(Number(r.paid));
+    return { earnedUsd: net, pendingUsd: pending, paidUsd: paid, availableUsd: round2(net - pending - paid) };
+  }
+
+  async wallet(userId: string) {
+    const s = await this.requireShop(userId);
+    const rows = await this.db.query<{ id: string; amount_usd: string; method: string; provider: string; account_name: string; account_number: string; status: string; reference: string | null; reason: string | null; created_at: Date; decided_at: Date | null }>(
+      'SELECT * FROM withdrawals WHERE shop_id = $1 ORDER BY created_at DESC LIMIT 50', [s.id]);
+    return {
+      ...(await this.balance(this.db, s.id)), minWithdrawalUsd: CommerceService.MIN_WITHDRAWAL_USD,
+      withdrawals: rows.map((r) => ({ id: r.id, amountUsd: Number(r.amount_usd), method: r.method, provider: r.provider, accountName: r.account_name, accountNumber: r.account_number, status: r.status, reference: r.reference, reason: r.reason, createdAt: r.created_at, decidedAt: r.decided_at })),
+    };
+  }
+
+  async requestWithdrawal(userId: string, b: { amountUsd: number; method: 'mobile_money' | 'bank'; provider: string; accountName: string; accountNumber: string }) {
+    const s = await this.requireShop(userId);
+    const shop = (await this.db.query<{ status: string; is_official: boolean; name: string }>('SELECT status, is_official, name FROM shops WHERE id = $1', [s.id]))[0]!;
+    if (shop.is_official) throw new AppError(403, 'forbidden', 'La boutique officielle ne demande pas de retrait.');
+    if (shop.status !== 'active') throw new AppError(403, 'shop_not_active', 'Votre boutique doit être validée pour retirer vos gains.');
+    const amount = round2(b.amountUsd);
+    if (amount < CommerceService.MIN_WITHDRAWAL_USD) throw new AppError(400, 'below_minimum', `Retrait minimum : ${CommerceService.MIN_WITHDRAWAL_USD} $.`);
+    const id = await this.db.transaction(async (t) => {
+      await t.query('SELECT id FROM shops WHERE id = $1 FOR UPDATE', [s.id]); // deux demandes simultanées ne doivent pas dépasser le solde
+      if (amount > (await this.balance(t, s.id)).availableUsd) throw new AppError(409, 'insufficient_balance', 'Montant supérieur à votre solde disponible.');
+      if (Number((await t.query<{ n: string }>("SELECT count(*) AS n FROM withdrawals WHERE shop_id = $1 AND status = 'pending'", [s.id]))[0]!.n) >= 3) throw new AppError(409, 'too_many_pending', 'Trois demandes sont déjà en attente de validation.');
+      const wid = newId();
+      await t.query('INSERT INTO withdrawals(id, shop_id, amount_usd, method, provider, account_name, account_number) VALUES ($1,$2,$3,$4,$5,$6,$7)', [wid, s.id, amount.toFixed(2), b.method, b.provider.trim(), b.accountName.trim(), b.accountNumber.trim()]);
+      await t.query('INSERT INTO notifications(kind,title,body,ref) VALUES ($1,$2,$3,$4)', ['withdrawal.requested', `Demande de retrait : ${amount.toFixed(2)} $`, `Boutique ${shop.name} · ${b.provider.trim()}`, wid]);
+      return wid;
+    });
+    return { id };
   }
 
   // ---------- Messagerie acheteur ↔ vendeur ----------

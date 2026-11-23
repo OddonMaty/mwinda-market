@@ -76,6 +76,12 @@ export function adminRoutes(r: FastifyInstance, { svc, authenticate, parse }: Ct
   r.post('/admin/demo/hide', guard('moderator'), async (req) => { await svc.hideDemo(me(req)); return ok; });
   r.post('/admin/demo/restore', guard('moderator'), async (req) => { await svc.restoreDemo(me(req)); return ok; });
 
+  r.get('/admin/withdrawals', guard('finance'), async (req) => ({ withdrawals: await svc.withdrawals(parse(z.object({ status: z.enum(['pending', 'paid', 'rejected']).optional() }), req.query).status) }));
+  r.post('/admin/withdrawals/:id/:decision', guard('finance'), async (req) => {
+    const p = parse(z.object({ id: z.string().length(26), decision: z.enum(['pay', 'reject']) }), req.params);
+    await svc.decideWithdrawal(me(req), p.id, { approve: p.decision === 'pay', ...parse(z.object({ reference: z.string().trim().max(100).optional(), reason: z.string().trim().max(300).optional() }), req.body ?? {}) });
+    return ok;
+  });
   r.get('/admin/orders', guard('finance', 'moderator'), async (req) => { const q = parse(Query, req.query); return { orders: await svc.orders(q.q, q.status) }; });
   r.patch('/admin/orders/:number', guard('finance'), async (req) => {
     await svc.setOrderStatus(me(req), parse(z.object({ number: z.string().regex(/^STM-[0-9]{1,12}$/) }), req.params).number, parse(z.object({ status: z.enum(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']) }), req.body).status);

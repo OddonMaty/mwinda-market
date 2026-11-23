@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import { z, ZodError } from 'zod';
 import {
-  ChangePasswordBodySchema, EmailBodySchema, LoginBodySchema, RegisterBodySchema, ResetPasswordBodySchema, TokenBodySchema, UpdateProfileBodySchema,
+  ChangePasswordBodySchema, EmailBodySchema, ForgotBodySchema, LoginBodySchema, ResetPhoneBodySchema, VerifyConfirmBodySchema, VerifyStartBodySchema, RegisterBodySchema, ResetPasswordBodySchema, TokenBodySchema, UpdateProfileBodySchema,
 } from '@saotech/shared';
 import { AppError } from '../errors.js';
 import { isAllowedOrigin } from '../config/env.js';
@@ -80,6 +80,10 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
     });
 
     r.get('/auth/providers', async () => ({ google: !!deps.google }));
+    r.get('/auth/channels', async () => svc.channels());
+    r.post('/auth/verify/start', { preHandler: authenticate }, async (req) => { await svc.startVerification(req.auth!.user, parse(VerifyStartBodySchema, req.body).channel); return OK; });
+    r.post('/auth/verify/confirm', { preHandler: authenticate }, async (req) => ({ user: await svc.confirmPhone(req.auth!.user, parse(VerifyConfirmBodySchema, req.body).code) }));
+    r.post('/auth/reset-password-phone', async (req) => { const b = parse(ResetPhoneBodySchema, req.body); await svc.resetPasswordByPhone(b.phone, b.code, b.password); return OK; });
 
     // Connexion Google : /start redirige vers Google, /callback ouvre la session puis renvoie vers le site.
     const GCOOKIE = 'stm_oauth';
@@ -127,7 +131,7 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
       return OK;
     });
     r.post('/auth/forgot-password', async (req) => {
-      await svc.forgotPassword(parse(EmailBodySchema, req.body).email, meta(req));
+      await svc.forgotPassword(parse(ForgotBodySchema, req.body).identifier, meta(req));
       return OK;
     });
     r.post('/auth/reset-password', async (req) => {
@@ -147,7 +151,7 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
       await svc.revokeSession(req.auth!.user.id, parse(z.object({ id: z.string().length(26) }), req.params).id);
       return OK;
     });
-    const notify = new Notifier(deps.db, deps.mailer, publicUrl(deps.config));
+    const notify = new Notifier(deps.db, deps.mailer, publicUrl(deps.config), deps.messenger);
     const commerce = new CommerceService(deps.db, deps.store, notify);
     const admin = new AdminService(deps.db, commerce, { mailer: deps.mailer, baseUrl: publicUrl(deps.config) }, notify);
     commerceRoutes(r, { svc: commerce, authenticate, parse });

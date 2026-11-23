@@ -3,6 +3,7 @@ import { buildApp } from './app.js';
 import { createPgDb } from './db/client.js';
 import { migrate } from './db/migrate.js';
 import { SmtpMailer, NoopMailer } from './mail/mailer.js';
+import { ChannelMessenger } from './services/messenger.js';
 import { GoogleClient } from './services/google.js';
 import { publicUrl } from './services/auth.js';
 import { VercelBlobStore } from './services/storage.js';
@@ -15,7 +16,8 @@ async function main(): Promise<void> {
   const mailer = config.SMTP_URL ? new SmtpMailer(config.SMTP_URL, config.MAIL_FROM, publicUrl(config)) : new NoopMailer();
   const store = config.BLOB_READ_WRITE_TOKEN ? new VercelBlobStore(config.BLOB_READ_WRITE_TOKEN) : undefined;
   const google = config.GOOGLE_CLIENT_ID && config.GOOGLE_CLIENT_SECRET ? new GoogleClient(config.GOOGLE_CLIENT_ID, config.GOOGLE_CLIENT_SECRET, `${publicUrl(config)}/api/v1/auth/google/callback`) : undefined;
-  const app = await buildApp(config, { db, mailer, store, google });
+  const messenger = new ChannelMessenger({ whatsappToken: config.WHATSAPP_TOKEN, whatsappPhoneId: config.WHATSAPP_PHONE_ID, twilioSid: config.TWILIO_ACCOUNT_SID, twilioToken: config.TWILIO_AUTH_TOKEN, twilioFrom: config.TWILIO_FROM });
+  const app = await buildApp(config, { db, mailer, store, google, messenger });
 
   try {
     const address = await app.listen({

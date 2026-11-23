@@ -14,8 +14,8 @@ const OrderBody = z.object({
   shippingPhone: phone, shippingCity: text(80), shippingAddress: text(500),
 });
 const AddressBody = z.object({ label: z.string().trim().max(60).optional(), city: text(80), address: text(500), phone });
-const ShopBody = z.object({ name: text(100), phone: phone.optional(), description: z.string().trim().max(1000).optional(), citySlug: z.string().max(100).optional(), countryCode: z.string().length(2).toUpperCase().optional() });
-const ShopPatch = z.object({ name: text(100).optional(), phone: phone.optional(), description: z.string().trim().max(1000).optional() });
+const ShopBody = z.object({ name: text(100), phone: phone.optional(), whatsapp: phone.optional(), description: z.string().trim().max(1000).optional(), citySlug: z.string().max(100).optional(), countryCode: z.string().length(2).toUpperCase().optional() });
+const ShopPatch = z.object({ name: text(100).optional(), phone: phone.optional(), whatsapp: phone.nullable().optional(), notifyWhatsapp: z.boolean().optional(), description: z.string().trim().max(1000).optional() });
 const ProductBody = z.object({
   name: text(200), description: text(5000), priceUsd: z.number().positive().max(1_000_000), originalPriceUsd: z.number().positive().max(1_000_000).nullable().optional(),
   department: z.enum(DEPARTMENT_SLUGS), category: text(80), colors: list, sizes: list, inStock: z.boolean().default(true), images: z.array(imageUrl).max(5).default([]),
@@ -65,6 +65,10 @@ export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }:
     const p = parse(Number_.extend({ action: z.enum(['confirm', 'ship', 'cancel']) }), req.params);
     return svc.shopOrderAction(user(req).id, p.number, ({ confirm: 'confirmed', ship: 'shipped', cancel: 'cancelled' } as const)[p.action]);
   });
+  r.get('/seller/wallet', pre, async (req) => svc.wallet(user(req).id));
+  r.post('/seller/withdrawals', pre, async (req, reply) => reply.code(201).send(await svc.requestWithdrawal(user(req).id, parse(z.object({
+    amountUsd: z.number().positive().max(1_000_000), method: z.enum(['mobile_money', 'bank']), provider: text(60), accountName: text(120), accountNumber: text(60),
+  }), req.body))));
   r.get('/seller/products', pre, async (req) => ({ products: await svc.listMyProducts(user(req).id) }));
   r.post('/seller/products', pre, async (req, reply) => reply.code(201).send(await svc.createProduct(user(req).id, parse(ProductBody, req.body))));
   r.put('/seller/products/:id', pre, async (req) => { await svc.updateProduct(user(req).id, Number(parse(IdParam, req.params).id), parse(ProductBody, req.body)); return { ok: true }; });

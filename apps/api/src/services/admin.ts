@@ -89,7 +89,7 @@ export class AdminService extends PlatformService {
     const rows = await this.db.query<{ id: string; email: string; first_name: string; last_name: string; phone: string | null; country_code: string | null; status: string; created_at: Date; roles: string[] | null; shop: string | null }>(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.country_code, u.status, u.created_at,
               (SELECT array_agg(role) FROM admin_roles WHERE user_id = u.id) AS roles, (SELECT name FROM shops WHERE owner_id = u.id) AS shop
-         FROM users u WHERE u.email ILIKE $1 OR u.first_name ILIKE $1 OR u.last_name ILIKE $1 ORDER BY u.created_at DESC LIMIT 200`, [like(q)]);
+         FROM users u WHERE u.email ILIKE $1 OR u.phone ILIKE $1 OR u.first_name ILIKE $1 OR u.last_name ILIKE $1 ORDER BY u.created_at DESC LIMIT 200`, [like(q)]);
     return rows.map((u) => ({ id: u.id, email: u.email, name: `${u.first_name} ${u.last_name}`, phone: u.phone, countryCode: u.country_code, status: u.status, createdAt: u.created_at, roles: u.roles ?? [], shop: u.shop }));
   }
 
@@ -281,6 +281,25 @@ export class AdminService extends PlatformService {
   async restoreDemo(actor: string) {
     await this.db.query("UPDATE products SET status = 'active', updated_at = now() WHERE is_demo");
     await this.audit(actor, 'demo.restore', 'platform', 'demo');
+  }
+
+  // ---------- Retraits des vendeurs ----------
+  async withdrawals(status?: string) {
+    const rows = await this.db.query<{ id: string; amount_usd: string; method: string; provider: string; account_name: string; account_number: string; status: string; reference: string | null; reason: string | null; created_at: Date; decided_at: Date | null; shop: string; owner: string | null }>(
+      `SELECT w.*, s.name AS shop, COALESCE(u.email, u.phone) AS owner FROM withdrawals w JOIN shops s ON s.id = w.shop_id LEFT JOIN users u ON u.id = s.owner_id
+        WHERE ($1::text IS NULL OR w.status = $1) ORDER BY (w.status = 'pending') DESC, w.created_at DESC LIMIT 200`, [status ?? null]);
+    return rows.map((r) => ({ id: r.id, shop: r.shop, owner: r.owner, amountUsd: Number(r.amount_usd), method: r.method, provider: r.provider, accountName: r.account_name, accountNumber: r.account_number, status: r.status, reference: r.reference, reason: r.reason, createdAt: r.created_at, decidedAt: r.decided_at }));
+  }
+
+  /** Valide (le paiement a été fait hors plateforme, référence facultative) ou refuse (motif obligatoire) une demande en attente. */
+  async decideWithdrawal(actor: string, id: string, b: { approve: boolean; reference?: string; reason?: string }) {
+    if (!b.approve && !b.reason?.trim()) throw new AppError(400, 'validation_error', 'Indiquez le motif du refus.');
+    const r = await this.db.query(
+      "UPDATE withdrawals SET status = $2, reference = $3, reason = $4, decided_at = now(), decided_by = $5 WHERE id = $1 AND status = 'pending' RETURNING id",
+      [id, b.approve ? 'paid' : 'rejected', b.approve ? (b.reference?.trim() || null) : null, b.approve ? null : b.reason!.trim(), actor]);
+    if (!r[0]) throw new AppError(404, 'not_found', 'Demande introuvable ou déjà traitée.');
+    await this.audit(actor, b.approve ? 'withdrawal.pay' : 'withdrawal.reject', 'withdrawal', id, b);
+    await this.notify?.withdrawalDecision(id);
   }
 
   // ---------- Commandes ----------

@@ -1,5 +1,7 @@
 import type { ImageStore } from './storage.js';
 import type { GoogleOAuth, GoogleProfile } from './google.js';
+import type { Channel, Messenger } from './messenger.js';
+import { randomInt } from 'node:crypto';
 import type { Db } from '../db/client.js';
 import type { EnvConfig } from '../config/env.js';
 import { webOrigins } from '../config/env.js';
@@ -19,6 +21,7 @@ export interface AuthDeps {
   now?: () => Date;
   store?: ImageStore;
   google?: GoogleOAuth;
+  messenger?: Messenger;
 }
 export interface ReqMeta { ip: string; userAgent?: string }
 
@@ -32,7 +35,7 @@ const LOGIN_WINDOW = 15 * MIN;
 
 type Locale = 'fr' | 'en';
 interface UserRow {
-  id: string; email: string; email_verified_at: Date | null; password_hash: string | null; first_name: string; last_name: string;
+  id: string; email: string | null; email_verified_at: Date | null; phone_verified_at: Date | null; password_hash: string | null; first_name: string; last_name: string;
   phone: string | null; country_code: string | null; city_id: string | null; locale: string; status: string;
 }
 
@@ -54,7 +57,7 @@ export class AuthService {
   async toDto(u: UserRow): Promise<UserDto> {
     const roles = await this.d.db.query<{ role: UserDto['roles'][number] }>('SELECT role FROM admin_roles WHERE user_id = $1 ORDER BY role', [u.id]);
     return {
-      id: u.id, email: u.email, emailVerified: !!u.email_verified_at, firstName: u.first_name, lastName: u.last_name, phone: u.phone,
+      id: u.id, email: u.email, emailVerified: !!u.email_verified_at, phoneVerified: !!u.phone_verified_at, verified: !!(u.email_verified_at || u.phone_verified_at), firstName: u.first_name, lastName: u.last_name, phone: u.phone,
       countryCode: u.country_code, cityId: u.city_id, locale: u.locale, roles: roles.map((r) => r.role),
     };
   }
@@ -76,15 +79,19 @@ export class AuthService {
 
   // ---------- Inscription ----------
   async register(body: RegisterBody, meta: ReqMeta): Promise<void> {
+    const handle = body.email ?? body.phone;
     this.limit(`register:ip:${meta.ip}`, 10, HOUR);
-    this.limit(`register:email:${body.email}`, 5, HOUR);
-    const problem = checkPassword(body.password, body.email);
+    this.limit(`register:id:${handle}`, 5, HOUR);
+    const problem = checkPassword(body.password, handle);
     if (problem) throw new AppError(400, `weak_password_${problem}`, 'Mot de passe trop faible.');
     const passwordHash = await hashPassword(body.password); // toujours calculé : même durée que le compte existe ou non
-    const existing = await this.d.db.query<{ id: string; locale: string }>('SELECT id, locale FROM users WHERE email = $1', [body.email]);
+    const existing = await this.d.db.query<{ id: string; locale: string; email: string | null }>(
+      body.email ? 'SELECT id, locale, email FROM users WHERE email = $1' : 'SELECT id, locale, email FROM users WHERE phone = $1 AND (email IS NULL OR phone_verified_at IS NOT NULL)', [body.email ?? body.phone]);
     const base = publicUrl(this.d.config);
     if (existing[0]) {
-      await this.d.mailer.send(tpl.accountExists(asLocale(existing[0].locale), body.email, `${base}/connexion`, `${base}/mot-de-passe-oublie`));
+      // Sans e-mail, on ne peut pas prévenir le titulaire : on l'indique franchement (le numéro n'est pas un secret).
+      if (!body.email) throw new AppError(409, 'account_exists', 'Un compte existe déjà avec ce numéro. Connectez-vous.');
+      if (existing[0].email) await this.d.mailer.send(tpl.accountExists(asLocale(existing[0].locale), existing[0].email, `${base}/connexion`, `${base}/mot-de-passe-oublie`));
       return;
     }
     const country = await this.d.db.query('SELECT 1 FROM countries WHERE code = $1 AND active', [body.countryCode]);
@@ -93,28 +100,29 @@ export class AuthService {
     try {
       await this.d.db.query(
         `INSERT INTO users(id, email, password_hash, first_name, last_name, phone, country_code, city_id, locale) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [id, body.email, passwordHash, body.firstName, body.lastName, body.phone, body.countryCode, await this.cityId(body.countryCode, body.citySlug), body.locale]);
+        [id, body.email ?? null, passwordHash, body.firstName, body.lastName, body.phone, body.countryCode, await this.cityId(body.countryCode, body.citySlug), body.locale]);
     } catch (e) {
       if ((e as { code?: string }).code === '23505') return; // course : compte créé entre-temps, réponse identique
       throw e;
     }
-    const token = await this.issueToken(id, 'verify_email', DAY);
-    await this.d.mailer.send(tpl.verifyEmail(body.locale, body.email, `${base}/verifier-email?token=${token}`));
+    if (body.email) {
+      const token = await this.issueToken(id, 'verify_email', DAY);
+      await this.d.mailer.send(tpl.verifyEmail(asLocale(body.locale), body.email, `${base}/verifier-email?token=${token}`));
+    }
   }
 
-  // ---------- Connexion ----------
   async login(body: LoginBody, meta: ReqMeta): Promise<{ token: string; expiresAt: Date; admin: boolean; user: UserDto }> {
-    const failKey = `login:fail:${body.email}`;
+    const failKey = `login:fail:${body.identifier}`;
     this.limit(`login:ip:${meta.ip}`, 30, LOGIN_WINDOW);
-    if (this.d.limiter.count(`login:lock:${body.email}`, LOGIN_WINDOW) > 0) throw new AppError(429, 'too_many_requests', 'Trop de tentatives. Réessayez dans 15 minutes.');
-    const rows = await this.d.db.query<UserRow>('SELECT * FROM users WHERE email = $1', [body.email]);
+    if (this.d.limiter.count(`login:lock:${body.identifier}`, LOGIN_WINDOW) > 0) throw new AppError(429, 'too_many_requests', 'Trop de tentatives. Réessayez dans 15 minutes.');
+    const rows = await this.d.db.query<UserRow>(body.identifier.includes('@') ? 'SELECT * FROM users WHERE email = $1' : 'SELECT * FROM users WHERE phone = $1 AND (email IS NULL OR phone_verified_at IS NOT NULL)', [body.identifier]);
     const u = rows[0];
     const ok = await verifyPassword(u?.password_hash ?? (await getDummy()), body.password);
     if (!u || !u.password_hash || !ok) {
       this.d.limiter.hit(failKey, Number.MAX_SAFE_INTEGER, LOGIN_WINDOW);
       // 5 échecs en 15 min : blocage de 15 min à partir de maintenant.
-      if (this.d.limiter.count(failKey, LOGIN_WINDOW) >= LOGIN_FAILS) this.d.limiter.hit(`login:lock:${body.email}`, Number.MAX_SAFE_INTEGER, LOGIN_WINDOW);
-      throw new AppError(401, 'invalid_credentials', 'E-mail ou mot de passe incorrect.');
+      if (this.d.limiter.count(failKey, LOGIN_WINDOW) >= LOGIN_FAILS) this.d.limiter.hit(`login:lock:${body.identifier}`, Number.MAX_SAFE_INTEGER, LOGIN_WINDOW);
+      throw new AppError(401, 'invalid_credentials', 'Identifiant ou mot de passe incorrect.');
     }
     if (u.status !== 'active') throw new AppError(403, 'account_suspended', 'Ce compte est suspendu.');
     this.d.limiter.reset(failKey);
@@ -206,25 +214,102 @@ export class AuthService {
     const u = (await this.d.db.query<UserRow>('SELECT * FROM users WHERE email = $1', [email]))[0];
     if (!u || u.email_verified_at || u.status !== 'active') return;
     const token = await this.issueToken(u.id, 'verify_email', DAY);
-    await this.d.mailer.send(tpl.verifyEmail(asLocale(u.locale), u.email, `${publicUrl(this.d.config)}/verifier-email?token=${token}`));
+    if (u.email) await this.d.mailer.send(tpl.verifyEmail(asLocale(u.locale), u.email, `${publicUrl(this.d.config)}/verifier-email?token=${token}`));
   }
 
   // ---------- Mot de passe ----------
-  async forgotPassword(email: string, meta: ReqMeta): Promise<void> {
+  async forgotPassword(identifier: string, meta: ReqMeta): Promise<void> {
     this.limit(`forgot:ip:${meta.ip}`, 10, HOUR);
-    this.limit(`forgot:email:${email}`, 3, HOUR);
-    const u = (await this.d.db.query<UserRow>('SELECT * FROM users WHERE email = $1', [email]))[0];
+    this.limit(`forgot:id:${identifier}`, 3, HOUR);
+    const byEmail = identifier.includes('@');
+    const u = (await this.d.db.query<UserRow>(byEmail ? 'SELECT * FROM users WHERE email = $1' : 'SELECT * FROM users WHERE phone = $1 AND (email IS NULL OR phone_verified_at IS NOT NULL)', [identifier]))[0];
     if (!u || u.status !== 'active') return;
-    const token = await this.issueToken(u.id, 'reset_password', HOUR);
-    await this.d.mailer.send(tpl.resetPassword(asLocale(u.locale), u.email, `${publicUrl(this.d.config)}/reinitialiser-mot-de-passe?token=${token}`));
+    if (byEmail) {
+      const token = await this.issueToken(u.id, 'reset_password', HOUR);
+      await this.d.mailer.send(tpl.resetPassword(asLocale(u.locale), u.email!, `${publicUrl(this.d.config)}/reinitialiser-mot-de-passe?token=${token}`));
+      return;
+    }
+    // Compte identifié par son numéro : le code part sur ce numéro (WhatsApp de préférence).
+    const av = this.d.messenger?.available();
+    const channel: Channel | null = av?.whatsapp ? 'whatsapp' : av?.sms ? 'sms' : null;
+    if (!channel) return;
+    try { await this.d.messenger!.sendCode(channel, u.phone!, await this.issueCode(u.id, 'reset_phone'), u.locale); } catch { /* réponse identique */ }
+  }
+
+  async resetPasswordByPhone(phone: string, code: string, password: string): Promise<void> {
+    this.limit(`resetphone:id:${phone}`, 10, HOUR);
+    const u = (await this.d.db.query<UserRow>('SELECT * FROM users WHERE phone = $1 AND (email IS NULL OR phone_verified_at IS NOT NULL)', [phone]))[0];
+    if (!u || u.status !== 'active') throw new AppError(400, 'invalid_code', 'Code invalide ou expiré.');
+    const problem = checkPassword(password, u.email ?? u.phone ?? '');
+    if (problem) throw new AppError(400, `weak_password_${problem}`, 'Mot de passe trop faible.');
+    await this.checkCode(u.id, 'reset_phone', code);
+    const now = this.now();
+    await this.d.db.query('UPDATE users SET password_hash = $2, phone_verified_at = COALESCE(phone_verified_at, $3), updated_at = $3 WHERE id = $1', [u.id, await hashPassword(password), now]);
+    await this.d.db.query('UPDATE sessions SET revoked_at = $2 WHERE user_id = $1 AND revoked_at IS NULL', [u.id, now]);
+  }
+
+  // ---------- Vérification facultative du compte (e-mail, SMS ou WhatsApp) ----------
+  channels() {
+    const av = this.d.messenger?.available() ?? { sms: false, whatsapp: false };
+    return { email: !!this.d.config.SMTP_URL || this.d.config.NODE_ENV === 'test', sms: av.sms, whatsapp: av.whatsapp, google: !!this.d.google };
+  }
+
+  private async issueCode(userId: string, purpose: 'verify_phone' | 'reset_phone'): Promise<string> {
+    await this.d.db.query('UPDATE one_time_tokens SET used_at = $3 WHERE user_id = $1 AND purpose = $2 AND used_at IS NULL', [userId, purpose, this.now()]);
+    const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
+    await this.d.db.query('INSERT INTO one_time_tokens(id, user_id, purpose, token_hash, expires_at) VALUES ($1,$2,$3,$4,$5)',
+      [newId(), userId, purpose, hashToken(`${userId}:${purpose}:${code}`), new Date(this.now().getTime() + 10 * MIN)]);
+    return code;
+  }
+
+  private async checkCode(userId: string, purpose: 'verify_phone' | 'reset_phone', code: string): Promise<void> {
+    const row = (await this.d.db.query<{ id: string; token_hash: string; expires_at: Date; attempts: number }>(
+      'SELECT id, token_hash, expires_at, attempts FROM one_time_tokens WHERE user_id = $1 AND purpose = $2 AND used_at IS NULL ORDER BY expires_at DESC LIMIT 1', [userId, purpose]))[0];
+    if (!row || new Date(row.expires_at).getTime() <= this.now().getTime()) throw new AppError(400, 'invalid_code', 'Code invalide ou expiré.');
+    if (row.attempts >= 5) throw new AppError(429, 'too_many_requests', 'Trop de tentatives. Demandez un nouveau code.');
+    if (row.token_hash !== hashToken(`${userId}:${purpose}:${code}`)) {
+      await this.d.db.query('UPDATE one_time_tokens SET attempts = attempts + 1 WHERE id = $1', [row.id]);
+      throw new AppError(400, 'invalid_code', 'Code invalide ou expiré.');
+    }
+    const claimed = await this.d.db.query('UPDATE one_time_tokens SET used_at = $2 WHERE id = $1 AND used_at IS NULL RETURNING id', [row.id, this.now()]);
+    if (!claimed[0]) throw new AppError(400, 'invalid_code', 'Code invalide ou expiré.');
+  }
+
+  /** Envoie le lien (e-mail) ou le code (SMS / WhatsApp) de vérification. Facultatif : rien n'est bloqué tant que le compte n'est pas vérifié. */
+  async startVerification(user: UserRow, channel: 'email' | 'sms' | 'whatsapp'): Promise<void> {
+    this.limit(`verify:user:${user.id}`, 6, HOUR);
+    if (channel === 'email') {
+      if (!user.email) throw new AppError(400, 'no_email', 'Aucune adresse e-mail sur ce compte.');
+      if (user.email_verified_at) throw new AppError(409, 'already_verified', 'Cette adresse est déjà vérifiée.');
+      const token = await this.issueToken(user.id, 'verify_email', DAY);
+      try { await this.d.mailer.send(tpl.verifyEmail(asLocale(user.locale), user.email, `${publicUrl(this.d.config)}/verifier-email?token=${token}`)); } catch { throw new AppError(502, 'send_failed', "Envoi impossible pour le moment."); }
+      return;
+    }
+    if (!user.phone) throw new AppError(400, 'no_phone', 'Aucun numéro de téléphone sur ce compte.');
+    if (user.phone_verified_at) throw new AppError(409, 'already_verified', 'Ce numéro est déjà vérifié.');
+    if (!this.d.messenger?.available()[channel]) throw new AppError(503, 'channel_unavailable', 'Ce canal n’est pas disponible pour le moment.');
+    const code = await this.issueCode(user.id, 'verify_phone');
+    try { await this.d.messenger.sendCode(channel, user.phone, code, user.locale); } catch { throw new AppError(502, 'send_failed', "Envoi impossible pour le moment."); }
+  }
+
+  async confirmPhone(user: UserRow, code: string): Promise<UserDto> {
+    this.limit(`verifycode:user:${user.id}`, 20, HOUR);
+    await this.checkCode(user.id, 'verify_phone', code);
+    try {
+      await this.d.db.query('UPDATE users SET phone_verified_at = $2, updated_at = $2 WHERE id = $1', [user.id, this.now()]);
+    } catch (e) {
+      if ((e as { code?: string }).code === '23505') throw new AppError(409, 'phone_taken', 'Ce numéro est déjà associé à un autre compte.');
+      throw e;
+    }
+    return this.toDto((await this.d.db.query<UserRow>('SELECT * FROM users WHERE id = $1', [user.id]))[0]!);
   }
 
   async resetPassword(token: string, password: string): Promise<void> {
     const hash = hashToken(token);
-    const peek = (await this.d.db.query<{ email: string }>(
+    const peek = (await this.d.db.query<{ email: string | null }>(
       `SELECT u.email FROM one_time_tokens t JOIN users u ON u.id = t.user_id WHERE t.token_hash = $1 AND t.purpose = 'reset_password'`, [hash]))[0];
     if (peek) {
-      const problem = checkPassword(password, peek.email);
+      const problem = checkPassword(password, peek.email ?? '');
       if (problem) throw new AppError(400, `weak_password_${problem}`, 'Mot de passe trop faible.');
     }
     const userId = await this.consume(token, 'reset_password');
@@ -232,29 +317,29 @@ export class AuthService {
     const now = this.now();
     await this.d.db.query('UPDATE users SET password_hash = $2, email_verified_at = COALESCE(email_verified_at, $3), updated_at = $3 WHERE id = $1', [userId, await hashPassword(password), now]);
     await this.d.db.query('UPDATE sessions SET revoked_at = $2 WHERE user_id = $1 AND revoked_at IS NULL', [userId, now]);
-    await this.d.mailer.send(tpl.passwordChanged(asLocale(u.locale), u.email));
+    if (u.email) await this.d.mailer.send(tpl.passwordChanged(asLocale(u.locale), u.email));
   }
 
   async changePassword(user: UserRow, sessionId: string, oldPassword: string, newPassword: string): Promise<void> {
     this.limit(`chgpwd:user:${user.id}`, 10, HOUR);
     if (!user.password_hash || !(await verifyPassword(user.password_hash, oldPassword))) throw new AppError(400, 'wrong_password', 'Ancien mot de passe incorrect.');
-    const problem = checkPassword(newPassword, user.email);
+    const problem = checkPassword(newPassword, user.email ?? user.phone ?? '');
     if (problem) throw new AppError(400, `weak_password_${problem}`, 'Mot de passe trop faible.');
     const now = this.now();
     await this.d.db.query('UPDATE users SET password_hash = $2, updated_at = $3 WHERE id = $1', [user.id, await hashPassword(newPassword), now]);
     await this.d.db.query('UPDATE sessions SET revoked_at = $3 WHERE user_id = $1 AND id <> $2 AND revoked_at IS NULL', [user.id, sessionId, now]);
-    await this.d.mailer.send(tpl.passwordChanged(asLocale(user.locale), user.email));
+    if (user.email) await this.d.mailer.send(tpl.passwordChanged(asLocale(user.locale), user.email));
   }
 
   // ---------- Profil et appareils ----------
-  async updateProfile(user: UserRow, patch: { firstName?: string; lastName?: string; phone?: string; countryCode?: string; citySlug?: string | null; locale?: 'fr' | 'en' }): Promise<UserDto> {
+  async updateProfile(user: UserRow, patch: { firstName?: string; lastName?: string; phone?: string; countryCode?: string; citySlug?: string | null; locale?: 'fr' | 'en' | 'sw' | 'zh' | 'es' }): Promise<UserDto> {
     const country = patch.countryCode ?? user.country_code ?? 'CD';
     if (patch.countryCode && !(await this.d.db.query('SELECT 1 FROM countries WHERE code = $1 AND active', [patch.countryCode]))[0]) {
       throw new AppError(400, 'country_not_supported', 'Pays non disponible.');
     }
     const city = patch.citySlug === undefined ? user.city_id : await this.cityId(country, patch.citySlug);
     await this.d.db.query(
-      `UPDATE users SET first_name = $2, last_name = $3, phone = $4, country_code = $5, city_id = $6, locale = $7, updated_at = $8 WHERE id = $1`,
+      `UPDATE users SET first_name = $2, last_name = $3, phone = $4::varchar, country_code = $5, city_id = $6, locale = $7, updated_at = $8, phone_verified_at = CASE WHEN phone IS DISTINCT FROM $4::varchar THEN NULL ELSE phone_verified_at END WHERE id = $1`,
       [user.id, patch.firstName ?? user.first_name, patch.lastName ?? user.last_name, patch.phone ?? user.phone, country, city, patch.locale ?? user.locale, this.now()]);
     return this.toDto((await this.d.db.query<UserRow>('SELECT * FROM users WHERE id = $1', [user.id]))[0]!);
   }

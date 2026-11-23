@@ -63,3 +63,9 @@ export function planDecision(locale: Locale, to: string, shopName: string, planN
     ? { to, subject: approved ? `Your ${planName} plan is active` : 'Your plan request was declined', text: approved ? `Your ${planName} plan is now active for "${shopName}" (3 months).\nManage your shop: ${link}${sign.en}` : `Your request for the ${planName} plan for "${shopName}" could not be accepted. Contact us at contact@mwindamarket.com for details.${sign.en}` }
     : { to, subject: approved ? `Votre abonnement ${planName} est actif` : 'Votre demande d’abonnement n’a pas été acceptée', text: approved ? `Votre abonnement ${planName} est maintenant actif pour « ${shopName} » (3 mois).\nGérez votre boutique : ${link}${sign.fr}` : `Votre demande d’abonnement ${planName} pour « ${shopName} » n’a pas pu être acceptée. Contactez-nous à contact@mwindamarket.com pour en savoir plus.${sign.fr}` };
 }
+
+export function withdrawalDecision(locale: Locale, to: string, shopName: string, amount: string, paid: boolean, detail: string | null, link: string): Mail {
+  return locale === 'en'
+    ? { to, subject: paid ? `Withdrawal of ${amount} paid` : `Withdrawal of ${amount} declined`, text: paid ? `Your withdrawal of ${amount} for "${shopName}" has been paid.${detail ? `\nReference: ${detail}` : ''}\nSee your wallet: ${link}${sign.en}` : `Your withdrawal request of ${amount} for "${shopName}" was declined.${detail ? `\nReason: ${detail}` : ''}\nThe amount is back in your available balance: ${link}${sign.en}` }
+    : { to, subject: paid ? `Retrait de ${amount} payé` : `Retrait de ${amount} refusé`, text: paid ? `Votre retrait de ${amount} pour « ${shopName} » a été payé.${detail ? `\nRéférence : ${detail}` : ''}\nConsultez votre portefeuille : ${link}${sign.fr}` : `Votre demande de retrait de ${amount} pour « ${shopName} » a été refusée.${detail ? `\nMotif : ${detail}` : ''}\nLe montant est de nouveau dans votre solde disponible : ${link}${sign.fr}` };
+}
