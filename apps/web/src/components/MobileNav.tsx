@@ -7,6 +7,7 @@ import { DEPARTMENTS } from '@saotech/shared';
 import { collectionHref } from '../lib';
 import { useAuth } from './AuthProvider';
 import { useCart } from './CartProvider';
+import { useT } from './I18n';
 
 const LINKS: [string, string, string][] = [
   ['fa-house', 'Accueil', '/'],
@@ -26,6 +27,7 @@ type Sheet = null | 'menu' | 'cats';
 export function MobileNav() {
   const path = usePathname() ?? '/';
   const { accountClick, user } = useAuth();
+  const t = useT();
   const { count, toggle } = useCart();
   const [sheet, setSheet] = useState<Sheet>(null);
   const [openDep, setOpenDep] = useState<string | null>(null);
@@ -48,17 +50,17 @@ export function MobileNav() {
 
   return (
     <>
-      <button type="button" className="m-menu-btn" aria-label="Ouvrir le menu" onClick={() => setSheet('menu')}><i className="fas fa-bars" /></button>
+      <button type="button" className="m-menu-btn" aria-label={t('Ouvrir le menu')} onClick={() => setSheet('menu')}><i className="fas fa-bars" /></button>
 
       {!hideBar && (
         <nav className="m-tabbar" aria-label="Navigation principale">
-          <Link href="/" className={on('/') ? 'on' : ''}><i className="fas fa-house" /><span>Accueil</span></Link>
-          <button type="button" className={sheet === 'cats' ? 'on' : ''} onClick={() => setSheet(sheet === 'cats' ? null : 'cats')}><i className="fas fa-table-cells-large" /><span>Catégories</span></button>
-          <button type="button" onClick={focusSearch}><i className="fas fa-search" /><span>Recherche</span></button>
+          <Link href="/" className={on('/') ? 'on' : ''}><i className="fas fa-house" /><span>{t('Accueil')}</span></Link>
+          <button type="button" className={sheet === 'cats' ? 'on' : ''} onClick={() => setSheet(sheet === 'cats' ? null : 'cats')}><i className="fas fa-table-cells-large" /><span>{t('Catégories')}</span></button>
+          <button type="button" onClick={focusSearch}><i className="fas fa-search" /><span>{t('Recherche')}</span></button>
           <button type="button" onClick={() => { setSheet(null); toggle(); }}>
-            <i className="fas fa-shopping-cart" />{count > 0 && <b className="m-badge">{count}</b>}<span>Panier</span>
+            <i className="fas fa-shopping-cart" />{count > 0 && <b className="m-badge">{count}</b>}<span>{t('Panier')}</span>
           </button>
-          <button type="button" className={on('/compte') ? 'on' : ''} onClick={() => { setSheet(null); accountClick(); }}><i className="fas fa-user" /><span>{user ? 'Compte' : 'Connexion'}</span></button>
+          <button type="button" className={on('/compte') ? 'on' : ''} onClick={() => { setSheet(null); accountClick(); }}><i className="fas fa-user" /><span>{t(user ? 'Compte' : 'Connexion')}</span></button>
         </nav>
       )}
 
@@ -67,23 +69,23 @@ export function MobileNav() {
       <aside className={`m-drawer${sheet === 'menu' ? ' open' : ''}`} aria-hidden={sheet !== 'menu'}>
         <div className="m-sheet-head">
           <img src="/images/brand/mwinda-h-light.png" alt="Mwinda Market" />
-          <button type="button" onClick={() => setSheet(null)} aria-label="Fermer"><i className="fas fa-times" /></button>
+          <button type="button" onClick={() => setSheet(null)} aria-label={t('Fermer')}><i className="fas fa-times" /></button>
         </div>
         <ul className="m-links">
           {LINKS.map(([icon, label, to]) => (
-            <li key={to}><Link href={to} className={on(to) && to !== '/' ? 'on' : ''}><i className={`fas ${icon}`} /><span>{label}</span><i className="fas fa-chevron-right" /></Link></li>
+            <li key={to}><Link href={to} className={on(to) && to !== '/' ? 'on' : ''}><i className={`fas ${icon}`} /><span>{t(label)}</span><i className="fas fa-chevron-right" /></Link></li>
           ))}
         </ul>
-        <div className="m-legal">{LEGAL.map(([l, to]) => <Link key={to} href={to}>{l}</Link>)}</div>
+        <div className="m-legal">{LEGAL.map(([l, to]) => <Link key={to} href={to}>{t(l)}</Link>)}</div>
         <div className="m-contact">
           <a href="tel:+243972584021"><i className="fas fa-phone" /> +243 972 584 021</a>
           <a href="mailto:contact@mwindamarket.com"><i className="fas fa-envelope" /> contact@mwindamarket.com</a>
-          <small>La place de marché africaine · Lancement en RDC, bientôt partout en Afrique</small>
+          <small>{t('La place de marché africaine · Lancement en RDC, bientôt partout en Afrique')}</small>
         </div>
       </aside>
 
       <section className={`m-cats${sheet === 'cats' ? ' open' : ''}`} aria-hidden={sheet !== 'cats'}>
-        <div className="m-sheet-head"><b>Catégories</b><button type="button" onClick={() => setSheet(null)} aria-label="Fermer"><i className="fas fa-times" /></button></div>
+        <div className="m-sheet-head"><b>{t('Catégories')}</b><button type="button" onClick={() => setSheet(null)} aria-label={t('Fermer')}><i className="fas fa-times" /></button></div>
         <ul className="m-links">
           {DEPARTMENTS.map((d) => (
             <li key={d.slug}>

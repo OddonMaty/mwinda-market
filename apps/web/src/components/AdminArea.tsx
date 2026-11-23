@@ -7,7 +7,7 @@ import { api, errorMessage, useAuth } from './AuthProvider';
 import { Showcase } from './AdminShowcase';
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Empty, Field, Input, Select, StatCard, Table as UTable, Td, Textarea, Th, DashboardShell, PageLoader, WelcomeDialog, type NavGroup } from './ui';
 
-type Tab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'plans' | 'requests' | 'countries' | 'pages' | 'audit' | 'promotions';
+type Tab = 'dashboard' | 'users' | 'shops' | 'products' | 'orders' | 'plans' | 'requests' | 'countries' | 'pages' | 'audit' | 'promotions' | 'withdrawals';
 const NAV: NavGroup[] = [
   { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: BarChart3 }] },
   { title: 'Gestion', items: [
@@ -15,7 +15,7 @@ const NAV: NavGroup[] = [
     { key: 'products', label: 'Produits', icon: Package }, { key: 'orders', label: 'Commandes', icon: ShoppingBag },
     { key: 'promotions', label: 'Promotions', icon: Sparkles },
   ] },
-  { title: 'Abonnements', items: [{ key: 'plans', label: 'Plans', icon: Crown }, { key: 'requests', label: 'Demandes de plan', icon: Inbox }] },
+  { title: 'Abonnements', items: [{ key: 'plans', label: 'Plans', icon: Crown }, { key: 'requests', label: 'Demandes de plan', icon: Inbox }, { key: 'withdrawals', label: 'Retraits vendeurs', icon: Wallet }] },
   { title: 'Configuration', items: [{ key: 'countries', label: 'Pays & villes', icon: Globe2 }, { key: 'pages', label: 'Textes légaux', icon: FileText }, { key: 'audit', label: 'Journal d’audit', icon: ScrollText }] },
 ];
 const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée', active: 'Actif', suspended: 'Suspendu', archived: 'Archivé' };
@@ -82,7 +82,7 @@ export function AdminArea() {
   const roleLabel = isSuper ? 'Super-administrateur' : roles.map((r) => ({ moderator: 'Modérateur', finance: 'Finance' }[r] ?? r)).join(', ');
 
   return (
-    <DashboardShell space="Administration" subtitle={roleLabel} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email, email: user.email }} topRight={<NotificationBell onOpenShops={() => setTab('shops')} />}>
+    <DashboardShell space="Administration" subtitle={roleLabel} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email || user.phone || '', email: user.email ?? user.phone ?? undefined }} topRight={<NotificationBell onOpenShops={() => setTab('shops')} />}>
       {welcome && <WelcomeDialog title={`Bienvenue, ${user.firstName || 'administrateur'} !`} text={shopsPending > 0 ? `${shopsPending} boutique${shopsPending > 1 ? 's attendent' : ' attend'} votre validation. Acceptez ou refusez chaque demande depuis l’onglet Boutiques.` : 'Tout est à jour : aucune boutique n’attend de validation. Bon travail !'} action="Voir l’administration" onClose={() => setWelcome(false)} />}
       {tab === 'dashboard' && <Dashboard />}
       {tab === 'users' && <Users isSuper={isSuper} notify={notify} fail={fail} />}
@@ -91,6 +91,7 @@ export function AdminArea() {
       {tab === 'orders' && <Orders notify={notify} fail={fail} />}
       {tab === 'plans' && <Plans isSuper={isSuper} notify={notify} fail={fail} />}
       {tab === 'requests' && <Requests notify={notify} fail={fail} />}
+      {tab === 'withdrawals' && <Withdrawals notify={notify} fail={fail} />}
       {tab === 'countries' && <Countries isSuper={isSuper} notify={notify} fail={fail} />}
       {tab === 'pages' && <Pages notify={notify} fail={fail} />}
       {tab === 'promotions' && <Showcase notify={notify} fail={fail} />}
@@ -182,7 +183,7 @@ function Users({ isSuper, notify, fail }: P & { isSuper: boolean }) {
       <Table head={['Nom', 'E-mail', 'Pays', 'Boutique', 'Inscrit le', 'État', 'Rôle', '']} empty={rows?.length === 0}>
         {rows?.map((u) => (
           <tr key={u.id}>
-            <Td>{u.name}</Td><Td>{u.email}</Td><Td>{u.countryCode ?? '—'}</Td><Td>{u.shop ?? '—'}</Td><Td>{day(u.createdAt)}</Td><Td><St s={u.status} /></Td>
+            <Td>{u.name}</Td><Td>{u.email ?? '—'}</Td><Td>{u.countryCode ?? '—'}</Td><Td>{u.shop ?? '—'}</Td><Td>{day(u.createdAt)}</Td><Td><St s={u.status} /></Td>
             <Td>{isSuper ? (
               <Select className="h-9 min-w-[8rem]" value={u.roles[0] ?? ''} onChange={(e) => void setRole(u.id, e.target.value)}>
                 <option value="">Utilisateur</option><option value="moderator">Modérateur</option><option value="finance">Finance</option><option value="superadmin">Super-admin</option>
@@ -327,6 +328,38 @@ function Requests({ notify, fail }: P) {
         {rows?.map((r) => (
           <tr key={r.id}><Td>{day(r.createdAt)}</Td><Td>{r.shop}</Td><Td>{r.owner ?? '—'}</Td><Td>{r.plan}</Td><Td>{formatUsd(r.priceUsd)}</Td><Td><Badge variant={TONE[r.status] ?? 'secondary'}>{r.status === 'pending' ? 'En attente' : r.status === 'approved' ? 'Approuvée' : 'Refusée'}</Badge></Td>
             <Td className="text-right"><Actions>{r.status === 'pending' && <><Button type="button" variant="ghost" size="sm" onClick={() => void decide(r.id, 'approve')}>Approuver</Button><Button type="button" variant="ghost" size="sm" onClick={() => void decide(r.id, 'reject')}>Refuser</Button></>}</Actions></Td></tr>
+        ))}
+      </Table>
+    </>
+  );
+}
+
+function Withdrawals({ notify, fail }: P) {
+  const [rows, reload] = useAdminData<{ id: string; shop: string; owner: string | null; amountUsd: number; method: string; provider: string; accountName: string; accountNumber: string; status: string; reference: string | null; reason: string | null; createdAt: string }>('/admin/withdrawals', 'withdrawals');
+  async function pay(id: string) {
+    const reference = window.prompt('Référence du paiement effectué (transaction Mobile Money, virement…) — facultatif :');
+    if (reference === null) return;
+    const r = await api(`/admin/withdrawals/${id}/pay`, { method: 'POST', body: { reference: reference.trim() || undefined } });
+    if (!r.ok) return fail(r);
+    notify('Retrait marqué comme payé : le vendeur est prévenu.'); await reload();
+  }
+  async function reject(id: string) {
+    const reason = window.prompt('Motif du refus (communiqué au vendeur) :');
+    if (!reason?.trim()) return;
+    const r = await api(`/admin/withdrawals/${id}/reject`, { method: 'POST', body: { reason: reason.trim() } });
+    if (!r.ok) return fail(r);
+    notify('Retrait refusé : le montant retourne au solde du vendeur.'); await reload();
+  }
+  const label: Record<string, string> = { pending: 'À payer', paid: 'Payé', rejected: 'Refusé' };
+  return (
+    <>
+      <p className="mb-4 max-w-2xl text-sm text-muted-foreground">Envoyez l&apos;argent au vendeur (Mobile Money ou virement) <b>avant</b> de cliquer sur « Marquer payé » : le vendeur est alors prévenu par e-mail ou WhatsApp. Un refus remet le montant dans son solde.</p>
+      <Table head={['Date', 'Boutique', 'Montant', 'Destination', 'État', '']} empty={rows?.length === 0}>
+        {rows?.map((r) => (
+          <tr key={r.id}><Td>{day(r.createdAt)}</Td><Td>{r.shop}<div className="text-xs text-muted-foreground">{r.owner ?? ''}</div></Td><Td>{formatUsd(r.amountUsd)}</Td>
+            <Td>{r.provider} · {r.accountNumber}<div className="text-xs text-muted-foreground">{r.accountName}</div></Td>
+            <Td><Badge variant={TONE[r.status] === undefined ? (r.status === 'paid' ? 'success' : r.status === 'rejected' ? 'danger' : 'warning') : TONE[r.status]}>{label[r.status] ?? r.status}</Badge>{r.reference && <div className="text-xs text-muted-foreground">Réf. {r.reference}</div>}{r.reason && <div className="text-xs text-muted-foreground">{r.reason}</div>}</Td>
+            <Td className="text-right"><Actions>{r.status === 'pending' && <><Button type="button" variant="ghost" size="sm" onClick={() => void pay(r.id)}>Marquer payé</Button><Button type="button" variant="ghost" size="sm" onClick={() => void reject(r.id)}>Refuser</Button></>}</Actions></Td></tr>
         ))}
       </Table>
     </>

@@ -9,9 +9,10 @@ import { formatUsd, productImageUrl } from '../lib';
 import { ConversationList, Thread, type Conv } from './Chat';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { PhotoPicker } from './PhotoPicker';
+import { SellerWallet } from './SellerWallet';
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DashboardShell, Empty, Field, PageLoader, WelcomeDialog, Input, PageHeading, Select, StatCard, Table, Td, Textarea, Th, type NavGroup } from './ui';
 
-interface Shop { rejectReason?: string | null; certified: boolean; id: string; name: string; description?: string | null; phone?: string | null; isOfficial: boolean; status: string; countryCode: string | null; city: string | null; plan: string; planName: string; planExpiresAt: string | null; commissionBps: number; maxProducts: number | null; productCount: number; pendingPlan: string | null }
+interface Shop { rejectReason?: string | null; certified: boolean; id: string; name: string; description?: string | null; phone?: string | null; whatsapp?: string | null; notifyWhatsapp?: boolean; isOfficial: boolean; status: string; countryCode: string | null; city: string | null; plan: string; planName: string; planExpiresAt: string | null; commissionBps: number; maxProducts: number | null; productCount: number; pendingPlan: string | null }
 interface Stats { salesUsd: number; commissionUsd: number; netUsd: number; inProgressUsd: number; pendingLines: number; deliveredLines: number }
 interface SProduct { id: number; name: string; description: string; priceUsd: number; originalPriceUsd: number | null; department: string; category: string; colors: string[]; sizes: string[]; inStock: boolean; images: string[] }
 interface SOrder { number: string; status: string; createdAt: string; customer: string; city: string; phone: string; address: string; totalUsd: number; commissionUsd: number; netUsd: number; items: { name: string; quantity: number; unitPriceUsd: number; color: string; size: string }[] }
@@ -19,7 +20,7 @@ const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Conf
 const TONE: Record<string, 'success' | 'warning' | 'danger' | 'default'> = { pending: 'warning', confirmed: 'default', shipped: 'default', delivered: 'success', cancelled: 'danger' };
 const csv = (v: FormDataEntryValue | null): string[] => String(v ?? '').split(',').map((x) => x.trim()).filter(Boolean);
 const toUsd = (v: FormDataEntryValue | null): number => Math.round(Number(v) * 100) / 100;
-type Tab = 'dashboard' | 'products' | 'orders' | 'messages' | 'shop';
+type Tab = 'dashboard' | 'products' | 'orders' | 'wallet' | 'messages' | 'shop';
 
 export function SellerDashboard() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export function SellerDashboard() {
   async function saveShop(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const r = await api('/seller/shop', { method: 'PATCH', body: { name: String(f.get('name')).trim(), phone: String(f.get('phone') ?? '').replace(/[\s.-]/g, '') || undefined, description: String(f.get('description')).trim() } });
+    const r = await api('/seller/shop', { method: 'PATCH', body: { name: String(f.get('name')).trim(), phone: String(f.get('phone') ?? '').replace(/[\s.-]/g, '') || undefined, whatsapp: String(f.get('whatsapp') ?? '').replace(/[\s.-]/g, '') || null, notifyWhatsapp: !!f.get('notifyWhatsapp'), description: String(f.get('description')).trim() } });
     if (!r.ok) return notify(r.data.message ?? errorMessage(r.data.code));
     await load();
     notify('Boutique mise à jour');
@@ -113,7 +114,7 @@ export function SellerDashboard() {
   const toDo = orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').length;
   const groups: NavGroup[] = [
     { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard }] },
-    { title: 'Ma boutique', items: [{ key: 'products', label: 'Produits', icon: Package, badge: products.length || undefined }, { key: 'orders', label: 'Commandes', icon: ShoppingBag, badge: toDo || undefined }, { key: 'messages', label: 'Messages', icon: MessageCircle }] },
+    { title: 'Ma boutique', items: [{ key: 'products', label: 'Produits', icon: Package, badge: products.length || undefined }, { key: 'orders', label: 'Commandes', icon: ShoppingBag, badge: toDo || undefined }, { key: 'wallet', label: 'Mes gains', icon: Wallet }, { key: 'messages', label: 'Messages', icon: MessageCircle }] },
     { title: 'Paramètres', items: [{ key: 'shop', label: 'Boutique et plan', icon: Settings }] },
   ];
   const planLine = `${shop.productCount} produit${shop.productCount > 1 ? 's' : ''} sur ${shop.maxProducts ?? 'illimité'}${shop.planExpiresAt ? ` · valable jusqu’au ${new Date(shop.planExpiresAt).toLocaleDateString('fr-FR')}` : ''}`;
@@ -121,7 +122,7 @@ export function SellerDashboard() {
   const shownOrders = orders.filter((o) => orderFilter === 'all' || o.status === orderFilter);
 
   return (
-    <DashboardShell space="Espace vendeur" subtitle={shop.name} groups={groups} active={tab} onSelect={(k) => { setTab(k as Tab); setForm({ open: false, editing: null }); }} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email, email: user.email }}
+    <DashboardShell space="Espace vendeur" subtitle={shop.name} groups={groups} active={tab} onSelect={(k) => { setTab(k as Tab); setForm({ open: false, editing: null }); }} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email || user.phone || '', email: user.email ?? user.phone ?? undefined }}
       topRight={<>
         <Button size="sm" onClick={() => openForm(null)}><Plus /><span className="sm:hidden">Ajouter</span><span className="hidden sm:inline">Ajouter un produit</span></Button>
         <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex"><Link href="/compte">Mon compte</Link></Button>
@@ -143,6 +144,8 @@ export function SellerDashboard() {
       {!shop.isOfficial && shop.status === 'suspended' && (
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-900" role="alert"><X className="mt-0.5 size-4 shrink-0" /><p><b>Votre boutique est suspendue.</b> Contactez-nous à contact@mwindamarket.com.</p></div>
       )}
+
+      {tab === 'wallet' && <SellerWallet official={shop.isOfficial} />}
 
       {tab === 'messages' && (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
@@ -287,9 +290,11 @@ export function SellerDashboard() {
           <Card>
             <CardHeader><CardTitle>Informations de la boutique</CardTitle><CardDescription>Localisation : {shop.city ?? 'ville non précisée'}{shop.countryCode ? ` (${shop.countryCode})` : ''}</CardDescription></CardHeader>
             <CardContent>
-              <form className="grid gap-4" onSubmit={saveShop} key={shop.name + shop.description + shop.phone}>
+              <form className="grid gap-4" onSubmit={saveShop} key={shop.name + shop.description + shop.phone + shop.whatsapp + shop.notifyWhatsapp}>
                 <Field label="Nom de la boutique *"><Input name="name" defaultValue={shop.name} required /></Field>
                 <Field label="Téléphone"><Input type="tel" name="phone" defaultValue={shop.phone ?? ''} /></Field>
+                <Field label="Numéro WhatsApp" hint="Avec l’indicatif (+243…) — vos alertes de commande et de retrait y sont envoyées"><Input type="tel" name="whatsapp" defaultValue={shop.whatsapp ?? ''} /></Field>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyWhatsapp" defaultChecked={shop.notifyWhatsapp ?? true} />Recevoir les notifications sur WhatsApp</label>
                 <Field label="Description"><Textarea name="description" rows={3} defaultValue={shop.description ?? ''} /></Field>
                 <div><Button type="submit">Enregistrer</Button></div>
               </form>

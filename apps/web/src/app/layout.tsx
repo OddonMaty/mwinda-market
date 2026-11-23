@@ -3,6 +3,7 @@ import './globals.css';
 import 'flag-icons/css/flag-icons.min.css';
 import { LocaleProvider } from '../components/Locale';
 import { AuthProvider } from '../components/AuthProvider';
+import { I18nProvider } from '../components/I18n';
 import { ChatProvider } from '../components/Chat';
 import { CartProvider } from '../components/CartProvider';
 
@@ -30,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body><AuthProvider><LocaleProvider><ChatProvider><CartProvider>{children}</CartProvider></ChatProvider></LocaleProvider></AuthProvider></body>
+      <body><I18nProvider><AuthProvider><LocaleProvider><ChatProvider><CartProvider>{children}</CartProvider></ChatProvider></LocaleProvider></AuthProvider></I18nProvider></body>
     </html>
   );
 }

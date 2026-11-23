@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { DEPARTMENTS } from '@saotech/shared';
+import { useT } from './I18n';
 import { collectionHref, formatUsd, productImageUrl } from '../lib';
 
 interface Suggestion { id: number; name: string; priceUsd: number; category: string; image: string | null }
@@ -9,6 +10,7 @@ interface Suggestion { id: number; name: string; priceUsd: number; category: str
 /** Recherche reliée au catalogue : suggestions de produits et de rayons pendant la frappe. */
 export function SearchBar({ initial = '' }: { initial?: string }) {
   const router = useRouter();
+  const t = useT();
   const [value, setValue] = useState(initial);
   const [items, setItems] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
@@ -53,7 +55,7 @@ export function SearchBar({ initial = '' }: { initial?: string }) {
         autoComplete="off"
         role="combobox"
         aria-expanded={open && (items.length > 0 || rayons.length > 0)}
-        placeholder="Rechercher un produit, une marque…"
+        placeholder={t('Rechercher un produit, une marque…')}
         value={value}
         onChange={(e) => { setValue(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}

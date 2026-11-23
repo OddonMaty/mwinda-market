@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { api, errorMessage, useAuth } from './AuthProvider';
+import { useT } from './I18n';
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
@@ -32,21 +33,44 @@ export function VerifyEmail({ token }: { token?: string }) {
 }
 
 export function ForgotPassword() {
-  const { notify } = useAuth();
-  const [sent, setSent] = useState(false);
+  const { notify, openLogin } = useAuth();
+  const t = useT();
+  const [step, setStep] = useState<'ask' | 'mail' | 'code' | 'done'>('ask');
+  const [phone, setPhone] = useState('');
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const r = await api('/auth/forgot-password', { method: 'POST', body: { email: new FormData(e.currentTarget).get('email') } });
+    const id = String(new FormData(e.currentTarget).get('identifier') ?? '').trim();
+    const r = await api('/auth/forgot-password', { method: 'POST', body: { identifier: id } });
     if (!r.ok) return notify(errorMessage(r.data.code));
-    setSent(true);
+    if (id.includes('@')) return setStep('mail');
+    setPhone(id.replace(/[\s.-]/g, ''));
+    setStep('code');
   }
-  if (sent) return <Card><p style={muted}>Si un compte existe pour cette adresse, un e-mail contenant un lien de réinitialisation vient d&apos;être envoyé (valable 1 heure).</p></Card>;
+  async function reset(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const r = await api('/auth/reset-password-phone', { method: 'POST', body: { phone, code: String(f.get('code') ?? '').trim(), password: f.get('password') } });
+    if (!r.ok) return notify(errorMessage(r.data.code));
+    setStep('done');
+  }
+  if (step === 'mail') return <Card><p style={muted}>Si un compte existe pour cette adresse, un e-mail contenant un lien de réinitialisation vient d&apos;être envoyé (valable 1 heure).</p></Card>;
+  if (step === 'done') return <Card><p style={muted}>{t('Mot de passe modifié. Tous vos appareils ont été déconnectés.')}</p><button type="button" className="btn btn-primary full-width" onClick={() => openLogin('signin')}>{t('Se connecter')}</button></Card>;
+  if (step === 'code') return (
+    <Card>
+      <p style={muted}>Si un compte correspond à ce numéro, un code à 6 chiffres vient d&apos;être envoyé par WhatsApp ou SMS (valable 10 minutes).</p>
+      <form onSubmit={reset}>
+        <div className="form-group"><label>{t('Code reçu *')}</label><input type="text" name="code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} placeholder="123456" required /></div>
+        <div className="form-group"><label>{t('Nouveau mot de passe *')}</label><input type="password" name="password" placeholder="8 caractères minimum" required minLength={8} /></div>
+        <button type="submit" className="btn btn-primary full-width">{t('Enregistrer')}</button>
+      </form>
+    </Card>
+  );
   return (
     <Card>
-      <p style={muted}>Saisissez l&apos;adresse e-mail de votre compte : nous vous enverrons un lien pour choisir un nouveau mot de passe.</p>
+      <p style={muted}>{t("Saisissez l'e-mail ou le numéro de téléphone de votre compte : nous vous enverrons un lien (e-mail) ou un code (WhatsApp / SMS).")}</p>
       <form onSubmit={submit}>
-        <div className="form-group"><label>Adresse e-mail *</label><input type="email" name="email" placeholder="votre@email.com" required /></div>
-        <button type="submit" className="btn btn-primary full-width">Envoyer le lien</button>
+        <div className="form-group"><label>{t('E-mail ou téléphone *')}</label><input type="text" name="identifier" placeholder={t('votre@email.com ou +243…')} required /></div>
+        <button type="submit" className="btn btn-primary full-width">{t('Continuer')}</button>
       </form>
     </Card>
   );

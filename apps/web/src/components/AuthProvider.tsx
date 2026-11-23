@@ -4,11 +4,14 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GeoFields } from './Geo';
+import { trNow, useT } from './I18n';
 
 export interface SessionUser {
   id: string;
-  email: string;
+  email: string | null;
   emailVerified: boolean;
+  phoneVerified: boolean;
+  verified: boolean;
   firstName: string;
   lastName: string;
   phone: string | null;
@@ -49,7 +52,13 @@ export async function api<T = unknown>(path: string, init?: { method?: string; b
 }
 
 const ERRORS: Record<string, string> = {
-  invalid_credentials: 'E-mail ou mot de passe incorrect.',
+  invalid_credentials: 'Identifiant ou mot de passe incorrect.',
+  account_exists: 'Un compte existe déjà avec ce numéro. Connectez-vous.',
+  phone_taken: 'Ce numéro est déjà utilisé par un autre compte.',
+  invalid_code: 'Code incorrect ou expiré.',
+  channel_unavailable: 'Ce canal d’envoi n’est pas encore disponible.',
+  send_failed: 'Envoi impossible pour le moment. Réessayez.',
+  already_verified: 'Déjà vérifié.',
   too_many_requests: 'Trop de tentatives. Réessayez dans quelques minutes.',
   validation_error: 'Vérifiez les informations saisies (téléphone au format international, par exemple +243…).',
   account_suspended: 'Ce compte est suspendu.',
@@ -64,6 +73,7 @@ export const errorMessage = (code?: string): string =>
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const t = useT();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
@@ -87,9 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const notify = useCallback((text: string) => {
     const id = nextId.current++;
-    setToasts((t) => [...t, { id, text, out: false }]);
-    setTimeout(() => setToasts((t) => t.map((x) => (x.id === id ? { ...x, out: true } : x))), 3000);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3300);
+    setToasts((l) => [...l, { id, text: trNow(text), out: false }]);
+    setTimeout(() => setToasts((l) => l.map((x) => (x.id === id ? { ...x, out: true } : x))), 3000);
+    setTimeout(() => setToasts((l) => l.filter((x) => x.id !== id)), 3300);
   }, []);
 
   useEffect(() => {
@@ -114,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function onSignin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const r = await api('/auth/login', { method: 'POST', body: { email: f.get('email'), password: f.get('password'), client: 'web' } });
+    const r = await api('/auth/login', { method: 'POST', body: { identifier: String(f.get('identifier') ?? '').trim(), password: f.get('password'), client: 'web' } });
     if (!r.ok) return notify(errorMessage(r.data.code));
     await refresh();
     setOpen(false);
@@ -129,14 +139,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const r = await api('/auth/register', {
       method: 'POST',
       body: {
-        email: f.get('email'), password: f.get('password'), firstName: f.get('firstName'), lastName: f.get('lastName'),
+        email: String(f.get('email') ?? '').trim() || undefined, password: f.get('password'), firstName: f.get('firstName'), lastName: f.get('lastName'),
         phone: String(f.get('phone') ?? '').replace(/[\s.-]/g, ''), countryCode: f.get('country'), citySlug: f.get('city') || undefined, locale: 'fr',
       },
     });
     if (!r.ok) return notify(errorMessage(r.data.code));
     form.reset();
     setTab('signin');
-    notify('Compte créé ! Vérifiez votre e-mail pour l’activer, puis connectez-vous.');
+    notify(f.get('email') ? 'Compte créé ! Connectez-vous. Vous pourrez vérifier votre compte plus tard (facultatif).' : 'Compte créé ! Connectez-vous avec votre numéro.');
   }
 
   return (
@@ -148,26 +158,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         <div className="modal-content">
           <button type="button" className="modal-close" onClick={() => setOpen(false)}><i className="fas fa-times" /></button>
           <div className="modal-tabs">
-            <button type="button" className={`modal-tab${tab === 'signin' ? ' active' : ''}`} onClick={() => setTab('signin')}>Connexion</button>
-            <button type="button" className={`modal-tab${tab === 'register' ? ' active' : ''}`} onClick={() => setTab('register')}>Inscription</button>
+            <button type="button" className={`modal-tab${tab === 'signin' ? ' active' : ''}`} onClick={() => setTab('signin')}>{t('Connexion')}</button>
+            <button type="button" className={`modal-tab${tab === 'register' ? ' active' : ''}`} onClick={() => setTab('register')}>{t('Inscription')}</button>
           </div>
           <form id="signinForm" className={`form-content${tab === 'signin' ? ' active' : ''}`} onSubmit={onSignin}>
-            <div className="form-group"><label>Adresse e-mail *</label><input type="email" name="email" placeholder="votre@email.com" required /></div>
-            <div className="form-group"><label>Mot de passe *</label><input type="password" name="password" placeholder="••••••••" required /></div>
-            <button type="submit" className="btn btn-primary full-width">Se connecter</button>
+            <div className="form-group"><label>{t('E-mail ou numéro de téléphone *')}</label><input type="text" name="identifier" placeholder={t('votre@email.com ou +243…')} autoComplete="username" required /></div>
+            <div className="form-group"><label>{t('Mot de passe *')}</label><input type="password" name="password" placeholder="••••••••" required /></div>
+            <button type="submit" className="btn btn-primary full-width">{t('Se connecter')}</button>
             {googleOn && <GoogleButton next={redirect.current} />}
             <div className="form-footer" style={{ marginTop: '1rem', marginBottom: 0 }}>
-              <Link href="/mot-de-passe-oublie" className="link-btn" onClick={() => setOpen(false)}>Mot de passe oublié ?</Link>
+              <Link href="/mot-de-passe-oublie" className="link-btn" onClick={() => setOpen(false)}>{t('Mot de passe oublié ?')}</Link>
             </div>
           </form>
           <form id="registerForm" className={`form-content${tab === 'register' ? ' active' : ''}`} onSubmit={onRegister}>
-            <div className="form-row"><input type="text" name="firstName" placeholder="Prénom *" required /><input type="text" name="lastName" placeholder="Nom *" required /></div>
-            <div className="form-group"><label>Adresse e-mail *</label><input type="email" name="email" placeholder="votre@email.com" required /></div>
-            <div className="form-group"><input type="tel" name="phone" placeholder="Téléphone avec indicatif (+243...)" required /></div>
+            <div className="form-row"><input type="text" name="firstName" placeholder={t('Prénom *')} required /><input type="text" name="lastName" placeholder={t('Nom *')} required /></div>
+            <div className="form-group"><input type="tel" name="phone" placeholder={t('Téléphone avec indicatif (+243...) *')} required /></div>
+            <div className="form-group"><input type="email" name="email" placeholder={t('E-mail (facultatif)')} /></div>
             <GeoFields label={false} />
-            <div className="form-group"><label>Mot de passe *</label><input type="password" name="password" placeholder="••••••••" required minLength={8} /></div>
-            <label className="checkbox-label"><input type="checkbox" name="newsletter" /><span>S&apos;abonner à notre newsletter</span></label>
-            <button type="submit" className="btn btn-primary full-width">S&apos;inscrire</button>
+            <div className="form-group"><label>{t('Mot de passe *')}</label><input type="password" name="password" placeholder="••••••••" required minLength={8} /></div>
+            <label className="checkbox-label"><input type="checkbox" name="newsletter" /><span>{t("S'abonner à notre newsletter")}</span></label>
+            <button type="submit" className="btn btn-primary full-width">{t("S'inscrire")}</button>
             {googleOn && <GoogleButton next={redirect.current} />}
           </form>
         </div>
@@ -185,7 +195,7 @@ function GoogleButton({ next }: { next: string | null }) {
   return (
     <a href={`/api/v1/auth/google/start${next ? `?next=${encodeURIComponent(next)}` : ''}`} className="btn btn-outline full-width google-btn" style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, textDecoration: 'none' }}>
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" /><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z" /><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.100 0 24s.9 7.600 2.600 10.800l7.900-6.100z" /><path fill="#34A853" d="M24 48c6.500 0 11.900-2.100 15.900-5.800l-7.600-5.900c-2.100 1.400-4.900 2.300-8.300 2.300-6.300 0-11.600-4.100-13.500-9.800l-7.900 6.100C6.500 42.600 14.600 48 24 48z" /></svg>
-      Continuer avec Google
+      {useT()('Continuer avec Google')}
     </a>
   );
 }

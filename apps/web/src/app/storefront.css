@@ -330,3 +330,8 @@
   .container { padding-left: 1.5rem; padding-right: 1.5rem; }
 }
 .hero-content a.btn { text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+
+.lang-select { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; }
+.lang-select select { background: transparent; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 0; max-width: 6.5rem; }
+.lang-select select option { color: #222; }
+.lang-select:hover { color: var(--primary); }

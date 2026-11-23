@@ -8,6 +8,7 @@ import { ConversationList, Thread, type Conv } from './Chat';
 import { api, errorMessage, useAuth } from './AuthProvider';
 import { e164, type Address } from './CheckoutArea';
 import { useCountries } from './Geo';
+import { VerifyPanel } from './VerifyPanel';
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DashboardShell, Empty, PageLoader, Field, Input, PageHeading, StatCard, Table, Td, Textarea, Th, type NavGroup } from './ui';
 
 interface SessionRow { id: string; kind: string; createdAt: string; lastUsedAt: string; userAgent: string | null; ip: string | null; current: boolean }
@@ -109,7 +110,8 @@ export function AccountArea() {
   }
 
   const count = (st: string) => orders?.filter((o) => o.status === st).length ?? 0;
-  const fullName = `${user.firstName} ${user.lastName}`.trim() || user.email;
+  const fullName = `${user.firstName} ${user.lastName}`.trim() || user.email || user.phone || 'Mon compte';
+  const contact = user.email ?? user.phone ?? '';
   const groups: NavGroup[] = [
     { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard }] },
     { title: 'Achats', items: [{ key: 'orders', label: 'Mes commandes', icon: ShoppingBag, badge: orders?.length || undefined }, { key: 'messages', label: 'Mes messages', icon: MessageCircle }, { key: 'addresses', label: 'Mes adresses', icon: MapPin }] },
@@ -144,7 +146,7 @@ export function AccountArea() {
   );
 
   return (
-    <DashboardShell space="Mon compte" subtitle={user.email} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: fullName, email: user.email }}
+    <DashboardShell space="Mon compte" subtitle={contact} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: fullName, email: contact }}
       topRight={<>
         {user.roles.length > 0 && <Button asChild variant="outline" size="sm"><a href="/admin"><ShieldCheck /><span className="hidden sm:inline">Administration</span></a></Button>}
         <Button asChild variant="outline" size="sm"><Link href="/vendeur"><Store /><span className="hidden sm:inline">Espace vendeur</span></Link></Button>
@@ -154,10 +156,11 @@ export function AccountArea() {
         <div className="grid gap-6">
           <Card><CardContent className="flex flex-wrap items-center gap-4 pt-5">
             <div className="flex size-16 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">{fullName.charAt(0).toUpperCase()}</div>
-            <div className="min-w-0 flex-1"><p className="text-lg font-semibold">{fullName}</p><p className="truncate text-sm text-muted-foreground">{user.email}{user.phone ? ` · ${user.phone}` : ''}</p>
-              {!user.emailVerified && <Badge variant="warning" className="mt-1">E-mail non vérifié</Badge>}</div>
+            <div className="min-w-0 flex-1"><p className="text-lg font-semibold">{fullName}</p><p className="truncate text-sm text-muted-foreground">{[user.email, user.phone].filter(Boolean).join(' · ')}</p>
+              {user.verified ? <Badge variant="success" className="mt-1">Compte vérifié</Badge> : <Badge variant="secondary" className="mt-1">Non vérifié (facultatif)</Badge>}</div>
             <Button variant="dark" onClick={() => setTab('profile')}>Modifier mon profil</Button>
           </CardContent></Card>
+          {!user.verified && <VerifyPanel />}
           <div>
             <PageHeading title="Mes commandes" actions={<Button variant="link" onClick={() => { setFilter('all'); setTab('orders'); }}>Tout voir</Button>} />
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -232,7 +235,7 @@ export function AccountArea() {
               <Field label="Prénom *"><Input name="firstName" defaultValue={user.firstName} required /></Field>
               <Field label="Nom *"><Input name="lastName" defaultValue={user.lastName} required /></Field>
             </div>
-            <Field label="E-mail"><Input value={user.email} disabled readOnly /></Field>
+            <Field label="E-mail"><Input value={user.email ?? 'Aucun e-mail'} disabled readOnly /></Field>
             <Field label="Téléphone *"><Input type="tel" name="phone" defaultValue={user.phone ?? ''} placeholder="+243…" required /></Field>
             <div><Button type="submit">Enregistrer</Button></div>
           </form>
@@ -241,6 +244,7 @@ export function AccountArea() {
 
       {tab === 'security' && (
         <div className="grid max-w-3xl gap-6">
+          <VerifyPanel />
           <Card><CardHeader><CardTitle>Mot de passe</CardTitle><CardDescription>Après modification, vos autres appareils sont déconnectés.</CardDescription></CardHeader><CardContent>
             <form className="grid gap-4" onSubmit={changePassword}>
               <Field label="Mot de passe actuel *"><Input type="password" name="oldPassword" required /></Field>

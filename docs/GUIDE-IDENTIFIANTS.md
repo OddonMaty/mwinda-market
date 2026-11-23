@@ -100,7 +100,7 @@ WhatsApp ne permet pas d'envoyer des messages automatiques depuis un numéro per
    - Sur cet utilisateur : **Ajouter des éléments** → **Applications** → choisissez « Mwinda Market » → activez **Contrôle total**.
    - **Générer un jeton** → application « Mwinda Market » → expiration **Jamais** → cochez les autorisations **whatsapp_business_messaging** et **whatsapp_business_management** → **Générer** → copiez le jeton.
 7. **Vérifier l'entreprise** (nécessaire pour envoyer à de nombreux clients) : **Paramètres de l'entreprise** → **Centre de sécurité** → **Démarrer la vérification**. Meta demande un document officiel (registre de commerce, numéro d'impôt...). Cela peut prendre plusieurs jours.
-8. **Créer les modèles de messages** (obligatoire : un message envoyé par l'entreprise en premier doit utiliser un modèle approuvé). **WhatsApp Manager** → **Modèles de messages** → **Créer un modèle**. Langue : Français (créez aussi la version Anglais si possible). Créez ces 3 modèles, noms exacts :
+8. **Créer les modèles de messages** (obligatoire : un message envoyé par l'entreprise en premier doit utiliser un modèle approuvé). **WhatsApp Manager** → **Modèles de messages** → **Créer un modèle**. Langues : créez **chaque modèle en Français ET en Anglais** (même nom, deux langues) — la plateforme envoie la version française aux utilisateurs francophones et l'anglaise à tous les autres (swahili, chinois, espagnol, anglais). Créez ces 3 modèles, noms exacts :
 
    | Nom exact | Catégorie | Texte (utilisez `{{1}}`, `{{2}}`... pour les variables) |
    |-----------|-----------|-----------------------------------------------------------|

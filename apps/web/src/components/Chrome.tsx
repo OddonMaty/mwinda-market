@@ -6,6 +6,7 @@ import { CartButton } from './CartButton';
 import { CountrySelector } from './CountrySelector';
 import { collectionHref } from '../lib';
 import { MobileNav } from './MobileNav';
+import { LanguageSelector, NewsletterField, T } from './I18n';
 
 type Active = 'home' | 'collection' | 'about' | 'contact' | 'faq' | '';
 
@@ -23,9 +24,9 @@ export function Header({ active }: { active: Active }) {
             <span className="hidden-mobile"><i className="fas fa-envelope" /> contact@mwindamarket.com</span>
           </div>
           <div className="top-bar-right">
-            <span className="hidden-mobile">La place de marché africaine · Lancement en RDC, bientôt partout en Afrique</span>
+            <span className="hidden-mobile"><T>La place de marché africaine · Lancement en RDC, bientôt partout en Afrique</T></span>
             <CountrySelector />
-            <span>Français</span>
+            <LanguageSelector />
           </div>
         </div>
       </div>
@@ -39,9 +40,9 @@ export function Header({ active }: { active: Active }) {
           <div className="m-country"><CountrySelector /></div>
           <SearchBar />
           <div className="header-actions">
-            <NavButton to="/vendeur" className="header-btn"><i className="fas fa-store" /><span className="hidden-mobile">Vendeur</span></NavButton>
+            <NavButton to="/vendeur" className="header-btn"><i className="fas fa-store" /><span className="hidden-mobile"><T>Vendeur</T></span></NavButton>
             <AccountButton />
-            <button type="button" className="header-btn"><i className="fas fa-heart" /><span className="hidden-mobile">Favoris</span></button>
+            <button type="button" className="header-btn"><i className="fas fa-heart" /><span className="hidden-mobile"><T>Favoris</T></span></button>
             <CartButton />
           </div>
         </div>
@@ -72,10 +73,10 @@ export function Footer() {
       <div className="footer-newsletter">
         <div className="container">
           <div className="newsletter-footer">
-            <div><p>Restez informé — <span>Abonnez-vous à la newsletter</span></p></div>
+            <div><p><T>Restez informé — </T><span><T>Abonnez-vous à la newsletter</T></span></p></div>
             <div className="newsletter-input">
-              <input type="email" placeholder="Votre adresse e-mail" />
-              <button type="button" className="btn btn-primary">S&apos;abonner</button>
+              <NewsletterField />
+              <button type="button" className="btn btn-primary"><T>S'abonner</T></button>
             </div>
           </div>
         </div>
@@ -85,16 +86,16 @@ export function Footer() {
           <div className="footer-columns">
             {FOOTER_COLS.map(([title, items]) => (
               <div className="footer-column" key={title}>
-                <h4>{title}</h4>
-                <ul>{items.map(([label, to]) => <li key={label}><NavButton to={to}>{label}</NavButton></li>)}</ul>
+                <h4><T>{title}</T></h4>
+                <ul>{items.map(([label, to]) => <li key={label}><NavButton to={to}><T>{label}</T></NavButton></li>)}</ul>
               </div>
             ))}
             <div className="footer-column">
-              <h4>Contactez-nous</h4>
+              <h4><T>Contactez-nous</T></h4>
               <ul className="contact-list">
                 <li><i className="fas fa-phone" /> +243 972 584 021</li>
                 <li><i className="fas fa-envelope" /> contact@mwindamarket.com</li>
-                <li><i className="fas fa-clock" /> Lun–Sam : 8h – 19h</li>
+                <li><i className="fas fa-clock" /> <T>Lun–Sam : 8h – 19h</T></li>
               </ul>
               <div className="social-links">
                 <button type="button"><i className="fab fa-facebook" /></button>
@@ -107,8 +108,8 @@ export function Footer() {
       </div>
       <div className="footer-bottom">
         <div className="container">
-          <p>&copy; 2026 Mwinda Market. Tous droits réservés.</p>
-          <p>La place de marché africaine</p>
+          <p>&copy; 2026 Mwinda Market. <T>Tous droits réservés.</T></p>
+          <p><T>La place de marché africaine</T></p>
         </div>
       </div>
     </footer>

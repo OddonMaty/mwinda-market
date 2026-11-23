@@ -23,3 +23,19 @@ describe('i18n Dictionary', () => {
   });
 });
 
+
+import { DICT } from './i18n/dict.js';
+import { tr } from './i18n/translate.js';
+
+describe('Traductions de la boutique', () => {
+  it('les quatre langues couvrent exactement les mêmes phrases', () => {
+    const keys = Object.keys(DICT.en).sort();
+    for (const l of ['sw', 'zh', 'es'] as const) assert.deepEqual(Object.keys(DICT[l]).sort(), keys, l);
+  });
+  it('aucune traduction vide ; une phrase inconnue reste en français', () => {
+    for (const l of ['en', 'sw', 'zh', 'es'] as const) for (const [k, v] of Object.entries(DICT[l])) assert.ok(v.trim(), `${l}: ${k}`);
+    assert.equal(tr('zh', 'Accueil'), '首页');
+    assert.equal(tr('es', 'Phrase jamais traduite'), 'Phrase jamais traduite');
+    assert.equal(tr('fr', 'Accueil'), 'Accueil');
+  });
+});

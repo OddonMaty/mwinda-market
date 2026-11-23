@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, Globe2, Smartphone, Store, Users } from 'lucide-react';
 import { api, errorMessage, useAuth } from './AuthProvider';
+import { useT } from './I18n';
 import { e164 } from './CheckoutArea';
 import { useCountries } from './Geo';
 import { PlanCards, type Plan } from './PlanCards';
@@ -16,6 +17,7 @@ const STEPS = ['Votre boutique', 'Votre plan', 'Votre compte'];
 /** Ouverture de boutique en 3 étapes : boutique (pays et ville) → plan → compte. Un vendeur déjà connecté saute l'étape compte. */
 export function SellerArea() {
   const router = useRouter();
+  const t = useT();
   const { user, ready, notify, refresh } = useAuth();
   const countries = useCountries();
   const [mode, setMode] = useState<'open' | 'login'>('open');
@@ -41,7 +43,7 @@ export function SellerArea() {
   const set = (k: keyof typeof shop) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setShop((s) => ({ ...s, [k]: e.target.value, ...(k === 'country' ? { city: '' } : {}) }));
 
   async function createShopAndPlan(): Promise<boolean> {
-    const r = await api('/seller/shop', { method: 'POST', body: { name: shop.name.trim(), phone: e164(shop.phone), description: shop.description.trim() || undefined, countryCode: shop.country, citySlug: shop.city || undefined } });
+    const r = await api('/seller/shop', { method: 'POST', body: { name: shop.name.trim(), phone: e164(shop.phone), whatsapp: e164(shop.phone), description: shop.description.trim() || undefined, countryCode: shop.country, citySlug: shop.city || undefined } });
     if (!r.ok) { notify(r.data.code === 'shop_exists' ? 'Vous avez déjà une boutique.' : r.data.message ?? errorMessage(r.data.code)); return false; }
     if (plan !== 'free') {
       const p = await api('/seller/plan', { method: 'POST', body: { plan } });
@@ -65,12 +67,12 @@ export function SellerArea() {
         return;
       }
       const f = new FormData(e.currentTarget);
-      const email = String(f.get('email')); const password = String(f.get('password'));
+      const email = String(f.get('email') ?? '').trim(); const password = String(f.get('password'));
       const [first, ...rest] = shop.owner.trim().split(/\s+/);
-      const reg = await api('/auth/register', { method: 'POST', body: { email, password, firstName: first, lastName: rest.join(' ') || first, phone: e164(shop.phone), countryCode: shop.country, citySlug: shop.city || undefined, locale: 'fr' } });
+      const reg = await api('/auth/register', { method: 'POST', body: { email: email || undefined, password, firstName: first, lastName: rest.join(' ') || first, phone: e164(shop.phone), countryCode: shop.country, citySlug: shop.city || undefined, locale: 'fr' } });
       if (!reg.ok) return notify(errorMessage(reg.data.code));
-      const log = await api('/auth/login', { method: 'POST', body: { email, password, client: 'web' } });
-      if (!log.ok) return notify('Un compte existe déjà avec cet e-mail : connectez-vous avec votre mot de passe.');
+      const log = await api('/auth/login', { method: 'POST', body: { identifier: email || e164(shop.phone), password, client: 'web' } });
+      if (!log.ok) return notify('Un compte existe déjà avec cet identifiant : connectez-vous avec votre mot de passe.');
       if (!(await createShopAndPlan())) { await refresh(); return; }
       await refresh();
       router.push('/vendeur/tableau');
@@ -80,7 +82,7 @@ export function SellerArea() {
   async function onLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const r = await api('/auth/login', { method: 'POST', body: { email: f.get('email'), password: f.get('password'), client: 'web' } });
+    const r = await api('/auth/login', { method: 'POST', body: { identifier: String(f.get('identifier') ?? '').trim(), password: f.get('password'), client: 'web' } });
     if (!r.ok) return notify(errorMessage(r.data.code));
     await refresh();
     notify('Connexion réussie !');
@@ -95,7 +97,7 @@ export function SellerArea() {
     <>
     <Header active="" />
     <div className="page-header" data-theme="vendeur">
-      <h1>Devenez vendeur sur Mwinda Market</h1>
+      <h1>{t('Devenez vendeur sur Mwinda Market')}</h1>
       <p>Ouvrez votre boutique en ligne et vendez vos produits à des milliers de clients, dans votre pays et partout en Afrique.</p>
     </div>
     <div className="container" style={{ paddingTop: '3rem', paddingBottom: '4rem' }}>
@@ -114,12 +116,12 @@ export function SellerArea() {
       <Card className="self-start">
         {mode === 'login' && !user ? (
           <>
-            <CardHeader><CardTitle>Se connecter à ma boutique</CardTitle><CardDescription>Accédez à votre espace vendeur.</CardDescription></CardHeader>
+            <CardHeader><CardTitle>{t('Se connecter à ma boutique')}</CardTitle><CardDescription>Accédez à votre espace vendeur.</CardDescription></CardHeader>
             <CardContent>
               <form id="sellerLoginForm" className="grid gap-4" onSubmit={onLogin}>
-                <Field label="Adresse e-mail *"><Input type="email" name="email" placeholder="vendeur@email.com" required /></Field>
-                <Field label="Mot de passe *"><Input type="password" name="password" required /></Field>
-                <Button type="submit" size="lg">Se connecter</Button>
+                <Field label={t('Numéro WhatsApp ou e-mail *')}><Input type="text" name="identifier" placeholder="+243… ou vendeur@email.com" required /></Field>
+                <Field label={t('Mot de passe *')}><Input type="password" name="password" required /></Field>
+                <Button type="submit" size="lg">{t('Se connecter')}</Button>
                 <button type="button" className="text-sm text-primary hover:underline" onClick={() => setMode('open')}>Pas encore de boutique ? Ouvrir ma boutique</button>
               </form>
             </CardContent>
@@ -127,12 +129,12 @@ export function SellerArea() {
         ) : (
           <>
             <CardHeader>
-              <CardTitle className="text-xl">Ouvrir ma boutique</CardTitle>
+              <CardTitle className="text-xl">{t('Ouvrir ma boutique')}</CardTitle>
               <ol className="mt-3 flex items-center gap-2 text-xs">
                 {stepsShown.map((s, i) => (
                   <li key={s} className="flex items-center gap-2">
                     <span className={cn('flex size-6 items-center justify-center rounded-full border font-semibold', i < step ? 'border-primary bg-primary text-primary-foreground' : i === step ? 'border-primary text-primary' : 'text-muted-foreground')}>{i < step ? <Check className="size-3.5" /> : i + 1}</span>
-                    <span className={cn('hidden sm:inline', i === step ? 'font-medium' : 'text-muted-foreground')}>{s}</span>
+                    <span className={cn('hidden sm:inline', i === step ? 'font-medium' : 'text-muted-foreground')}>{t(s)}</span>
                     {i < stepsShown.length - 1 && <span className="mx-1 h-px w-6 bg-border" />}
                   </li>
                 ))}
@@ -141,15 +143,15 @@ export function SellerArea() {
             <CardContent>
               <form id="sellerRegisterForm" className="grid gap-4" onSubmit={step < last ? next : submit}>
                 <div className={cn('grid gap-4', step !== 0 && 'hidden')}>
-                  <Field label="Nom de la boutique *"><Input name="shopName" value={shop.name} onChange={set('name')} placeholder="Ex. TechPlus" required /></Field>
-                  {!user && <Field label="Votre nom complet *"><Input name="ownerName" value={shop.owner} onChange={set('owner')} required /></Field>}
-                  <Field label="Téléphone *" hint="Avec l’indicatif du pays"><Input type="tel" name="phone" value={shop.phone} onChange={set('phone')} placeholder={`${country?.phonePrefix ?? '+243'} …`} required /></Field>
+                  <Field label={t('Nom de la boutique *')}><Input name="shopName" value={shop.name} onChange={set('name')} placeholder="Ex. TechPlus" required /></Field>
+                  {!user && <Field label={t('Votre nom complet *')}><Input name="ownerName" value={shop.owner} onChange={set('owner')} required /></Field>}
+                  <Field label={t('Numéro WhatsApp *')} hint={t('Avec l’indicatif du pays — vous y recevrez les nouvelles commandes, même sans e-mail')}><Input type="tel" name="phone" value={shop.phone} onChange={set('phone')} placeholder={`${country?.phonePrefix ?? '+243'} …`} required /></Field>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Pays *"><Select name="country" value={shop.country} onChange={set('country')} required>
+                    <Field label={t('Pays *')}><Select name="country" value={shop.country} onChange={set('country')} required>
                       {countries.length === 0 && <option value={shop.country}>Chargement…</option>}
                       {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
                     </Select></Field>
-                    <Field label="Ville"><Select name="city" value={shop.city} onChange={set('city')} key={shop.country}>
+                    <Field label={t('Ville')}><Select name="city" value={shop.city} onChange={set('city')} key={shop.country}>
                       <option value="">{country?.cities.length ? 'Autre ville' : 'Ville non listée'}</option>
                       {country?.cities.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
                     </Select></Field>
@@ -165,15 +167,15 @@ export function SellerArea() {
 
                 {!user && (
                   <div className={cn('grid gap-4', step !== 2 && 'hidden')}>
-                    <Field label="Adresse e-mail *"><Input type="email" name="email" placeholder="vendeur@email.com" required={step === 2} /></Field>
-                    <Field label="Mot de passe *" hint="8 caractères minimum — enregistré de façon chiffrée"><Input type="password" name="password" minLength={8} required={step === 2} /></Field>
+                    <Field label={t('Adresse e-mail')} hint={t('Facultatif — sans e-mail, vous vous connectez avec votre numéro WhatsApp et recevez vos alertes dessus')}><Input type="email" name="email" placeholder="vendeur@email.com" /></Field>
+                    <Field label={t('Mot de passe *')} hint={t('8 caractères minimum')}><Input type="password" name="password" minLength={8} required={step === 2} /></Field>
                     <div className="rounded-xl bg-muted/60 p-3 text-sm"><b>Récapitulatif :</b> {shop.name || 'Votre boutique'} · {country?.name}{shop.city ? ` · ${country?.cities.find((c) => c.slug === shop.city)?.name}` : ''} · plan {chosen?.name}</div>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between gap-2 pt-1">
-                  {step > 0 ? <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>Retour</Button> : !user ? <button type="button" className="text-sm text-primary hover:underline" onClick={() => setMode('login')}>J’ai déjà une boutique</button> : <span />}
-                  <Button type="submit" size="lg" disabled={busy}>{step < last ? 'Continuer' : busy ? 'Création…' : 'Créer ma boutique'}</Button>
+                  {step > 0 ? <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>{t('Retour')}</Button> : !user ? <button type="button" className="text-sm text-primary hover:underline" onClick={() => setMode('login')}>{t('J’ai déjà une boutique')}</button> : <span />}
+                  <Button type="submit" size="lg" disabled={busy}>{t(step < last ? 'Continuer' : 'Créer ma boutique')}</Button>
                 </div>
                 {!user && step === 0 && <p className="text-center text-xs text-muted-foreground">En continuant, vous acceptez les <Link href="/conditions-vendeur" className="text-primary hover:underline">conditions vendeur</Link>.</p>}
               </form>

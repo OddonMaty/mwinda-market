@@ -7,7 +7,7 @@ const API = process.env.API ?? 'http://localhost:4000';
 
 (async () => {
   const browser = await chromium.launch();
-  const page = await browser.newPage();
+  const page = await (await browser.newContext({ locale: 'fr-FR' })).newPage();
   const email = `e2e${Date.now()}@example.com`;
   const pwd = 'Un-bon-mot-de-passe-42';
 
@@ -30,7 +30,7 @@ const API = process.env.API ?? 'http://localhost:4000';
   await page.waitForSelector('text=Votre adresse e-mail est confirmée');
 
   await page.click('.seller-auth-card .btn-primary');
-  await page.fill('#signinForm [name=email]', email);
+  await page.fill('#signinForm [name=identifier]', email);
   await page.fill('#signinForm [name=password]', 'mauvais-mot-de-passe');
   await page.click('#signinForm button[type=submit]');
   await page.waitForSelector('text=incorrect');

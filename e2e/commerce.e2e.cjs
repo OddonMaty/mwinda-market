@@ -7,8 +7,8 @@ const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { tim
 
 (async () => {
   const browser = await chromium.launch();
-  const seller = await browser.newContext();
-  const buyer = await browser.newContext();
+  const seller = await browser.newContext({ locale: 'fr-FR' });
+  const buyer = await browser.newContext({ locale: 'fr-FR' });
   const stamp = Date.now();
   const pwd = 'Un-bon-mot-de-passe-42';
 
@@ -65,7 +65,7 @@ const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { tim
   console.log('photo envoyée :', size);
 
   // ---- Le produit du vendeur apparaît dans le catalogue public (mise à jour en quelques secondes)
-  const pub = await browser.newPage();
+  const pub = await (await browser.newContext({ locale: 'fr-FR' })).newPage();
   let found = false;
   for (let i = 0; i < 12 && !found; i++) {
     await pub.goto(`${WEB}/collection?q=Casque+e2e`);
@@ -97,7 +97,7 @@ const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { tim
   await bp.fill('#registerForm [name=password]', pwd);
   await bp.click('#registerForm button[type=submit]');
   await bp.waitForSelector('text=Compte créé');
-  await bp.fill('#signinForm [name=email]', email);
+  await bp.fill('#signinForm [name=identifier]', email);
   await bp.fill('#signinForm [name=password]', pwd);
   await bp.click('#signinForm button[type=submit]');
   await bp.waitForURL('**/commande');
@@ -222,7 +222,7 @@ const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { tim
   const ap0 = await buyer.newPage();
   await ap0.goto(`${WEB}/admin`);
   await ap0.waitForSelector('text=Accès réservé');
-  const adminCtx = await browser.newContext();
+  const adminCtx = await browser.newContext({ locale: 'fr-FR' });
   const ap = await adminCtx.newPage();
   const aemail = `admin${stamp}@example.com`;
   await ap.goto(`${WEB}/`);
