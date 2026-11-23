@@ -65,3 +65,4 @@ export function setConfig(config: EnvConfig | null): void {
   currentConfig = config;
 }
 
+// Origines autorisées : WEB_ORIGIN (liste) et WEB_ORIGIN_REGEX, à mettre à jour si le site change d'adresse.
