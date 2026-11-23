@@ -34,3 +34,32 @@ export function shopRejected(locale: Locale, to: string, shopName: string, reaso
     ? { to, subject: `Your shop "${shopName}" was not accepted`, text: `We reviewed your request to open "${shopName}" on Mwinda Market and could not accept it.\nReason: ${reason || 'not specified'}\nYou can write to us at contact@mwindamarket.com to discuss it.${sign.en}` }
     : { to, subject: `Votre boutique « ${shopName} » n’a pas été acceptée`, text: `Nous avons examiné votre demande d’ouverture de « ${shopName} » sur Mwinda Market et n’avons pas pu l’accepter.\nMotif : ${reason || 'non précisé'}\nVous pouvez nous écrire à contact@mwindamarket.com pour en discuter.${sign.fr}` };
 }
+
+export interface MailLine { name: string; quantity: number; unitUsd: number }
+const usd = (n: number) => `$${n.toFixed(2)}`;
+const lineText = (l: MailLine) => `- ${l.name} × ${l.quantity} : ${usd(l.unitUsd * l.quantity)}`;
+
+export function orderPlaced(locale: Locale, to: string, number: string, lines: MailLine[], totalUsd: number, link: string): Mail {
+  const body = lines.map(lineText).join('\n');
+  return locale === 'en'
+    ? { to, subject: `Order ${number} received`, text: `Thank you for your order ${number} on Mwinda Market.\n\n${body}\nTotal: ${usd(totalUsd)}\n\nEach seller will confirm and ship their part. Follow your order: ${link}${sign.en}` }
+    : { to, subject: `Commande ${number} bien reçue`, text: `Merci pour votre commande ${number} sur Mwinda Market.\n\n${body}\nTotal : ${usd(totalUsd)}\n\nChaque vendeur va confirmer puis expédier sa partie de la commande. Suivez votre commande : ${link}${sign.fr}` };
+}
+export function newOrderSeller(locale: Locale, to: string, shopName: string, number: string, lines: MailLine[], link: string): Mail {
+  const body = lines.map(lineText).join('\n');
+  return locale === 'en'
+    ? { to, subject: `New order ${number} for ${shopName}`, text: `You have a new order (${number}) for your shop "${shopName}":\n\n${body}\n\nConfirm it from your seller space: ${link}${sign.en}` }
+    : { to, subject: `Nouvelle commande ${number} pour ${shopName}`, text: `Vous avez reçu une nouvelle commande (${number}) pour votre boutique « ${shopName} » :\n\n${body}\n\nConfirmez-la depuis votre espace vendeur : ${link}${sign.fr}` };
+}
+const STATUS_FR: Record<string, string> = { confirmed: 'a été confirmée par le vendeur', shipped: 'a été expédiée', delivered: 'a été livrée', cancelled: 'a été annulée' };
+const STATUS_EN: Record<string, string> = { confirmed: 'was confirmed by the seller', shipped: 'has been shipped', delivered: 'was delivered', cancelled: 'was cancelled' };
+export function orderStatus(locale: Locale, to: string, number: string, status: string, link: string): Mail {
+  return locale === 'en'
+    ? { to, subject: `Order ${number}: ${STATUS_EN[status] ?? status}`, text: `Your order ${number} ${STATUS_EN[status] ?? `is now "${status}"`}.\nFollow it here: ${link}${sign.en}` }
+    : { to, subject: `Commande ${number} : ${STATUS_FR[status] ?? status}`, text: `Votre commande ${number} ${STATUS_FR[status] ?? `est maintenant « ${status} »`}.\nSuivez-la ici : ${link}${sign.fr}` };
+}
+export function planDecision(locale: Locale, to: string, shopName: string, planName: string, approved: boolean, link: string): Mail {
+  return locale === 'en'
+    ? { to, subject: approved ? `Your ${planName} plan is active` : 'Your plan request was declined', text: approved ? `Your ${planName} plan is now active for "${shopName}" (3 months).\nManage your shop: ${link}${sign.en}` : `Your request for the ${planName} plan for "${shopName}" could not be accepted. Contact us at contact@mwindamarket.com for details.${sign.en}` }
+    : { to, subject: approved ? `Votre abonnement ${planName} est actif` : 'Votre demande d’abonnement n’a pas été acceptée', text: approved ? `Votre abonnement ${planName} est maintenant actif pour « ${shopName} » (3 mois).\nGérez votre boutique : ${link}${sign.fr}` : `Votre demande d’abonnement ${planName} pour « ${shopName} » n’a pas pu être acceptée. Contactez-nous à contact@mwindamarket.com pour en savoir plus.${sign.fr}` };
+}

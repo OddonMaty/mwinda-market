@@ -1,4 +1,5 @@
 import type { ImageStore } from './storage.js';
+import type { Notifier } from './notify.js';
 import { AppError } from '../errors.js';
 import { newId } from '../lib/crypto.js';
 import type { Db } from '../db/client.js';
@@ -40,7 +41,7 @@ const slugify = (s: string): string =>
 interface ProductRow { certified?: boolean; shop_name?: string; shop_country?: string | null; shop_country_name?: string | null; shop_city?: string | null; shop_city_slug?: string | null; rating?: string; reviews?: number; sku?: string | null; tags?: string[]; id: string; shop_id: string; name: string; description: string; price_usd: string; original_price_usd: string | null; department: string; category: string; colors: string[]; sizes: string[]; in_stock: boolean; status: string; created_at: Date }
 
 export class CommerceService {
-  constructor(private db: Db, private store?: ImageStore) {}
+  constructor(private db: Db, private store?: ImageStore, private notify?: Notifier) {}
 
   // ---------- Catalogue public ----------
   private publicDto(p: ProductRow, imgs: string[]) {
@@ -94,7 +95,7 @@ export class CommerceService {
       const prev = merged.get(i.id);
       merged.set(i.id, prev ? { ...prev, quantity: prev.quantity + i.quantity } : { ...i });
     }
-    return this.db.transaction(async (t) => {
+    const placed = await this.db.transaction(async (t) => {
       const ids = [...merged.keys()];
       const rows = await t.query<ProductRow & { image: string | null; shop_status: string; shop_plan: string; shop_official: boolean }>(
         `SELECT p.*, s.status AS shop_status, s.is_official AS shop_official, CASE WHEN s.is_official THEN 'official' ELSE ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} END AS shop_plan, (SELECT url FROM product_images WHERE product_id = p.id AND position = 0) AS image
@@ -123,6 +124,8 @@ export class CommerceService {
       await t.query("INSERT INTO order_events(order_id, kind, location, note) VALUES ($1, 'placed', $2, 'Commande passée')", [orderId, ship.shippingCity]);
       return { id: orderId, number, subtotalUsd: Number(subtotal.toFixed(2)) };
     });
+    await this.notify?.orderPlaced(placed.id);
+    return placed;
   }
 
   async listOrders(userId: string) {
@@ -411,7 +414,7 @@ export class CommerceService {
     const o = (await this.db.query<{ id: string }>('SELECT id FROM orders WHERE number = $1', [number]))[0];
     const from = to === 'confirmed' ? ['pending'] : to === 'shipped' ? ['confirmed'] : ['pending', 'confirmed'];
     if (!o) throw new AppError(404, 'not_found', 'Commande introuvable.');
-    return this.db.transaction(async (t) => {
+    const done = await this.db.transaction(async (t) => {
       const r = await t.query('UPDATE order_items SET status = $4 WHERE order_id = $1 AND shop_id = $2 AND status = ANY($3::text[]) RETURNING id', [o.id, s.id, from, to]);
       if (!r[0]) throw new AppError(409, 'invalid_transition', 'Cette action n’est pas possible dans l’état actuel de la commande.');
       const origin = (await t.query<{ city: string | null }>('SELECT c.name AS city FROM shops sh LEFT JOIN cities c ON c.id = sh.city_id WHERE sh.id = $1', [s.id]))[0]?.city ?? null;
@@ -419,6 +422,8 @@ export class CommerceService {
         [o.id, s.id, to, to === 'cancelled' ? null : origin, to === 'confirmed' ? 'Commande confirmée par le vendeur' : to === 'shipped' ? 'Colis expédié par le vendeur' : 'Commande annulée par le vendeur']);
       return { status: await this.syncOrderStatus(t, o.id) };
     });
+    await this.notify?.orderStatus(o.id, to);
+    return done;
   }
 
   async shopStats(userId: string) {

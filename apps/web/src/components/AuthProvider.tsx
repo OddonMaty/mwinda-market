@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<{ id: number; text: string; out: boolean }[]>([]);
   const nextId = useRef(1);
   const redirect = useRef<string | null>(null);
+  const [googleOn, setGoogleOn] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -82,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setReady(true);
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => { void api<{ google: boolean }>('/auth/providers').then((r) => setGoogleOn(r.ok && r.data.google)); }, []);
 
   const notify = useCallback((text: string) => {
     const id = nextId.current++;
@@ -89,6 +91,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToasts((t) => t.map((x) => (x.id === id ? { ...x, out: true } : x))), 3000);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3300);
   }, []);
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const g = p.get('google');
+    if (!g) return;
+    notify(g === 'annule' ? 'Connexion Google annulée.' : g === 'suspendu' ? 'Ce compte est suspendu.' : 'La connexion avec Google a échoué. Réessayez ou utilisez votre e-mail.');
+    p.delete('google');
+    window.history.replaceState(null, '', `${window.location.pathname}${p.size ? `?${p}` : ''}`);
+  }, [notify]);
 
   const openLogin = useCallback((t: 'signin' | 'register' = 'signin', redirectTo?: string) => { redirect.current = redirectTo ?? null; setTab(t); setOpen(true); }, []);
   const accountClick = useCallback(() => { if (user) router.push('/compte'); else openLogin('signin'); }, [user, router, openLogin]);
@@ -144,6 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             <div className="form-group"><label>Adresse e-mail *</label><input type="email" name="email" placeholder="votre@email.com" required /></div>
             <div className="form-group"><label>Mot de passe *</label><input type="password" name="password" placeholder="••••••••" required /></div>
             <button type="submit" className="btn btn-primary full-width">Se connecter</button>
+            {googleOn && <GoogleButton next={redirect.current} />}
             <div className="form-footer" style={{ marginTop: '1rem', marginBottom: 0 }}>
               <Link href="/mot-de-passe-oublie" className="link-btn" onClick={() => setOpen(false)}>Mot de passe oublié ?</Link>
             </div>
@@ -156,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             <div className="form-group"><label>Mot de passe *</label><input type="password" name="password" placeholder="••••••••" required minLength={8} /></div>
             <label className="checkbox-label"><input type="checkbox" name="newsletter" /><span>S&apos;abonner à notre newsletter</span></label>
             <button type="submit" className="btn btn-primary full-width">S&apos;inscrire</button>
+            {googleOn && <GoogleButton next={redirect.current} />}
           </form>
         </div>
       </div>
@@ -164,5 +177,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         <div key={t.id} className="toast-item" style={{ ['--i' as string]: i, position: 'fixed', bottom: 20 + i * 64, right: 20, backgroundColor: '#E68723', color: 'white', padding: '1rem 1.5rem', borderRadius: 2, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)', zIndex: 1000, opacity: t.out ? 0 : 1, transition: 'opacity .3s' }}>{t.text}</div>
       ))}
     </AuthContext.Provider>
+  );
+}
+
+/** « Continuer avec Google » : la connexion se fait côté API puis revient sur la page demandée. */
+function GoogleButton({ next }: { next: string | null }) {
+  return (
+    <a href={`/api/v1/auth/google/start${next ? `?next=${encodeURIComponent(next)}` : ''}`} className="btn btn-outline full-width google-btn" style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, textDecoration: 'none' }}>
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" /><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z" /><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.100 0 24s.9 7.600 2.600 10.800l7.900-6.100z" /><path fill="#34A853" d="M24 48c6.500 0 11.900-2.100 15.900-5.800l-7.600-5.900c-2.100 1.400-4.900 2.300-8.300 2.300-6.300 0-11.600-4.100-13.500-9.800l-7.900 6.100C6.500 42.600 14.600 48 24 48z" /></svg>
+      Continuer avec Google
+    </a>
   );
 }

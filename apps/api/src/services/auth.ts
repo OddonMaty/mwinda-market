@@ -1,4 +1,5 @@
 import type { ImageStore } from './storage.js';
+import type { GoogleOAuth, GoogleProfile } from './google.js';
 import type { Db } from '../db/client.js';
 import type { EnvConfig } from '../config/env.js';
 import { webOrigins } from '../config/env.js';
@@ -17,6 +18,7 @@ export interface AuthDeps {
   config: EnvConfig;
   now?: () => Date;
   store?: ImageStore;
+  google?: GoogleOAuth;
 }
 export interface ReqMeta { ip: string; userAgent?: string }
 
@@ -116,14 +118,39 @@ export class AuthService {
     }
     if (u.status !== 'active') throw new AppError(403, 'account_suspended', 'Ce compte est suspendu.');
     this.d.limiter.reset(failKey);
+    return this.openSession(u, body.client, meta);
+  }
+
+  private async openSession(u: UserRow, client: string, meta: ReqMeta) {
     const admin = (await this.d.db.query('SELECT 1 FROM admin_roles WHERE user_id = $1', [u.id])).length > 0;
     const token = newToken();
     const now = this.now();
     const expiresAt = new Date(now.getTime() + (admin ? ADMIN_SESSION_HOURS * HOUR : SESSION_DAYS * DAY));
     await this.d.db.query('INSERT INTO sessions(id, user_id, token_hash, kind, ip, user_agent, created_at, expires_at, last_used_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$7)',
-      [newId(), u.id, hashToken(token), body.client, meta.ip, meta.userAgent?.slice(0, 300) ?? null, now, expiresAt]);
+      [newId(), u.id, hashToken(token), client, meta.ip, meta.userAgent?.slice(0, 300) ?? null, now, expiresAt]);
     await this.d.db.query('UPDATE users SET last_login_at = $2 WHERE id = $1', [u.id, now]);
     return { token, expiresAt, admin, user: await this.toDto(u) };
+  }
+
+  // ---------- Connexion Google ----------
+  /** Connecte (ou crée) le compte correspondant au profil Google. L'e-mail doit être vérifié par Google. */
+  async googleLogin(g: GoogleProfile, meta: ReqMeta) {
+    this.limit(`google:ip:${meta.ip}`, 30, LOGIN_WINDOW);
+    if (!g.emailVerified) throw new AppError(403, 'google_email_unverified', 'Votre adresse Google n\'est pas vérifiée.');
+    const db = this.d.db;
+    let u = (await db.query<UserRow>('SELECT * FROM users WHERE google_sub = $1', [g.sub]))[0];
+    if (!u) {
+      u = (await db.query<UserRow>('SELECT * FROM users WHERE email = $1', [g.email]))[0];
+      if (u) {
+        await db.query('UPDATE users SET google_sub = $2, email_verified_at = COALESCE(email_verified_at, now()), updated_at = now() WHERE id = $1', [u.id, g.sub]);
+      } else {
+        const id = newId();
+        await db.query("INSERT INTO users(id, email, email_verified_at, google_sub, first_name, last_name, locale) VALUES ($1,$2,now(),$3,$4,$5,'fr')", [id, g.email, g.sub, g.firstName.slice(0, 80), g.lastName.slice(0, 80)]);
+        u = (await db.query<UserRow>('SELECT * FROM users WHERE id = $1', [id]))[0]!;
+      }
+    }
+    if (u.status !== 'active') throw new AppError(403, 'account_suspended', 'Ce compte est suspendu.');
+    return this.openSession(u, 'web', meta);
   }
 
   /** Retrouve la session (cookie ou Bearer). Renvoie null si absente, expirée, révoquée ou compte suspendu. */

@@ -18,6 +18,9 @@ export const EnvSchema = z.object({
   MAIL_FROM: z.string().default('Mwinda Market <no-reply@mwindamarket.com>'),
   /** Jeton Vercel Blob : active le stockage dédié des photos (sinon, stockage en base). */
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
+  /** Identifiants OAuth Google : activent le bouton « Continuer avec Google ». */
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
   DATABASE_URL: z.string().min(1),
   API_SECRET: z.string().min(16, 'API_SECRET must be at least 16 characters long'),
 });

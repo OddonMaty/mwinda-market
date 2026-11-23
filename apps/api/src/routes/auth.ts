@@ -7,6 +7,9 @@ import {
 import { AppError } from '../errors.js';
 import { isAllowedOrigin } from '../config/env.js';
 import { AuthService, publicUrl, type AuthDeps, type UserRow } from '../services/auth.js';
+import { randomBytes } from 'node:crypto';
+import { newPkce } from '../services/google.js';
+import { Notifier } from '../services/notify.js';
 import { CommerceService } from '../services/commerce.js';
 import { commerceRoutes } from './commerce.js';
 import { adminRoutes, publicPlatformRoutes } from './admin.js';
@@ -76,6 +79,37 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
       return { user: s.user, token: s.token, expiresAt: s.expiresAt };
     });
 
+    r.get('/auth/providers', async () => ({ google: !!deps.google }));
+
+    // Connexion Google : /start redirige vers Google, /callback ouvre la session puis renvoie vers le site.
+    const GCOOKIE = 'stm_oauth';
+    r.get('/auth/google/start', async (req, reply) => {
+      if (!deps.google) throw new AppError(404, 'not_found', 'Connexion Google indisponible.');
+      const { next } = parse(z.object({ next: z.string().max(200).optional() }), req.query);
+      const pk = newPkce();
+      const state = randomBytes(16).toString('base64url');
+      const dest = next && /^\/(?!\/)[\w\-/.?=&%]*$/.test(next) ? next : '/compte';
+      reply.setCookie(GCOOKIE, `${state}.${pk.verifier}.${Buffer.from(dest).toString('base64url')}`, { httpOnly: true, secure, sameSite: 'lax', path: '/', maxAge: 600 });
+      return reply.redirect(deps.google.authUrl(state, pk.challenge), 302);
+    });
+    r.get('/auth/google/callback', async (req, reply) => {
+      const fail = (why: string) => { reply.clearCookie(GCOOKIE, { path: '/' }); return reply.redirect(`/?google=${why}`, 302); };
+      if (!deps.google) return fail('erreur');
+      const q = parse(z.object({ code: z.string().max(2000).optional(), state: z.string().max(200).optional(), error: z.string().max(100).optional() }), req.query);
+      const [state, verifier, dest64] = (req.cookies?.[GCOOKIE] ?? '').split('.');
+      if (q.error || !q.code || !state || !verifier || q.state !== state) return fail(q.error === 'access_denied' ? 'annule' : 'erreur');
+      try {
+        const profile = await deps.google.exchange(q.code, verifier);
+        const s = await svc.googleLogin(profile, meta(req));
+        setCookie(reply, s.token, s.expiresAt, s.admin);
+        reply.clearCookie(GCOOKIE, { path: '/' });
+        const dest = dest64 ? Buffer.from(dest64, 'base64url').toString() : '/compte';
+        return reply.redirect(dest.startsWith('/') && !dest.startsWith('//') ? dest : '/compte', 302);
+      } catch (e) {
+        return fail(e instanceof AppError && e.code === 'account_suspended' ? 'suspendu' : 'erreur');
+      }
+    });
+
     r.post('/auth/logout', { preHandler: authenticate }, async (req, reply) => {
       await svc.logout(req.auth!.sessionId);
       reply.clearCookie(SESSION_COOKIE, { path: '/' });
@@ -113,8 +147,9 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
       await svc.revokeSession(req.auth!.user.id, parse(z.object({ id: z.string().length(26) }), req.params).id);
       return OK;
     });
-    const commerce = new CommerceService(deps.db, deps.store);
-    const admin = new AdminService(deps.db, commerce, { mailer: deps.mailer, baseUrl: publicUrl(deps.config) });
+    const notify = new Notifier(deps.db, deps.mailer, publicUrl(deps.config));
+    const commerce = new CommerceService(deps.db, deps.store, notify);
+    const admin = new AdminService(deps.db, commerce, { mailer: deps.mailer, baseUrl: publicUrl(deps.config) }, notify);
     commerceRoutes(r, { svc: commerce, authenticate, parse });
     publicPlatformRoutes(r, admin, parse);
     adminRoutes(r, { svc: admin, authenticate, parse });

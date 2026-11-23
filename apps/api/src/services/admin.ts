@@ -2,6 +2,7 @@ import { USD_RATES } from '@saotech/shared';
 import { AppError } from '../errors.js';
 import { newId } from '../lib/crypto.js';
 import type { Db } from '../db/client.js';
+import type { Notifier } from './notify.js';
 import type { Mailer } from '../mail/mailer.js';
 import * as tpl from '../mail/templates.js';
 import { EFFECTIVE_PLAN_FOR, ORDER_FLOW, planDto, type CommerceService, type PlanRow } from './commerce.js';
@@ -55,7 +56,7 @@ export class PlatformService {
 }
 
 export class AdminService extends PlatformService {
-  constructor(db: Db, private commerce: CommerceService, private notifier?: { mailer: Mailer; baseUrl: string }) { super(db); }
+  constructor(db: Db, private commerce: CommerceService, private notifier?: { mailer: Mailer; baseUrl: string }, private notify?: Notifier) { super(db); }
 
   async roles(userId: string): Promise<AdminRole[]> {
     return (await this.db.query<{ role: AdminRole }>('SELECT role FROM admin_roles WHERE user_id = $1', [userId])).map((r) => r.role);
@@ -300,6 +301,7 @@ export class AdminService extends PlatformService {
       await t.query("UPDATE order_items SET status = $2 WHERE order_id = $1 AND status NOT IN ('cancelled', 'delivered')", [o.id, status]);
       await this.commerce.syncOrderStatus(t, o.id);
     });
+    await this.notify?.orderStatus(o.id, status);
     await this.audit(actor, 'order.status', 'order', number, { status });
   }
 
@@ -331,6 +333,7 @@ export class AdminService extends PlatformService {
       await t.query('UPDATE plan_requests SET status = $2, decided_at = now() WHERE id = $1', [id, approve ? 'approved' : 'rejected']);
       if (approve) await t.query("UPDATE shops SET plan = $2, plan_expires_at = now() + interval '3 months' WHERE id = $1", [r.shop_id, r.plan]);
     });
+    await this.notify?.planDecision(r.shop_id, approve);
     await this.audit(actor, approve ? 'plan_request.approve' : 'plan_request.reject', 'plan_request', id);
   }
 
