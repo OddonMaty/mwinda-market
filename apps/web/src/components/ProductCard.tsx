@@ -1,10 +1,10 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import type { Product } from '../data/catalogue';
 import { useCart } from './CartProvider';
 import { isProductNew, placeLabel, productImageUrl } from '../lib';
 import { Price } from './Locale';
+import { useWishlist } from './WishlistProvider';
 
 
 export function Stars({ rating }: { rating: number }) {
@@ -20,7 +20,8 @@ export function Stars({ rating }: { rating: number }) {
 
 export function ProductCard({ product, now }: { product: Product; now: number }) {
   const router = useRouter();
-  const [wish, setWish] = useState(false);
+  const wl = useWishlist();
+  const wish = wl.has(product.id);
   const cart = useCart();
   const open = () => router.push(`/produit/${product.id}`);
   return (
@@ -33,7 +34,7 @@ export function ProductCard({ product, now }: { product: Product; now: number })
           {product.certified && <span className="product-badge badge-certified"><i className="fas fa-check-circle" /> CERTIFIÉ</span>}
         </div>
         <div className="product-actions-hover">
-          <button type="button" className={wish ? 'active' : ''} style={wish ? { color: 'var(--primary)' } : undefined} onClick={(e) => { e.stopPropagation(); setWish(!wish); }}><i className="fas fa-heart" /></button>
+          <button type="button" className={wish ? 'active' : ''} style={wish ? { color: 'var(--primary)' } : undefined} onClick={(e) => { e.stopPropagation(); wl.toggle(product.id); }}><i className="fas fa-heart" /></button>
           <button type="button" onClick={(e) => { e.stopPropagation(); open(); }}><i className="fas fa-eye" /></button>
           <button type="button" onClick={(e) => { e.stopPropagation(); cart.add(product, 1); }}><i className="fas fa-shopping-cart" /></button>
         </div>

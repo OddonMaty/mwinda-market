@@ -166,8 +166,8 @@
   .search-bar button { width: 44px; height: 44px; right: 0; }
   .search-bar .search-suggest { min-width: 0; left: 0; right: 0; }
 
-  .m-tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 12px rgba(0,0,0,.06); }
-  .m-tabbar a, .m-tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 60px; background: none; border: 0; color: var(--text-muted); font-size: 0.68rem; font-weight: 500; cursor: pointer; text-decoration: none; }
+  .m-tabbar { display: grid; grid-template-columns: repeat(6, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 12px rgba(0,0,0,.06); }
+  .m-tabbar a, .m-tabbar button { min-width: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 60px; background: none; border: 0; color: var(--text-muted); font-size: 0.68rem; font-weight: 500; cursor: pointer; text-decoration: none; }
   .m-tabbar i { font-size: 1.2rem; }
   .m-tabbar .on { color: var(--primary); }
   .m-badge { position: absolute; top: 6px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--primary); color: #fff; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; }
@@ -363,4 +363,16 @@
   /* Collection : barre Filtrer / Trier épurée */
   .collection-layout .breadcrumb, .page-header p { display: none; }
   .filter-toggle-btn { background: #f4f4f5; color: var(--dark); border: 0; }
+}
+
+/* Offres du jour : 2 colonnes ; Nouveaux produits : défilement horizontal */
+@media (max-width: 768px) {
+  .deals-section .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); justify-content: stretch; }
+  .m-tabbar { font-size: 0.62rem; }
+  .m-tabbar a, .m-tabbar button { font-size: 0.62rem; }
+  .m-tabbar i { font-size: 1.1rem; }
+  .m-badge { left: calc(50% + 2px); }
+  .new-products-row { display: flex; gap: 0.75rem; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -1rem; padding: 0 1rem 0.5rem; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .new-products-row::-webkit-scrollbar { display: none; }
+  .new-products-row > .product-card { flex: 0 0 44%; max-width: 190px; scroll-snap-align: start; }
 }

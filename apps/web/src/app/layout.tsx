@@ -7,6 +7,7 @@ import { PushPrompt } from '../components/PushPrompt';
 import { I18nProvider } from '../components/I18n';
 import { ChatProvider } from '../components/Chat';
 import { CartProvider } from '../components/CartProvider';
+import { WishlistProvider } from '../components/WishlistProvider';
 
 export const metadata: Metadata = {
   title: 'Mwinda Market - La marketplace africaine',
@@ -33,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body><I18nProvider><AuthProvider><PushPrompt /><LocaleProvider><ChatProvider><CartProvider>{children}</CartProvider></ChatProvider></LocaleProvider></AuthProvider></I18nProvider></body>
+      <body><I18nProvider><AuthProvider><PushPrompt /><LocaleProvider><ChatProvider><CartProvider><WishlistProvider>{children}</WishlistProvider></CartProvider></ChatProvider></LocaleProvider></AuthProvider></I18nProvider></body>
     </html>
   );
 }

@@ -29,7 +29,7 @@ export function NewProducts({ products, now }: { products: Product[]; now: numbe
           {tab('All', 'Tous')}{catsOf(products).slice(0, 6).map((c) => tab(c, c))}
         </div>
       </div>
-      <div className="products-grid">
+      <div className="products-grid new-products-row">
         {list.length > 0
           ? list.map((p) => <ProductCard key={p.id} product={p} now={now} />)
           : <p className="empty-collection">{dep === 'All' ? 'Aucun nouveau produit pour le moment.' : 'Aucun nouveau produit dans ce rayon pour le moment.'}</p>}
