@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingBag, MapPin, UserRound, ShieldCheck, Store, LogOut, Plus, Package, Truck, CheckCircle2, Clock, Trash2, Laptop, KeyRound, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, MapPin, UserRound, ShieldCheck, Store, LogOut, Plus, Package, Truck, CheckCircle2, Clock, Trash2, Laptop, KeyRound, MessageCircle, Heart } from 'lucide-react';
 import { Price } from './Locale';
 import { ConversationList, Thread, type Conv } from './Chat';
 import { api, errorMessage, useAuth } from './AuthProvider';
@@ -25,6 +25,7 @@ export function AccountArea() {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [conv, setConv] = useState<Conv | null>(null);
   const [filter, setFilter] = useState('all');
+  const [mf, setMf] = useState<'all' | 'active' | 'shipped' | 'delivered'>('all');
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -153,18 +154,45 @@ export function AccountArea() {
         <Button variant="ghost" size="sm" onClick={() => void logout()}><LogOut /><span className="hidden sm:inline">Déconnexion</span></Button>
       </>}>
       {tab === 'dashboard' && (
-        <div className="grid gap-6">
+        <div className="grid gap-4 lg:hidden">
+          <div className="flex items-center gap-3">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground">{fullName.charAt(0).toUpperCase()}</div>
+            <div className="min-w-0 flex-1"><p className="truncate font-semibold">{fullName}</p><p className="truncate text-xs text-muted-foreground">{contact}</p></div>
+            <button type="button" aria-label="Réglages" className="rounded-full p-2 text-muted-foreground" onClick={() => setTab('profile')}><UserRound className="size-5" /></button>
+          </div>
+          <div className="grid grid-cols-4 gap-2 text-center text-xs">
+            <button type="button" onClick={() => { setFilter('all'); setTab('orders'); }} className="flex flex-col items-center gap-1.5 py-1"><ShoppingBag className="size-6" />Commandes</button>
+            <Link href="/favoris" className="flex flex-col items-center gap-1.5 py-1"><Heart className="size-6" />Favoris</Link>
+            <button type="button" onClick={() => setTab('addresses')} className="flex flex-col items-center gap-1.5 py-1"><MapPin className="size-6" />Adresses</button>
+            <button type="button" onClick={() => setTab('messages')} className="flex flex-col items-center gap-1.5 py-1"><MessageCircle className="size-6" />Messages</button>
+          </div>
+          {!user.verified && <VerifyPanel />}
+          <div className="flex border-b text-sm">
+            {([['all', 'Tous'], ['active', 'En cours'], ['shipped', 'Expédiées'], ['delivered', 'Livrées']] as const).map(([k, l]) => (
+              <button key={k} type="button" onClick={() => setMf(k)} className={`flex-1 border-b-2 py-2.5 ${mf === k ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted-foreground'}`}>{l}</button>
+            ))}
+          </div>
+          {orders === null ? <p className="text-sm text-muted-foreground">Chargement de vos commandes…</p> : (() => {
+            const list = orders.filter((o) => mf === 'all' || (mf === 'active' ? o.status === 'pending' || o.status === 'confirmed' : o.status === mf));
+            return list.length === 0 ? <Empty icon={ShoppingBag} title="Aucune commande" text="Vos achats apparaîtront ici." action={<Button asChild><Link href="/collection">Découvrir les produits</Link></Button>} />
+              : list.map((o) => (
+                <Link key={o.id} href={`/suivi?n=${o.number}`} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
+                  <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-muted"><Package className="size-6 text-muted-foreground" /></span>
+                  <span className="min-w-0 flex-1"><b className="block truncate text-sm">#{o.number}</b><span className="block text-xs text-muted-foreground">{day(o.createdAt)} · {o.items.reduce((n, i) => n + i.quantity, 0)} article(s)</span><b className="text-sm"><Price usd={o.subtotalUsd} /></b></span>
+                  <Badge variant={TONE[o.status] ?? 'secondary'}>{STATUS[o.status] ?? o.status}</Badge>
+                </Link>
+              ));
+          })()}
+        </div>
+      )}
+      {tab === 'dashboard' && (
+        <div className="hidden gap-6 lg:grid">
           <Card><CardContent className="flex flex-col gap-4 pt-5 sm:flex-row sm:items-center">
             <div className="flex size-16 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">{fullName.charAt(0).toUpperCase()}</div>
             <div className="min-w-0 flex-1"><p className="text-lg font-semibold">{fullName}</p><p className="truncate text-sm text-muted-foreground">{[user.email, user.phone].filter(Boolean).join(' · ')}</p>
               {user.verified ? <Badge variant="success" className="mt-1">Compte vérifié</Badge> : <Badge variant="secondary" className="mt-1">Non vérifié (facultatif)</Badge>}</div>
             <Button variant="dark" className="w-full sm:w-auto" onClick={() => setTab('profile')}>Modifier mon profil</Button>
           </CardContent></Card>
-          <div className="grid grid-cols-4 gap-2 lg:hidden">
-            {([['orders', ShoppingBag, 'Commandes'], ['messages', MessageCircle, 'Messages'], ['addresses', MapPin, 'Adresses'], ['profile', UserRound, 'Réglages']] as const).map(([k, Icon, l]) => (
-              <button key={k} type="button" onClick={() => { setFilter('all'); setTab(k); }} className="flex flex-col items-center gap-1.5 rounded-2xl border bg-card px-1 py-3 text-xs font-medium"><span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary"><Icon className="size-5" /></span>{l}</button>
-            ))}
-          </div>
           {!user.verified && <VerifyPanel />}
           <div>
             <PageHeading title="Mes commandes" actions={<Button variant="link" onClick={() => { setFilter('all'); setTab('orders'); }}>Tout voir</Button>} />

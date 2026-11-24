@@ -6,6 +6,7 @@ import { useLocale } from './Locale';
 import { ProductCard } from './ProductCard';
 import { NavButton } from './NavButton';
 import { CategorySidebar } from './CategorySidebar';
+import { MobileCatStrip } from './MobileCatStrip';
 
 interface Pill { label: string; href: string; active: boolean }
 interface Props {
@@ -44,6 +45,8 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
 
   return (
     <div className="container collection-container">
+      <h1 className="m-page-title">{query ? `« ${query} »` : 'Catégories'}</h1>
+      <MobileCatStrip active={activeDep} withAll />
       <div className="breadcrumb">
         <NavButton to="/">Accueil</NavButton>
         <i className="fas fa-chevron-right" />
@@ -51,10 +54,16 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
         {query && <NavButton to={clearHref} className="link-btn">✕ Effacer la recherche</NavButton>}
       </div>
 
-      <div className="filter-tabs" style={{ marginBottom: '1.5rem' }}>
+      <div className={`filter-tabs${baseDep === 'All' ? ' m-hide' : ''}`} style={{ marginBottom: '1.5rem' }}>
         {pills.map((p) => <NavButton key={p.label} to={p.href} className={`tab-btn ${p.active ? 'active' : ''}`}>{p.label}</NavButton>)}
       </div>
 
+      <div className="m-fsbar">
+        <button type="button" onClick={() => setSidebarOpen(true)}><i className="fas fa-sliders-h" /> Filtrer</button>
+        <label><i className="fas fa-sort-amount-down" /> Trier
+          <select value={sort} onChange={(e) => setSort(Number(e.target.value))} aria-label="Trier">{sorts.map((x, i) => <option key={x} value={i}>{x}</option>)}</select>
+        </label>
+      </div>
       <button type="button" className="filter-toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
         <i className="fas fa-sliders-h" /> Filtres et localisation
       </button>

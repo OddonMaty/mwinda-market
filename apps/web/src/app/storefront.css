@@ -383,3 +383,18 @@
   .deals-section .original-price { color: rgba(255,255,255,.55); }
   .deals-section .section-header h2 { color: #fff; }
 }
+
+/* Écran « Catégories » mobile (d'après la maquette) */
+.m-page-title, .m-fsbar { display: none; }
+@media (max-width: 768px) {
+  .m-page-title { display: block; text-align: center; font-size: 1.15rem; font-weight: 700; margin: 0.6rem 0 0; }
+  .collection-container .m-catstrip { padding: 0.6rem 0 0.4rem; margin: 0 -1rem; padding-left: 1rem; padding-right: 1rem; }
+  .m-catstrip a.on span { background: var(--primary); color: #fff; }
+  .m-catstrip a.on em { color: var(--primary); font-weight: 600; }
+  .collection-container .breadcrumb, .collection-container .filter-toggle-btn, .collection-container .products-toolbar, .filter-tabs.m-hide { display: none; }
+  .collection-container .filter-tabs { margin-bottom: 0.5rem !important; }
+  .m-fsbar { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 12px; margin: 0.25rem 0 1rem; overflow: hidden; background: #fff; }
+  .m-fsbar > * { flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem; color: var(--dark); background: none; border: 0; cursor: pointer; position: relative; }
+  .m-fsbar > label { border-left: 1px solid var(--border); }
+  .m-fsbar select { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; font-size: 16px; }
+}

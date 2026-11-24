@@ -52,7 +52,7 @@ export function MobileNav() {
       {!hideBar && (
         <nav className="m-tabbar" aria-label="Navigation principale">
           <Link href="/" className={on('/') ? 'on' : ''}><i className="fas fa-house" /><span>{t('Accueil')}</span></Link>
-          <button type="button" className={sheet === 'cats' ? 'on' : ''} onClick={() => setSheet(sheet === 'cats' ? null : 'cats')}><i className="fas fa-table-cells-large" /><span>{t('Catégories')}</span></button>
+          <Link href="/collection" className={path.startsWith('/collection') ? 'on' : ''}><i className="fas fa-table-cells-large" /><span>{t('Catégories')}</span></Link>
           <Link href="/favoris" className={path.startsWith('/favoris') ? 'on' : ''}><i className="fas fa-heart" />{wl.ids.length > 0 && <b className="m-badge">{wl.ids.length}</b>}<span>{t('Favoris')}</span></Link>
           <Link href="/vendeur" className={path.startsWith('/vendeur') ? 'on' : ''}><i className="fas fa-store" /><span>{t('Boutique')}</span></Link>
           <button type="button" onClick={() => { setSheet(null); toggle(); }}>
