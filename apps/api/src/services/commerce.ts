@@ -6,7 +6,7 @@ import type { Db } from '../db/client.js';
 import type { UserRow } from './auth.js';
 
 export interface OrderItemInput { id: number; quantity: number; color?: string; size?: string }
-export interface ShippingInput { shippingPhone: string; shippingCity: string; shippingAddress: string }
+export interface ShippingInput { shippingPhone: string; shippingCity: string; shippingAddress: string; paymentMethod?: 'cod' | 'mobile_money'; paymentProvider?: string; paymentPhone?: string }
 export interface ProductInput {
   name: string; description: string; priceUsd: number; originalPriceUsd?: number | null; department: string; category: string;
   colors: string[]; sizes: string[]; inStock: boolean; images: string[];
@@ -90,6 +90,8 @@ export class CommerceService {
   /** Les prix viennent de la base : ceux envoyés par le navigateur sont ignorés. */
   async placeOrder(user: UserRow, items: OrderItemInput[], ship: ShippingInput) {
     if (items.length === 0) throw new AppError(400, 'empty_cart', 'Votre panier est vide.');
+    const method = ship.paymentMethod ?? 'cod';
+    if (method === 'mobile_money' && (!ship.paymentProvider || !ship.paymentPhone)) throw new AppError(400, 'payment_required', 'Indiquez l’opérateur et le numéro Mobile Money.');
     const merged = new Map<number, OrderItemInput>();
     for (const i of items) {
       const prev = merged.get(i.id);
@@ -114,8 +116,8 @@ export class CommerceService {
       const orderId = newId();
       const num = await t.query<{ n: string }>("SELECT nextval('order_number_seq') AS n");
       const number = `STM-${num[0]!.n}`;
-      await t.query('INSERT INTO orders(id,number,user_id,subtotal_usd,shipping_phone,shipping_city,shipping_address) VALUES ($1,$2,$3,$4,$5,$6,$7)',
-        [orderId, number, user.id, subtotal.toFixed(2), ship.shippingPhone, ship.shippingCity, ship.shippingAddress]);
+      await t.query('INSERT INTO orders(id,number,user_id,subtotal_usd,shipping_phone,shipping_city,shipping_address,payment_method,payment_provider,payment_phone) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::varchar,$10::varchar)',
+        [orderId, number, user.id, subtotal.toFixed(2), ship.shippingPhone, ship.shippingCity, ship.shippingAddress, method, method === 'mobile_money' ? ship.paymentProvider! : null, method === 'mobile_money' ? ship.paymentPhone! : null]);
       for (const { p, i, unit } of lines) {
         const bps = p.shop_official ? 0 : (bpsByPlan.get(p.shop_plan) ?? 500);
         await t.query('INSERT INTO order_items(id,order_id,product_id,shop_id,name,unit_price_usd,quantity,color,size,image,commission_bps) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
@@ -129,8 +131,8 @@ export class CommerceService {
   }
 
   async listOrders(userId: string) {
-    const orders = await this.db.query<{ id: string; number: string; status: string; subtotal_usd: string; shipping_city: string; shipping_address: string; created_at: Date }>(
-      'SELECT id, number, status, subtotal_usd, shipping_city, shipping_address, created_at FROM orders WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100', [userId]);
+    const orders = await this.db.query<{ id: string; number: string; status: string; subtotal_usd: string; shipping_city: string; shipping_address: string; created_at: Date; payment_method: string; payment_provider: string | null }>(
+      'SELECT id, number, status, subtotal_usd, shipping_city, shipping_address, created_at, payment_method, payment_provider FROM orders WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100', [userId]);
     const items = orders.length
       ? await this.db.query<{ order_id: string; product_id: string; name: string; unit_price_usd: string; quantity: number; color: string; size: string; image: string | null; status: string; shop: string }>(
           `SELECT i.order_id, i.product_id, i.name, i.unit_price_usd, i.quantity, i.color, i.size, i.image, i.status, s.name AS shop
@@ -139,7 +141,7 @@ export class CommerceService {
     return orders.map((o) => {
       const its = items.filter((i) => i.order_id === o.id);
       return {
-        id: o.id, number: o.number, status: o.status, subtotalUsd: Number(o.subtotal_usd), city: o.shipping_city, address: o.shipping_address, createdAt: o.created_at,
+        id: o.id, number: o.number, status: o.status, subtotalUsd: Number(o.subtotal_usd), city: o.shipping_city, address: o.shipping_address, createdAt: o.created_at, payment: o.payment_method === 'mobile_money' ? `Mobile Money (${o.payment_provider})` : 'Paiement à la livraison',
         canCancel: its.some((i) => i.status === 'pending'), canConfirmReceipt: its.some((i) => i.status === 'shipped'),
         items: its.map((i) => ({ productId: Number(i.product_id), name: i.name, unitPriceUsd: Number(i.unit_price_usd), quantity: i.quantity, color: i.color, size: i.size, image: i.image, status: i.status, shop: i.shop })),
       };
@@ -395,13 +397,13 @@ export class CommerceService {
 
   async listShopOrders(userId: string) {
     const s = await this.requireShop(userId);
-    const rows = await this.db.query<{ number: string; status: string; created_at: Date; shipping_city: string; shipping_address: string; shipping_phone: string; first_name: string; last_name: string; name: string; unit_price_usd: string; quantity: number; color: string; size: string; commission_bps: number }>(
-      `SELECT o.number, i.status, o.created_at, o.shipping_city, o.shipping_address, o.shipping_phone, u.first_name, u.last_name, i.name, i.unit_price_usd, i.quantity, i.color, i.size, i.commission_bps
+    const rows = await this.db.query<{ number: string; status: string; created_at: Date; shipping_city: string; shipping_address: string; shipping_phone: string; payment_method: string; payment_provider: string | null; payment_phone: string | null; first_name: string; last_name: string; name: string; unit_price_usd: string; quantity: number; color: string; size: string; commission_bps: number }>(
+      `SELECT o.number, i.status, o.created_at, o.shipping_city, o.shipping_address, o.shipping_phone, o.payment_method, o.payment_provider, o.payment_phone, u.first_name, u.last_name, i.name, i.unit_price_usd, i.quantity, i.color, i.size, i.commission_bps
          FROM order_items i JOIN orders o ON o.id = i.order_id JOIN users u ON u.id = o.user_id
         WHERE i.shop_id = $1 ORDER BY o.created_at DESC LIMIT 300`, [s.id]);
-    const out = new Map<string, { number: string; status: string; createdAt: Date; customer: string; city: string; address: string; phone: string; totalUsd: number; commissionUsd: number; items: { name: string; quantity: number; unitPriceUsd: number; color: string; size: string }[] }>();
+    const out = new Map<string, { number: string; status: string; createdAt: Date; customer: string; city: string; address: string; phone: string; payment: string; totalUsd: number; commissionUsd: number; items: { name: string; quantity: number; unitPriceUsd: number; color: string; size: string }[] }>();
     for (const r of rows) {
-      const o = out.get(r.number) ?? { number: r.number, status: r.status, createdAt: r.created_at, customer: `${r.first_name} ${r.last_name}`, city: r.shipping_city, address: r.shipping_address, phone: r.shipping_phone, totalUsd: 0, commissionUsd: 0, items: [] };
+      const o = out.get(r.number) ?? { number: r.number, status: r.status, createdAt: r.created_at, customer: `${r.first_name} ${r.last_name}`, city: r.shipping_city, address: r.shipping_address, phone: r.shipping_phone, payment: r.payment_method === 'mobile_money' ? `Mobile Money ${r.payment_provider} (${r.payment_phone})` : 'Paiement à la livraison', totalUsd: 0, commissionUsd: 0, items: [] };
       const line = Number(r.unit_price_usd) * r.quantity;
       o.items.push({ name: r.name, quantity: r.quantity, unitPriceUsd: Number(r.unit_price_usd), color: r.color, size: r.size });
       o.totalUsd += line;
@@ -515,6 +517,7 @@ export class CommerceService {
   private async addMessage(conversationId: number, sender: 'buyer' | 'seller', body: string, productId?: number) {
     await this.db.query('INSERT INTO messages(conversation_id, sender, body, product_id) VALUES ($1,$2,$3,$4)', [conversationId, sender, body.trim(), productId ?? null]);
     await this.db.query(`UPDATE conversations SET last_message_at = now(), ${sender === 'buyer' ? 'buyer_read_at' : 'shop_read_at'} = now() WHERE id = $1`, [conversationId]);
+    await this.notify?.newMessage(conversationId, sender, body.trim());
   }
 
   async postMessage(userId: string, conversationId: number, body: string) {

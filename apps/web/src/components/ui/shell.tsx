@@ -72,8 +72,8 @@ export function DashboardShell({ space, subtitle, groups, active, onSelect, user
         {all.slice(0, 4).map((it) => {
           const Icon = it.icon; const on = it.key === active;
           return (
-            <button key={it.key} type="button" onClick={() => onSelect(it.key)} className={cn('relative flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium', on ? 'text-primary' : 'text-muted-foreground')}>
-              <Icon className="size-5" /><span className="max-w-full truncate px-1">{it.label}</span>
+            <button key={it.key} type="button" onClick={() => onSelect(it.key)} className={cn('relative flex min-h-[62px] flex-col items-center justify-center gap-1 text-[10px] font-medium', on ? 'text-primary' : 'text-muted-foreground')}>
+              <Icon className="size-5" /><span className="line-clamp-2 max-w-full break-words px-0.5 text-center text-[10px] leading-[1.1]">{it.label}</span>
               {it.badge !== undefined && it.badge !== 0 && <span className="absolute left-[55%] top-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">{it.badge}</span>}
             </button>
           );

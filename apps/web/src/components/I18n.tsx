@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { useAuth } from './AuthProvider';
 import { detectLang, isLang, LANGS, tr, type Lang } from '../i18n/translate';
 
 const KEY = 'mwinda_lang';
@@ -36,10 +37,11 @@ export function T({ children }: { children: string }) { return <>{useT()(childre
 /** Sélecteur de langue de la barre du haut. */
 export function LanguageSelector() {
   const { lang, setLang } = useI18n();
+  const { user } = useAuth();
   return (
     <label className="lang-select" title="Langue / Language">
       <i className="fas fa-language" aria-hidden="true" />
-      <select aria-label="Langue" value={lang} onChange={(e) => { const l = e.target.value; if (isLang(l)) { setLang(l); void fetch('/api/v1/me', { method: 'PATCH', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ locale: l }) }).catch(() => {}); } }}>
+      <select aria-label="Langue" value={lang} onChange={(e) => { const l = e.target.value; if (isLang(l)) { setLang(l); if (user) void fetch('/api/v1/me', { method: 'PATCH', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ locale: l }) }).catch(() => {}); } }}>
         {LANGS.map((o) => <option key={o.code} value={o.code}>{o.label}</option>)}
       </select>
     </label>

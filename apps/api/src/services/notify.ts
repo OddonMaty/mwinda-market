@@ -1,4 +1,5 @@
 import type { Messenger } from './messenger.js';
+import type { PushSender } from './push.js';
 import type { Db } from '../db/client.js';
 import type { Mailer } from '../mail/mailer.js';
 import * as tpl from '../mail/templates.js';
@@ -7,7 +8,12 @@ const loc = (l: string | null | undefined): 'fr' | 'en' => (l === 'en' ? 'en' : 
 
 /** E-mails liés aux commandes et aux abonnements. Un envoi raté ne doit jamais faire échouer l'action du client. */
 export class Notifier {
-  constructor(private db: Db, private mailer: Mailer, private baseUrl: string, private messenger?: Messenger) {}
+  constructor(private db: Db, private mailer: Mailer, private baseUrl: string, private messenger?: Messenger, private push?: PushSender) {}
+
+  private async pushTo(userId: string, title: string, body: string, path: string, tag?: string) {
+    if (!this.push?.available()) return;
+    await this.safe(() => this.push!.send(userId, { title, body, url: `${this.baseUrl}${path}`, tag }));
+  }
 
   private async safe(fn: () => Promise<void>) {
     try { await fn(); } catch (e) { console.error('[mail] envoi impossible', e instanceof Error ? e.message : e); }
@@ -25,9 +31,10 @@ export class Notifier {
       const o = (await this.db.query<{ number: string; subtotal_usd: string; email: string | null; locale: string }>('SELECT o.number, o.subtotal_usd, u.email, u.locale FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = $1', [orderId]))[0];
       if (!o) return;
       if (o.email) await this.mailer.send(tpl.orderPlaced(loc(o.locale), o.email, o.number, await this.lines(orderId), Number(o.subtotal_usd), `${this.baseUrl}/suivi`));
-      const shops = await this.db.query<{ id: string; name: string; email: string | null; locale: string; whatsapp: string | null; notify_whatsapp: boolean }>(
-        'SELECT DISTINCT s.id, s.name, u.email, u.locale, s.whatsapp, s.notify_whatsapp FROM order_items i JOIN shops s ON s.id = i.shop_id JOIN users u ON u.id = s.owner_id WHERE i.order_id = $1', [orderId]);
+      const shops = await this.db.query<{ id: string; name: string; owner_id: string; email: string | null; locale: string; whatsapp: string | null; notify_whatsapp: boolean }>(
+        'SELECT DISTINCT s.id, s.name, s.owner_id, u.email, u.locale, s.whatsapp, s.notify_whatsapp FROM order_items i JOIN shops s ON s.id = i.shop_id JOIN users u ON u.id = s.owner_id WHERE i.order_id = $1', [orderId]);
       for (const s of shops) {
+        await this.pushTo(s.owner_id, 'Nouvelle commande à confirmer', `Commande ${o.number} pour ${s.name} : ouvrez votre espace vendeur pour l’accepter.`, '/vendeur/tableau', `order-${o.number}`);
         if (s.email) await this.safe(async () => this.mailer.send(tpl.newOrderSeller(loc(s.locale), s.email!, s.name, o.number, await this.lines(orderId, s.id), `${this.baseUrl}/vendeur`)));
         await this.whatsapp(s, 'new_order', [o.number, s.name, `${this.baseUrl}/vendeur`]);
       }
@@ -43,7 +50,8 @@ export class Notifier {
   /** Prévient l'acheteur quand sa commande est confirmée, expédiée, livrée ou annulée. */
   orderStatus(orderId: string, status: string) {
     return this.safe(async () => {
-      const o = (await this.db.query<{ number: string; email: string | null; locale: string }>('SELECT o.number, u.email, u.locale FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = $1', [orderId]))[0];
+      const o = (await this.db.query<{ number: string; user_id: string; email: string | null; locale: string }>('SELECT o.number, o.user_id, u.email, u.locale FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = $1', [orderId]))[0];
+      if (o) await this.pushTo(o.user_id, `Commande ${o.number}`, ({ confirmed: 'Le vendeur a confirmé votre commande.', shipped: 'Votre commande est en route.', delivered: 'Votre commande est livrée.', cancelled: 'Votre commande a été annulée.' } as Record<string, string>)[status] ?? 'Mise à jour de votre commande.', '/compte', `order-${o.number}`);
       if (o?.email) await this.mailer.send(tpl.orderStatus(loc(o.locale), o.email, o.number, status, `${this.baseUrl}/suivi`));
     });
   }
@@ -68,6 +76,18 @@ export class Notifier {
       const amount = `$${Number(r.amount_usd).toFixed(2)}`;
       if (r.email) await this.mailer.send(tpl.withdrawalDecision(loc(r.locale), r.email, r.name, amount, paid, r.reference ?? r.reason, `${this.baseUrl}/vendeur`));
       await this.whatsapp(r, 'withdrawal', [amount, paid ? (loc(r.locale) === 'fr' ? 'payée' : 'paid') : (loc(r.locale) === 'fr' ? 'refusée' : 'declined'), `${this.baseUrl}/vendeur`]);
+    });
+  }
+
+  /** Nouveau message dans une discussion : notification push au destinataire (le vendeur ou l'acheteur). */
+  newMessage(conversationId: number, sender: 'buyer' | 'seller', body: string) {
+    return this.safe(async () => {
+      const c = (await this.db.query<{ buyer_id: string; owner_id: string | null; shop: string; buyer: string }>(
+        `SELECT c.buyer_id, s.owner_id, s.name AS shop, u.first_name AS buyer FROM conversations c JOIN shops s ON s.id = c.shop_id JOIN users u ON u.id = c.buyer_id WHERE c.id = $1`, [conversationId]))[0];
+      if (!c) return;
+      const preview = body.length > 120 ? `${body.slice(0, 117)}…` : body;
+      if (sender === 'buyer' && c.owner_id) await this.pushTo(c.owner_id, `Nouveau message de ${c.buyer}`, preview, '/vendeur/tableau', `msg-${conversationId}`);
+      if (sender === 'seller') await this.pushTo(c.buyer_id, `Message de ${c.shop}`, preview, '/compte', `msg-${conversationId}`);
     });
   }
 }

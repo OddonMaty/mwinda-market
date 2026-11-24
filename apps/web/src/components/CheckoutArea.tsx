@@ -22,6 +22,7 @@ export function CheckoutArea() {
   const [selected, setSelected] = useState<string | null>(null);
   const [newForm, setNewForm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [pay, setPay] = useState<{ method: 'cod' | 'mobile_money'; provider: string; phone: string }>({ method: 'cod', provider: 'M-Pesa', phone: '' });
 
   const loadAddresses = useCallback(async () => {
     const r = await api<{ addresses: Address[] }>('/me/addresses');
@@ -57,15 +58,17 @@ export function CheckoutArea() {
   }
 
   async function place(ship: { shippingPhone: string; shippingCity: string; shippingAddress: string }) {
+    const paymentPhone = e164(pay.phone || user?.phone || ship.shippingPhone);
+    if (pay.method === 'mobile_money' && paymentPhone.length < 8) return notify('Indiquez le numéro Mobile Money à débiter.');
     setBusy(true);
     const r = await api<{ order: { number: string } }>('/orders', {
       method: 'POST',
-      body: { items: cart.items.map((i) => ({ id: i.id, quantity: i.quantity, color: i.color, size: i.size })), ...ship },
+      body: { items: cart.items.map((i) => ({ id: i.id, quantity: i.quantity, color: i.color, size: i.size })), ...ship, paymentMethod: pay.method, ...(pay.method === 'mobile_money' ? { paymentProvider: pay.provider, paymentPhone } : {}) },
     });
     setBusy(false);
     if (!r.ok) return notify(errorMessage(r.data.code) === 'Une erreur est survenue. Réessayez.' ? (r.data.message ?? errorMessage(r.data.code)) : errorMessage(r.data.code));
     cart.clear();
-    notify(`Commande ${r.data.order.number} confirmée ! Vous pouvez la suivre dans « Mon compte ».`);
+    notify(`Commande ${r.data.order.number} envoyée au vendeur : il doit l’accepter, vous serez notifié. Suivi dans « Mon compte ».`);
     router.push('/compte');
   }
 
@@ -117,7 +120,7 @@ export function CheckoutArea() {
                 ))}
               </div>
               <button type="button" className="link-btn" style={{ margin: '0.75rem 0' }} onClick={() => setNewForm(true)}>+ Utiliser une nouvelle adresse</button>
-              <p className="seller-form-note">Le paiement se fait à la livraison (Mobile Money ou espèces), notre équipe vous contactera pour confirmer.</p>
+              <PaymentBox pay={pay} setPay={setPay} defaultPhone={user.phone ?? ''} />
               <button type="button" className="btn btn-primary full-width" disabled={busy} onClick={() => void submitSaved()}>Confirmer la commande</button>
             </div>
 
@@ -132,13 +135,44 @@ export function CheckoutArea() {
                 </div>
                 <div className="form-group"><label>Adresse complète *</label><textarea name="shippingAddress" rows={3} placeholder="Quartier, avenue, référence..." required /></div>
                 <label className="checkbox-label"><input type="checkbox" name="saveAddress" defaultChecked /><span>Enregistrer cette adresse pour la prochaine fois</span></label>
-                <p className="seller-form-note">Le paiement se fait à la livraison (Mobile Money ou espèces), notre équipe vous contactera pour confirmer.</p>
+                <PaymentBox pay={pay} setPay={setPay} defaultPhone={user.phone ?? ''} />
                 <button type="submit" className="btn btn-primary full-width" disabled={busy}>Confirmer la commande</button>
               </form>
             </div>
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+const PROVIDERS = ['M-Pesa', 'Airtel Money', 'Orange Money', 'Afrimoney'] as const;
+
+/** Choix du mode de paiement avant la validation de la commande. */
+function PaymentBox({ pay, setPay, defaultPhone }: { pay: { method: 'cod' | 'mobile_money'; provider: string; phone: string }; setPay: (p: { method: 'cod' | 'mobile_money'; provider: string; phone: string }) => void; defaultPhone: string }) {
+  return (
+    <div className="payment-box" style={{ margin: '1rem 0' }}>
+      <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Mode de paiement</h3>
+      <div className="checkout-address-list">
+        <label className={`checkout-address-option${pay.method === 'mobile_money' ? ' active' : ''}`} onClick={() => setPay({ ...pay, method: 'mobile_money' })}>
+          <input type="radio" name="payMethod" checked={pay.method === 'mobile_money'} readOnly />
+          <div><p style={{ fontWeight: 700 }}>Mobile Money</p><p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>M-Pesa, Airtel Money, Orange Money, Afrimoney</p></div>
+        </label>
+        <label className={`checkout-address-option${pay.method === 'cod' ? ' active' : ''}`} onClick={() => setPay({ ...pay, method: 'cod' })}>
+          <input type="radio" name="payMethod" checked={pay.method === 'cod'} readOnly />
+          <div><p style={{ fontWeight: 700 }}>Paiement à la livraison</p><p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Vous réglez en espèces à la réception du colis</p></div>
+        </label>
+      </div>
+      {pay.method === 'mobile_money' && (
+        <div style={{ marginTop: '0.75rem' }}>
+          <div className="form-group"><label>Opérateur *</label>
+            <select value={pay.provider} onChange={(e) => setPay({ ...pay, provider: e.target.value })}>{PROVIDERS.map((p) => <option key={p}>{p}</option>)}</select></div>
+          <div className="form-group"><label>Numéro Mobile Money *</label>
+            <input type="tel" placeholder="+243..." value={pay.phone || defaultPhone} onChange={(e) => setPay({ ...pay, phone: e.target.value })} /></div>
+          <p className="seller-form-note">Le paiement est demandé sur ce numéro une fois la commande acceptée par le vendeur. Ne payez rien avant d&apos;avoir reçu la demande.</p>
+        </div>
+      )}
+      {pay.method === 'cod' && <p className="seller-form-note">Le vendeur doit d&apos;abord accepter votre commande ; vous êtes prévenu par notification.</p>}
     </div>
   );
 }

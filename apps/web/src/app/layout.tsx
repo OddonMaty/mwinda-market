@@ -3,6 +3,7 @@ import './globals.css';
 import 'flag-icons/css/flag-icons.min.css';
 import { LocaleProvider } from '../components/Locale';
 import { AuthProvider } from '../components/AuthProvider';
+import { PushPrompt } from '../components/PushPrompt';
 import { I18nProvider } from '../components/I18n';
 import { ChatProvider } from '../components/Chat';
 import { CartProvider } from '../components/CartProvider';
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
   title: 'Mwinda Market - La marketplace africaine',
   description:
     "Découvrez des équipements électroniques premium avec livraison rapide, des prix compétitifs et 30 jours pour changer d'avis, partout en Afrique, avec un lancement en République démocratique du Congo.",
+  manifest: '/manifest.webmanifest',
   icons: {
     icon: [
       { url: '/images/brand/favicon-32.png', sizes: '32x32', type: 'image/png' },
@@ -31,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body><I18nProvider><AuthProvider><LocaleProvider><ChatProvider><CartProvider>{children}</CartProvider></ChatProvider></LocaleProvider></AuthProvider></I18nProvider></body>
+      <body><I18nProvider><AuthProvider><PushPrompt /><LocaleProvider><ChatProvider><CartProvider>{children}</CartProvider></ChatProvider></LocaleProvider></AuthProvider></I18nProvider></body>
     </html>
   );
 }

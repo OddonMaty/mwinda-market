@@ -104,6 +104,10 @@ const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { tim
   await bp.waitForSelector('text=Récapitulatif de votre commande');
   await bp.fill('[name=shippingCity]', 'Bukavu');
   await bp.fill('[name=shippingAddress]', 'Avenue du Lac, Nyawera');
+  await bp.waitForSelector('.payment-box:visible');
+  await bp.click('.payment-box:visible label:has-text("Mobile Money")');
+  await bp.selectOption('.payment-box:visible select', 'Airtel Money');
+  await bp.fill('.payment-box:visible input[type=tel]', '+243991234567');
   await bp.click('form button[type=submit]');
   await bp.waitForURL('**/compte');
   await bp.click('button:has-text("Mes commandes")');
@@ -171,7 +175,7 @@ const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { tim
   await bp.goto(`${WEB}/collection?q=Casque+e2e`);
   await bp.click('.product-card:has-text("Casque e2e")');
   await bp.waitForSelector('h1:has-text("Casque e2e")');
-  await bp.click('button.buy-now');
+  await bp.click('.product-share button:has-text("Poser une question")');
   await bp.waitForSelector('.chat-panel textarea');
   await bp.fill('.chat-panel textarea', 'Est-il disponible ?');
   await bp.click('.chat-send');
@@ -189,6 +193,15 @@ const dismiss = async (p) => { try { await p.click('[data-welcome-close]', { tim
   await bp.click('.header-btn:has(.fa-shopping-cart)');
   await bp.click('#cartDrawer.active .cart-ask');
   await bp.waitForSelector('.chat-msg.theirs:has-text("Oui, en stock.")');
+
+  // ---- Acheter : ouvre directement la commande (pas de message), avec le choix du paiement
+  await bp.click('#cartDrawer .close-btn').catch(() => {});
+  await bp.goto(`${WEB}/collection?q=Casque+e2e`);
+  await bp.click('.product-card:has-text("Casque e2e")');
+  await bp.click('button.buy-now');
+  await bp.waitForURL('**/commande');
+  await bp.waitForSelector('.payment-box:visible');
+  await bp.waitForSelector('.payment-box:visible label:has-text("Paiement à la livraison")');
 
   // ---- Recherche : suggestions reliées au catalogue
   await bp.goto(`${WEB}/`);

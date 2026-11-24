@@ -33,3 +33,15 @@
 /* Mobile : une grille sans colonnes déclarées ne doit pas s'élargir au contenu le plus large */
 .ui .grid:not([class*='grid-cols']) { grid-template-columns: minmax(0, 1fr); }
 .ui .grid > *, .ui main > * { min-width: 0; }
+
+/* Tableaux en fiches sur téléphone */
+@media (max-width: 640px) {
+  .ui .stack-table, .ui .stack-table tbody { display: block; }
+  .ui .stack-table thead { display: none; }
+  .ui .stack-table tr { display: block; padding: 0.6rem 0.9rem; border-bottom: 1px solid hsl(var(--border)); }
+  .ui .stack-table tbody tr:last-child { border-bottom: 0; }
+  .ui .stack-table td { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; border: 0; padding: 0.3rem 0; text-align: right; overflow-wrap: anywhere; }
+  .ui .stack-table td::before { content: attr(data-label); flex: none; max-width: 40%; text-align: left; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
+  .ui .stack-table td[data-label=""]::before { content: none; }
+  .ui .stack-table td[data-label=""] { justify-content: flex-end; flex-wrap: wrap; }
+}

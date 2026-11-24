@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Product } from '../data/catalogue';
 import { placeLabel, productImageUrl } from '../lib';
 import { Price } from './Locale';
@@ -20,6 +21,9 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
   const [tab, setTab] = useState<'description' | 'shipping' | 'faq'>('description');
   const allImages = [product.image, ...(product.images ?? [])].filter(Boolean);
   const [main, setMain] = useState(product.image);
+  const router = useRouter();
+  /** « Acheter » : le produit va au panier et on passe directement à la commande (plus de message au vendeur). */
+  const buy = () => { cart.add(product, qty, { color, size }); setQty(1); router.push('/commande'); };
   const ask = () => chat.ask({ productId: Number(product.id), productName: product.name, shopName: product.shopName });
   const hasDiscount = !!product.originalPrice && product.originalPrice > product.price;
 
@@ -110,8 +114,8 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
             <button type="button" className="btn btn-primary add-to-cart" onClick={() => { cart.add(product, qty, { color, size }); setQty(1); }}>
               <i className="fas fa-shopping-cart" /> Ajouter au panier
             </button>
-            <button type="button" className="btn btn-dark buy-now" onClick={ask}>
-              <i className="fas fa-comments" /> Acheter
+            <button type="button" className="btn btn-dark buy-now" disabled={!product.inStock} onClick={buy}>
+              <i className="fas fa-bolt" /> Acheter
             </button>
             <button type="button" className="btn btn-outline"><i className="fas fa-heart" /></button>
           </div>
@@ -126,7 +130,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
       <div className="m-buybar">
         <button type="button" className="m-buybar-ask" onClick={ask} aria-label="Poser une question au vendeur"><i className="fas fa-comment-dots" /><span>Question</span></button>
         <button type="button" className="m-buybar-cart" disabled={!product.inStock} onClick={() => { cart.add(product, qty, { color, size }); setQty(1); }}>Ajouter au panier</button>
-        <button type="button" className="m-buybar-buy" onClick={ask}>Acheter</button>
+        <button type="button" className="m-buybar-buy" disabled={!product.inStock} onClick={buy}>Acheter</button>
       </div>
 
       <div className="product-tabs">

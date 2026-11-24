@@ -12,6 +12,8 @@ const UploadBody = z.object({ data: z.string().min(16).max(2_100_000) });
 const OrderBody = z.object({
   items: z.array(z.object({ id: z.coerce.number().int().positive(), quantity: z.coerce.number().int().min(1).max(100), color: z.string().max(60).optional(), size: z.string().max(60).optional() })).min(1).max(50),
   shippingPhone: phone, shippingCity: text(80), shippingAddress: text(500),
+  paymentMethod: z.enum(['cod', 'mobile_money']).default('cod'),
+  paymentProvider: z.enum(['M-Pesa', 'Airtel Money', 'Orange Money', 'Afrimoney']).optional(), paymentPhone: phone.optional(),
 });
 const AddressBody = z.object({ label: z.string().trim().max(60).optional(), city: text(80), address: text(500), phone });
 const ShopBody = z.object({ name: text(100), phone: phone.optional(), whatsapp: phone.optional(), description: z.string().trim().max(1000).optional(), citySlug: z.string().max(100).optional(), countryCode: z.string().length(2).toUpperCase().optional() });

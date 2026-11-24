@@ -2,14 +2,13 @@
 import { getConfig } from '../dist/config/env.js';
 import { buildApp } from '../dist/app.js';
 import { createPgDb } from '../dist/db/client.js';
-import { SmtpMailer, NoopMailer } from '../dist/mail/mailer.js';
+import { buildDeps } from '../dist/bootstrap.js';
 
 let ready;
 function init() {
   const config = getConfig();
   const db = createPgDb(config.DATABASE_URL);
-  const mailer = config.SMTP_URL ? new SmtpMailer(config.SMTP_URL, config.MAIL_FROM) : new NoopMailer();
-  return buildApp(config, { db, mailer }).then(async (app) => { await app.ready(); return app; });
+  return buildApp(config, buildDeps(config, db)).then(async (app) => { await app.ready(); return app; });
 }
 
 export default async function handler(req, res) {

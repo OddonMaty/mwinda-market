@@ -1,6 +1,7 @@
 import type { ImageStore } from './storage.js';
 import type { GoogleOAuth, GoogleProfile } from './google.js';
 import type { Channel, Messenger } from './messenger.js';
+import type { PushSender } from './push.js';
 import { randomInt } from 'node:crypto';
 import type { Db } from '../db/client.js';
 import type { EnvConfig } from '../config/env.js';
@@ -22,6 +23,7 @@ export interface AuthDeps {
   store?: ImageStore;
   google?: GoogleOAuth;
   messenger?: Messenger;
+  push?: PushSender;
 }
 export interface ReqMeta { ip: string; userAgent?: string }
 

@@ -22,6 +22,9 @@ export const EnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   /** WhatsApp (API officielle Meta) et SMS (Twilio) : vérification de compte et notifications. */
+  /** Notifications push (clés VAPID : `npx web-push generate-vapid-keys`). */
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
   WHATSAPP_TOKEN: z.string().optional(),
   WHATSAPP_PHONE_ID: z.string().optional(),
   TWILIO_ACCOUNT_SID: z.string().optional(),

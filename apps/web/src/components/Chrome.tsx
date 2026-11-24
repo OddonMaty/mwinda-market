@@ -50,11 +50,11 @@ export function Header({ active }: { active: Active }) {
 
       <nav className="navigation">
         <div className="container">
-          <Nav to="/" className={`nav-item${is('home')}`}>Accueil</Nav>
-          <Nav to={collectionHref()} className={`nav-item${is('collection')}`}>Nos produits</Nav>
-          <Nav to="/a-propos" className={`nav-item${is('about')}`}>À propos</Nav>
-          <Nav to="/contact" className={`nav-item${is('contact')}`}>Contact</Nav>
-          <Nav to="/faq" className={`nav-item${is('faq')}`}>FAQ</Nav>
+          <Nav to="/" className={`nav-item${is('home')}`}><T>Accueil</T></Nav>
+          <Nav to={collectionHref()} className={`nav-item${is('collection')}`}><T>Nos produits</T></Nav>
+          <Nav to="/a-propos" className={`nav-item${is('about')}`}><T>À propos</T></Nav>
+          <Nav to="/contact" className={`nav-item${is('contact')}`}><T>Contact</T></Nav>
+          <Nav to="/faq" className={`nav-item${is('faq')}`}><T>FAQ</T></Nav>
         </div>
       </nav>
     </>

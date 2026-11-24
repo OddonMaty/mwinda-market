@@ -10,6 +10,7 @@ import { AuthService, publicUrl, type AuthDeps, type UserRow } from '../services
 import { randomBytes } from 'node:crypto';
 import { newPkce } from '../services/google.js';
 import { Notifier } from '../services/notify.js';
+import { removeSubscription, saveSubscription } from '../services/push.js';
 import { CommerceService } from '../services/commerce.js';
 import { commerceRoutes } from './commerce.js';
 import { adminRoutes, publicPlatformRoutes } from './admin.js';
@@ -151,7 +152,18 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
       await svc.revokeSession(req.auth!.user.id, parse(z.object({ id: z.string().length(26) }), req.params).id);
       return OK;
     });
-    const notify = new Notifier(deps.db, deps.mailer, publicUrl(deps.config), deps.messenger);
+    const notify = new Notifier(deps.db, deps.mailer, publicUrl(deps.config), deps.messenger, deps.push);
+    r.get('/push/key', async () => ({ publicKey: deps.push?.publicKey() ?? null }));
+    const Sub = z.object({ endpoint: z.string().url().max(1000), keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }) });
+    r.post('/push/subscribe', { preHandler: authenticate }, async (req) => {
+      const b = parse(Sub, req.body);
+      await saveSubscription(deps.db, req.auth!.user.id, { endpoint: b.endpoint, p256dh: b.keys.p256dh, auth: b.keys.auth, userAgent: String(req.headers['user-agent'] ?? '') });
+      return OK;
+    });
+    r.post('/push/unsubscribe', { preHandler: authenticate }, async (req) => {
+      await removeSubscription(deps.db, req.auth!.user.id, parse(z.object({ endpoint: z.string().max(1000) }), req.body).endpoint);
+      return OK;
+    });
     const commerce = new CommerceService(deps.db, deps.store, notify);
     const admin = new AdminService(deps.db, commerce, { mailer: deps.mailer, baseUrl: publicUrl(deps.config) }, notify);
     commerceRoutes(r, { svc: commerce, authenticate, parse });

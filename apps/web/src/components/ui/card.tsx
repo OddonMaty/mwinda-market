@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from './cn';
@@ -23,6 +24,17 @@ const badge = cva('inline-flex items-center rounded-full border px-2.5 py-0.5 te
 });
 export const Badge = ({ className, variant, ...p }: React.HTMLAttributes<HTMLSpanElement> & VariantProps<typeof badge>) => <span className={cn(badge({ variant }), className)} {...p} />;
 
-export const Table = ({ className, ...p }: React.TableHTMLAttributes<HTMLTableElement>) => <div className="w-full overflow-x-auto"><table className={cn('w-full text-sm', className)} {...p} /></div>;
+/** Tableau : sur téléphone, chaque ligne devient une fiche « libellé : valeur » (les libellés viennent de l'en-tête). */
+export const Table = ({ className, ...p }: React.TableHTMLAttributes<HTMLTableElement>) => {
+  const label = React.useCallback((el: HTMLTableElement | null) => {
+    if (!el) return;
+    const heads = Array.from(el.querySelectorAll('thead th')).map((h) => (h.textContent ?? '').trim());
+    el.querySelectorAll('tbody tr').forEach((tr) => Array.from(tr.children).forEach((td, i) => { if (!td.hasAttribute('data-label')) td.setAttribute('data-label', heads[i] ?? ''); }));
+  }, []);
+  // Les lignes changent à chaque rendu : on ré-étiquette après chaque mise à jour.
+  const ref = React.useRef<HTMLTableElement | null>(null);
+  React.useEffect(() => { label(ref.current); });
+  return <div className="w-full overflow-x-auto"><table ref={ref} className={cn('stack-table w-full text-sm', className)} {...p} /></div>;
+};
 export const Th = ({ className, ...p }: React.ThHTMLAttributes<HTMLTableCellElement>) => <th className={cn('h-10 whitespace-nowrap border-b px-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground', className)} {...p} />;
 export const Td = ({ className, ...p }: React.TdHTMLAttributes<HTMLTableCellElement>) => <td className={cn('border-b px-3 py-3 align-middle', className)} {...p} />;

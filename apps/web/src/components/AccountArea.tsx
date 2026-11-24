@@ -154,11 +154,11 @@ export function AccountArea() {
       </>}>
       {tab === 'dashboard' && (
         <div className="grid gap-6">
-          <Card><CardContent className="flex flex-wrap items-center gap-4 pt-5">
+          <Card><CardContent className="flex flex-col gap-4 pt-5 sm:flex-row sm:items-center">
             <div className="flex size-16 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">{fullName.charAt(0).toUpperCase()}</div>
             <div className="min-w-0 flex-1"><p className="text-lg font-semibold">{fullName}</p><p className="truncate text-sm text-muted-foreground">{[user.email, user.phone].filter(Boolean).join(' · ')}</p>
               {user.verified ? <Badge variant="success" className="mt-1">Compte vérifié</Badge> : <Badge variant="secondary" className="mt-1">Non vérifié (facultatif)</Badge>}</div>
-            <Button variant="dark" onClick={() => setTab('profile')}>Modifier mon profil</Button>
+            <Button variant="dark" className="w-full sm:w-auto" onClick={() => setTab('profile')}>Modifier mon profil</Button>
           </CardContent></Card>
           {!user.verified && <VerifyPanel />}
           <div>
@@ -256,7 +256,7 @@ export function AccountArea() {
             {sessions.map((s) => (
               <div key={s.id} className="flex items-center gap-3 border-b py-3 last:border-0">
                 <Laptop className="size-5 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{s.userAgent ?? 'Appareil inconnu'} {s.current && <Badge variant="success">Cet appareil</Badge>}</p><p className="text-xs text-muted-foreground">Connecté le {fmt(s.createdAt)} · dernière activité {fmt(s.lastUsedAt)}</p></div>
+                <div className="min-w-0 flex-1"><p className="flex flex-wrap items-center gap-1.5 text-sm font-medium"><span className="min-w-0 max-w-full truncate">{s.userAgent ?? 'Appareil inconnu'}</span>{s.current && <Badge variant="success">Cet appareil</Badge>}</p><p className="text-xs text-muted-foreground">Connecté le {fmt(s.createdAt)} · dernière activité {fmt(s.lastUsedAt)}</p></div>
                 {!s.current && <Button variant="outline" size="sm" onClick={() => void revoke(s.id)}>Déconnecter</Button>}
               </div>
             ))}
