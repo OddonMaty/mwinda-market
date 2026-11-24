@@ -8,9 +8,9 @@ export interface NavItem { key: string; label: string; icon: LucideIcon; badge?:
 export interface NavGroup { title?: string; items: NavItem[] }
 
 /** Gabarit « menu latéral » commun à l'administration, au compte et à l'espace vendeur (inspiré de My Alibaba). */
-export function DashboardShell({ space, subtitle, groups, active, onSelect, user, topRight, children, footer }: {
+export function DashboardShell({ space, subtitle, groups, active, onSelect, user, topRight, children, footer, hideTabs }: {
   space: string; subtitle?: string; groups: NavGroup[]; active: string; onSelect: (key: string) => void;
-  user?: { name: string; email?: string }; topRight?: React.ReactNode; children: React.ReactNode; footer?: React.ReactNode;
+  user?: { name: string; email?: string }; topRight?: React.ReactNode; children: React.ReactNode; footer?: React.ReactNode; hideTabs?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
   const all = groups.flatMap((g) => g.items);
@@ -68,7 +68,7 @@ export function DashboardShell({ space, subtitle, groups, active, onSelect, user
         <main className="mx-auto w-full min-w-0 max-w-[1200px] px-4 py-6 pb-24 sm:px-8 sm:py-8 lg:pb-8">{children}</main>
       </div>
       {/* Barre d'onglets mobile : les 4 premières rubriques + « Plus » qui ouvre le menu complet */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-card pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_12px_rgba(0,0,0,.06)] lg:hidden" aria-label="Rubriques">
+      {!hideTabs && <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-card pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_12px_rgba(0,0,0,.06)] lg:hidden" aria-label="Rubriques">
         {all.slice(0, 4).map((it) => {
           const Icon = it.icon; const on = it.key === active;
           return (
@@ -81,7 +81,7 @@ export function DashboardShell({ space, subtitle, groups, active, onSelect, user
         <button type="button" onClick={() => setOpen(true)} className={cn('flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium', all.slice(4).some((i) => i.key === active) ? 'text-primary' : 'text-muted-foreground')}>
           <Ellipsis className="size-5" /><span>Plus</span>
         </button>
-      </nav>
+      </nav>}
     </div>
   );
 }

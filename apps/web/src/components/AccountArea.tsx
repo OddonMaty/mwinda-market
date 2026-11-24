@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingBag, MapPin, UserRound, ShieldCheck, Store, LogOut, Plus, Package, Truck, CheckCircle2, Clock, Trash2, Laptop, KeyRound, MessageCircle, Heart } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, MapPin, UserRound, ShieldCheck, Store, LogOut, Plus, Package, Truck, CheckCircle2, Clock, Trash2, Laptop, KeyRound, MessageCircle, Heart, Bell, Settings } from 'lucide-react';
 import { Price } from './Locale';
 import { ConversationList, Thread, type Conv } from './Chat';
 import { api, errorMessage, useAuth } from './AuthProvider';
@@ -18,19 +18,28 @@ const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Conf
 const TONE: Record<string, 'success' | 'warning' | 'danger' | 'default'> = { pending: 'warning', confirmed: 'default', shipped: 'default', delivered: 'success', cancelled: 'danger' };
 const day = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 const fmt = (d: string) => new Date(d).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
-type Tab = 'dashboard' | 'orders' | 'messages' | 'addresses' | 'profile' | 'security';
+type Tab = 'dashboard' | 'notifications' | 'orders' | 'messages' | 'addresses' | 'profile' | 'security';
 
 export function AccountArea() {
   const { user, ready, openLogin, logout, notify, refresh } = useAuth();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [conv, setConv] = useState<Conv | null>(null);
   const [filter, setFilter] = useState('all');
+  const [convs, setConvs] = useState<Conv[]>([]);
   const [mf, setMf] = useState<'all' | 'active' | 'shipped' | 'delivered'>('all');
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addrForm, setAddrForm] = useState(false);
   const cities = useCountries().find((c) => c.code === (user?.countryCode ?? 'CD'))?.cities ?? [];
+  useEffect(() => {
+    if (!user) return;
+    let live = true;
+    const load = async () => { const r = await api<{ conversations: Conv[] }>('/conversations?as=buyer'); if (live && r.ok) setConvs(r.data.conversations); };
+    void load();
+    const t = setInterval(() => { if (!document.hidden) void load(); }, 15000);
+    return () => { live = false; clearInterval(t); };
+  }, [user]);
   const loadOrders = useCallback(() => api<{ orders: OrderRow[] }>('/orders').then((r) => setOrders(r.ok ? r.data.orders : [])), []);
   async function orderAction(number: string, action: 'cancel' | 'receive') {
     if (action === 'cancel' && !window.confirm('Annuler cette commande ?')) return;
@@ -111,12 +120,13 @@ export function AccountArea() {
   }
 
   const count = (st: string) => orders?.filter((o) => o.status === st).length ?? 0;
+  const unread = convs.reduce((n, c) => n + (c.unread ?? 0), 0);
   const fullName = `${user.firstName} ${user.lastName}`.trim() || user.email || user.phone || 'Mon compte';
   const contact = user.email ?? user.phone ?? '';
   const groups: NavGroup[] = [
-    { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard }] },
+    { items: [{ key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard }, { key: 'notifications', label: 'Notifications', icon: Bell, badge: unread || undefined }] },
     { title: 'Achats', items: [{ key: 'orders', label: 'Mes commandes', icon: ShoppingBag, badge: orders?.length || undefined }, { key: 'messages', label: 'Mes messages', icon: MessageCircle }, { key: 'addresses', label: 'Mes adresses', icon: MapPin }] },
-    { title: 'Paramètres', items: [{ key: 'profile', label: 'Mon profil', icon: UserRound }, { key: 'security', label: 'Sécurité et appareils', icon: ShieldCheck }] },
+    { title: 'Paramètres', items: [{ key: 'profile', label: 'Paramètres du compte', icon: Settings }, { key: 'security', label: 'Sécurité et appareils', icon: ShieldCheck }] },
   ];
   const visible = (orders ?? []).filter((o) => filter === 'all' || o.status === filter);
 
@@ -147,8 +157,9 @@ export function AccountArea() {
   );
 
   return (
-    <DashboardShell space="Mon compte" subtitle={contact} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: fullName, email: contact }}
+    <DashboardShell space="Mon compte" subtitle={contact} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} hideTabs user={{ name: fullName, email: contact }}
       topRight={<>
+        <button type="button" aria-label="Notifications" onClick={() => setTab('notifications')} className="relative inline-flex size-9 items-center justify-center rounded-lg border"><Bell className="size-4" />{unread > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">{unread}</span>}</button>
         {user.roles.length > 0 && <Button asChild variant="outline" size="sm"><a href="/admin"><ShieldCheck /><span className="hidden sm:inline">Administration</span></a></Button>}
         <Button asChild variant="outline" size="sm"><Link href="/vendeur"><Store /><span className="hidden sm:inline">Espace vendeur</span></Link></Button>
         <Button variant="ghost" size="sm" onClick={() => void logout()}><LogOut /><span className="hidden sm:inline">Déconnexion</span></Button>
@@ -158,7 +169,7 @@ export function AccountArea() {
           <div className="flex items-center gap-3">
             <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground">{fullName.charAt(0).toUpperCase()}</div>
             <div className="min-w-0 flex-1"><p className="truncate font-semibold">{fullName}</p><p className="truncate text-xs text-muted-foreground">{contact}</p></div>
-            <button type="button" aria-label="Réglages" className="rounded-full p-2 text-muted-foreground" onClick={() => setTab('profile')}><UserRound className="size-5" /></button>
+            <button type="button" aria-label="Paramètres du compte" className="rounded-full p-2 text-muted-foreground" onClick={() => setTab('profile')}><Settings className="size-5" /></button>
           </div>
           <div className="grid grid-cols-4 gap-2 text-center text-xs">
             <button type="button" onClick={() => { setFilter('all'); setTab('orders'); }} className="flex flex-col items-center gap-1.5 py-1"><ShoppingBag className="size-6" />Commandes</button>
@@ -166,7 +177,6 @@ export function AccountArea() {
             <button type="button" onClick={() => setTab('addresses')} className="flex flex-col items-center gap-1.5 py-1"><MapPin className="size-6" />Adresses</button>
             <button type="button" onClick={() => setTab('messages')} className="flex flex-col items-center gap-1.5 py-1"><MessageCircle className="size-6" />Messages</button>
           </div>
-          {!user.verified && <VerifyPanel />}
           <div className="flex border-b text-sm">
             {([['all', 'Tous'], ['active', 'En cours'], ['shipped', 'Expédiées'], ['delivered', 'Livrées']] as const).map(([k, l]) => (
               <button key={k} type="button" onClick={() => setMf(k)} className={`flex-1 border-b-2 py-2.5 ${mf === k ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted-foreground'}`}>{l}</button>
@@ -210,6 +220,26 @@ export function AccountArea() {
               <button type="button" onClick={() => setTab('security')} className="flex items-center gap-3 rounded-xl border p-4 text-left hover:bg-muted/40"><KeyRound className="size-5 text-primary" /><span className="flex-1"><b className="block text-sm">Sécuriser votre compte</b><span className="text-xs text-muted-foreground">Mot de passe et appareils</span></span></button>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {tab === 'notifications' && (
+        <div className="grid max-w-2xl gap-3">
+          {convs.filter((c) => c.unread > 0).map((c) => (
+            <button key={`m${c.id}`} type="button" onClick={() => { setConv(c); setTab('messages'); }} className="flex items-center gap-3 rounded-2xl border bg-card p-3 text-left">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><MessageCircle className="size-5" /></span>
+              <span className="min-w-0 flex-1"><b className="block truncate text-sm">{c.other}</b><span className="block truncate text-xs text-muted-foreground">{c.lastBody ?? ''}</span></span>
+              <Badge>{c.unread}</Badge>
+            </button>
+          ))}
+          {(orders ?? []).slice(0, 8).map((o) => (
+            <Link key={o.id} href={`/suivi?n=${o.number}`} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"><Package className="size-5" /></span>
+              <span className="min-w-0 flex-1"><b className="block truncate text-sm">Commande #{o.number}</b><span className="block text-xs text-muted-foreground">{day(o.createdAt)}</span></span>
+              <Badge variant={TONE[o.status] ?? 'secondary'}>{STATUS[o.status] ?? o.status}</Badge>
+            </Link>
+          ))}
+          {unread === 0 && (orders ?? []).length === 0 && <Empty icon={Bell} title="Aucune notification" text="Les nouveaux messages et l’avancement de vos commandes apparaîtront ici." />}
         </div>
       )}
 
@@ -262,7 +292,9 @@ export function AccountArea() {
       )}
 
       {tab === 'profile' && (
-        <Card className="max-w-2xl"><CardHeader><CardTitle>Mes informations</CardTitle><CardDescription>Ces informations sont utilisées pour vos commandes.</CardDescription></CardHeader><CardContent>
+        <div className="grid max-w-2xl gap-4">
+        <VerifyPanel />
+        <Card><CardHeader><CardTitle>Mes informations</CardTitle><CardDescription>Ces informations sont utilisées pour vos commandes.</CardDescription></CardHeader><CardContent>
           <form className="grid gap-4" onSubmit={saveProfile} key={user.id + user.firstName + user.lastName + user.phone}>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Prénom *"><Input name="firstName" defaultValue={user.firstName} required /></Field>
@@ -273,6 +305,8 @@ export function AccountArea() {
             <div><Button type="submit">Enregistrer</Button></div>
           </form>
         </CardContent></Card>
+        <Button variant="outline" className="lg:hidden" onClick={() => setTab('security')}><ShieldCheck />Mot de passe et appareils</Button>
+        </div>
       )}
 
       {tab === 'security' && (
