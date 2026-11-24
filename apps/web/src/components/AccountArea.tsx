@@ -160,14 +160,19 @@ export function AccountArea() {
               {user.verified ? <Badge variant="success" className="mt-1">Compte vérifié</Badge> : <Badge variant="secondary" className="mt-1">Non vérifié (facultatif)</Badge>}</div>
             <Button variant="dark" className="w-full sm:w-auto" onClick={() => setTab('profile')}>Modifier mon profil</Button>
           </CardContent></Card>
+          <div className="grid grid-cols-4 gap-2 lg:hidden">
+            {([['orders', ShoppingBag, 'Commandes'], ['messages', MessageCircle, 'Messages'], ['addresses', MapPin, 'Adresses'], ['profile', UserRound, 'Réglages']] as const).map(([k, Icon, l]) => (
+              <button key={k} type="button" onClick={() => { setFilter('all'); setTab(k); }} className="flex flex-col items-center gap-1.5 rounded-2xl border bg-card px-1 py-3 text-xs font-medium"><span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary"><Icon className="size-5" /></span>{l}</button>
+            ))}
+          </div>
           {!user.verified && <VerifyPanel />}
           <div>
             <PageHeading title="Mes commandes" actions={<Button variant="link" onClick={() => { setFilter('all'); setTab('orders'); }}>Tout voir</Button>} />
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <StatCard label="À confirmer" value={count('pending')} icon={Clock} />
-              <StatCard label="En préparation" value={count('confirmed')} icon={Package} />
-              <StatCard label="En livraison" value={count('shipped')} icon={Truck} />
-              <StatCard label="Livrées" value={count('delivered')} icon={CheckCircle2} />
+              <button type="button" className="text-left" onClick={() => { setFilter('pending'); setTab('orders'); }}><StatCard label="À confirmer" value={count('pending')} icon={Clock} /></button>
+              <button type="button" className="text-left" onClick={() => { setFilter('confirmed'); setTab('orders'); }}><StatCard label="En préparation" value={count('confirmed')} icon={Package} /></button>
+              <button type="button" className="text-left" onClick={() => { setFilter('shipped'); setTab('orders'); }}><StatCard label="En livraison" value={count('shipped')} icon={Truck} /></button>
+              <button type="button" className="text-left" onClick={() => { setFilter('delivered'); setTab('orders'); }}><StatCard label="Livrées" value={count('delivered')} icon={CheckCircle2} /></button>
             </div>
           </div>
           <Card>
