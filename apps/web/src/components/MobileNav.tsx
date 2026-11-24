@@ -42,11 +42,6 @@ export function MobileNav() {
 
   const hideBar = path.startsWith('/admin') || path.startsWith('/vendeur');
   const on = (p: string) => (p === '/' ? path === '/' : path.startsWith(p));
-  const focusSearch = () => {
-    setSheet(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => (document.getElementById('searchInput') as HTMLInputElement | null)?.focus(), 250);
-  };
 
   return (
     <>
@@ -56,7 +51,7 @@ export function MobileNav() {
         <nav className="m-tabbar" aria-label="Navigation principale">
           <Link href="/" className={on('/') ? 'on' : ''}><i className="fas fa-house" /><span>{t('Accueil')}</span></Link>
           <button type="button" className={sheet === 'cats' ? 'on' : ''} onClick={() => setSheet(sheet === 'cats' ? null : 'cats')}><i className="fas fa-table-cells-large" /><span>{t('Catégories')}</span></button>
-          <button type="button" onClick={focusSearch}><i className="fas fa-search" /><span>{t('Recherche')}</span></button>
+          <Link href="/vendeur" className={path.startsWith('/vendeur') ? 'on' : ''}><i className="fas fa-store" /><span>{t('Boutique')}</span></Link>
           <button type="button" onClick={() => { setSheet(null); toggle(); }}>
             <i className="fas fa-shopping-cart" />{count > 0 && <b className="m-badge">{count}</b>}<span>{t('Panier')}</span>
           </button>

@@ -23,8 +23,8 @@ export default async function HomePage() {
   return (
     <>
       <Header active="home" />
-      <MobileCatStrip />
       <div className="container home-hero-row"><CategorySidebar /><HeroSlider slides={slides} /></div>
+      <MobileCatStrip />
 
       <section className="usp-band">
         <div className="container">
