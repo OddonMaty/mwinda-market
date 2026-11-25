@@ -1,4 +1,5 @@
 'use client';
+import { nowLocale, useI18n } from './I18n';
 
 import { useCallback, useEffect, useState } from 'react';
 import { Banknote, CheckCircle2, Clock, Wallet } from 'lucide-react';
@@ -18,6 +19,7 @@ const ERR: Record<string, string> = {
 
 /** « Mes gains » : solde des commandes livrées (après commission), demande de retrait, historique. L’administration valide chaque retrait. */
 export function SellerWallet({ official }: { official: boolean }) {
+  useI18n();
   const { notify } = useAuth();
   const [w, setW] = useState<WalletData | null>(null);
   const [method, setMethod] = useState<'mobile_money' | 'bank'>('mobile_money');
@@ -74,7 +76,7 @@ export function SellerWallet({ official }: { official: boolean }) {
           <Card><Table>
             <thead><tr><Th>Date</Th><Th>Montant</Th><Th>Destination</Th><Th>Statut</Th></tr></thead>
             <tbody>{w.withdrawals.map((x) => (
-              <tr key={x.id}><Td>{new Date(x.createdAt).toLocaleDateString('fr-FR')}</Td><Td>{formatUsd(x.amountUsd)}</Td><Td>{x.provider} · {x.accountNumber}</Td>
+              <tr key={x.id}><Td>{new Date(x.createdAt).toLocaleDateString(nowLocale())}</Td><Td>{formatUsd(x.amountUsd)}</Td><Td>{x.provider} · {x.accountNumber}</Td>
                 <Td><Badge variant={TONE[x.status]}>{LABEL[x.status]}</Badge>{x.reference && <div className="text-xs text-muted-foreground">Réf. {x.reference}</div>}{x.reason && <div className="text-xs text-muted-foreground">Motif : {x.reason}</div>}</Td></tr>
             ))}</tbody>
           </Table></Card>

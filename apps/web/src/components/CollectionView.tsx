@@ -75,7 +75,7 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
           <div className="collection-cats"><CategorySidebar active={activeDep} /></div>
           <div className="filter-group location-filter">
             <h4>Localisation du vendeur</h4>
-            {nearMe && place.pays !== myCountry && <NavButton to={href(nearMe.code)} className="near-me-btn"><i className="fas fa-location-arrow" /> Vendeurs de mon pays ({nearMe.count})</NavButton>}
+            {nearMe && place.pays !== myCountry && <NavButton to={href(nearMe.code)} className="near-me-btn"><i className="fas fa-location-arrow" /> {`Vendeurs de mon pays (${nearMe.count})`}</NavButton>}
             {places.length === 0 ? <p className="loc-empty">Aucune localisation pour cette sélection.</p> : (
               <ul className="loc-list">
                 <li><NavButton to={href()} className={`loc-link${!place.pays ? ' active' : ''}`}>Tous les pays</NavButton></li>
@@ -92,7 +92,7 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
           </div>
           <div className="filter-group">
             <h4>Disponibilité</h4>
-            <label className="checkbox-label"><input type="checkbox" /><span>En stock ({inStockCount})</span></label>
+            <label className="checkbox-label"><input type="checkbox" /><span>{`En stock (${inStockCount})`}</span></label>
           </div>
           <div className="filter-group">
             <h4>Prix</h4>
@@ -115,7 +115,7 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
             <h4>Boutique</h4>
             <label className="checkbox-label"><input type="checkbox" /><span>Produits vendeurs uniquement</span></label>
           </div>
-          <div className="m-filter-foot"><button type="button" className="btn btn-primary" onClick={() => setSidebarOpen(false)}>Voir {shown.length} produit{shown.length > 1 ? 's' : ''}</button></div>
+          <div className="m-filter-foot"><button type="button" className="btn btn-primary" onClick={() => setSidebarOpen(false)}>{shown.length > 1 ? `Voir ${shown.length} produits` : `Voir ${shown.length} produit`}</button></div>
         </aside>
 
         <div className="products-area">

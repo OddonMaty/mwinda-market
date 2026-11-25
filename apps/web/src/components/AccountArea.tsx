@@ -1,4 +1,5 @@
 'use client';
+import { nowLocale, useI18n } from './I18n';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -16,11 +17,12 @@ interface SessionRow { id: string; kind: string; createdAt: string; lastUsedAt: 
 interface OrderRow { id: string; number: string; status: string; subtotalUsd: number; city: string; address: string; createdAt: string; canCancel: boolean; canConfirmReceipt: boolean; items: { name: string; unitPriceUsd: number; quantity: number; color: string; size: string; status: string; shop: string }[] }
 const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée' };
 const TONE: Record<string, 'success' | 'warning' | 'danger' | 'default'> = { pending: 'warning', confirmed: 'default', shipped: 'default', delivered: 'success', cancelled: 'danger' };
-const day = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-const fmt = (d: string) => new Date(d).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
+const day = (d: string) => new Date(d).toLocaleDateString(nowLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
+const fmt = (d: string) => new Date(d).toLocaleString(nowLocale(), { dateStyle: 'medium', timeStyle: 'short' });
 type Tab = 'dashboard' | 'notifications' | 'orders' | 'messages' | 'addresses' | 'profile' | 'security';
 
 export function AccountArea() {
+  useI18n();
   const { user, ready, openLogin, logout, notify, refresh } = useAuth();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [conv, setConv] = useState<Conv | null>(null);

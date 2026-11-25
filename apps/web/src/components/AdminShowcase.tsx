@@ -1,4 +1,5 @@
 'use client';
+import { useT } from './I18n';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
@@ -19,6 +20,7 @@ const REASON: Record<string, string> = { inactive: 'Désactivée', hors_periode:
 
 /** « Promotions » : l'administrateur choisit les produits promus (accueil, carrousel). Réservé aux vendeurs à abonnement payant. */
 export function Showcase({ notify, fail }: P) {
+  const t = useT();
   const [slides, setSlides] = useState<Slide[] | null>(null);
   const [demo, setDemo] = useState<Demo | null>(null);
   const [adding, setAdding] = useState<'hero' | 'home' | 'banner' | null>(null);
@@ -80,7 +82,7 @@ export function Showcase({ notify, fail }: P) {
                 <div className="min-w-0 flex-1 basis-48">
                   <p className="truncate font-medium">{s.title || '(sans titre)'} {s.tag && <span className="text-xs text-muted-foreground">· {s.tag}</span>}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {s.productId ? `Produit #${s.productId} · ${s.shop} · ${s.plan}` : 'Bannière libre'} · {s.priceUsd != null ? formatUsd(s.priceUsd) : 'sans prix'}{s.priceOverride != null ? ' (prix imposé)' : ''}
+                    {s.productId ? t('Produit #{0} · {1} · {2}', s.productId, s.shop ?? '', s.plan ?? '') : 'Bannière libre'} · {s.priceUsd != null ? formatUsd(s.priceUsd) : 'sans prix'}{s.priceOverride != null ? ' (prix imposé)' : ''}
                   </p>
                 </div>
                 <Badge variant="outline">{s.placement === 'home' ? 'À la une' : 'Carrousel'}</Badge>
@@ -108,7 +110,7 @@ export function Showcase({ notify, fail }: P) {
           <CardDescription>Les produits d’exemple fournis au lancement (boutique officielle). Quand les vrais produits des vendeurs sont en ligne, retirez-les en un clic ; ils sont archivés, pas supprimés.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
-          {demo && <p className="text-sm">{demo.demoActive} produit{demo.demoActive > 1 ? 's' : ''} de démonstration en ligne · {demo.realActive} produit{demo.realActive > 1 ? 's' : ''} réel{demo.realActive > 1 ? 's' : ''} en ligne</p>}
+          {demo && <p className="text-sm">{`${t(demo.demoActive > 1 ? '{0} produits de démonstration en ligne' : '{0} produit de démonstration en ligne', demo.demoActive)} · ${t(demo.realActive > 1 ? '{0} produits réels en ligne' : '{0} produit réel en ligne', demo.realActive)}`}</p>}
           {demo && demo.demoActive > 0 && <Button type="button" variant="destructive" onClick={() => void demoAction('hide')}>Retirer les produits de démonstration</Button>}
           {demo && demo.demoActive === 0 && demo.demoTotal > 0 && <Button type="button" variant="outline" onClick={() => void demoAction('restore')}>Remettre les produits de démonstration</Button>}
         </CardContent>

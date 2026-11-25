@@ -1,4 +1,5 @@
 'use client';
+import { nowLocale, useI18n } from './I18n';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ const toUsd = (v: FormDataEntryValue | null): number => Math.round(Number(v) * 1
 type Tab = 'dashboard' | 'products' | 'orders' | 'wallet' | 'messages' | 'shop';
 
 export function SellerDashboard() {
+  const { t } = useI18n();
   const router = useRouter();
   const { user, ready, logout, notify } = useAuth();
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -117,7 +119,7 @@ export function SellerDashboard() {
     { title: 'Ma boutique', items: [{ key: 'products', label: 'Produits', icon: Package, badge: products.length || undefined }, { key: 'orders', label: 'Commandes', icon: ShoppingBag, badge: toDo || undefined }, { key: 'wallet', label: 'Mes gains', icon: Wallet }, { key: 'messages', label: 'Messages', icon: MessageCircle }] },
     { title: 'Paramètres', items: [{ key: 'shop', label: 'Boutique et plan', icon: Settings }] },
   ];
-  const planLine = `${shop.productCount} produit${shop.productCount > 1 ? 's' : ''} sur ${shop.maxProducts ?? 'illimité'}${shop.planExpiresAt ? ` · valable jusqu’au ${new Date(shop.planExpiresAt).toLocaleDateString('fr-FR')}` : ''}`;
+  const planLine = `${t(shop.productCount > 1 ? '{0} produits sur {1}' : '{0} produit sur {1}', shop.productCount, shop.maxProducts ?? t('illimité'))}${shop.planExpiresAt ? ` · ${t('valable jusqu’au {0}', new Date(shop.planExpiresAt).toLocaleDateString(nowLocale()))}` : ''}`;
   const cats = DEPARTMENTS.find((d) => d.slug === dep)?.categories ?? [];
   const shownOrders = orders.filter((o) => orderFilter === 'all' || o.status === orderFilter);
 
@@ -256,7 +258,7 @@ export function SellerDashboard() {
           {shownOrders.length === 0 ? <Empty icon={ShoppingBag} title="Aucune commande" text="Les commandes de vos clients apparaîtront ici." /> : shownOrders.map((o) => (
             <Card key={o.number} className="overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/40 px-5 py-3">
-                <div><p className="text-sm font-semibold">Commande {o.number}</p><p className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · {o.customer} · {o.city} · {o.phone}</p></div>
+                <div><p className="text-sm font-semibold">Commande {o.number}</p><p className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleDateString(nowLocale(), { day: 'numeric', month: 'long', year: 'numeric' })} · {o.customer} · {o.city} · {o.phone}</p></div>
                 <Badge variant={TONE[o.status] ?? 'default'}>{STATUS[o.status] ?? o.status}</Badge>
               </div>
               <Table>

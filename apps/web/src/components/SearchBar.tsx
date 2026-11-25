@@ -75,7 +75,7 @@ export function SearchBar({ initial = '' }: { initial?: string }) {
               <span><b>{p.name}</b><small>{p.category}</small></span><em>{formatUsd(p.priceUsd)}</em>
             </button>
           ))}
-          <button type="button" className="search-sug-all" onClick={() => go()}>Voir tous les résultats pour « {q} »</button>
+          <button type="button" className="search-sug-all" onClick={() => go()}>{`Voir tous les résultats pour « ${q} »`}</button>
         </div>
       )}
     </div>

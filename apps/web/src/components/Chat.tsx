@@ -1,4 +1,5 @@
 'use client';
+import { nowLocale, useI18n } from './I18n';
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -17,10 +18,11 @@ interface Ctx {
 const ChatContext = createContext<Ctx>({ ask: () => {}, openInbox: () => {} });
 export const useChat = () => useContext(ChatContext);
 
-const time = (d: string) => new Date(d).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const time = (d: string) => new Date(d).toLocaleString(nowLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 /** Fil de discussion : messages, saisie, actualisation toutes les 5 s. Sert à l'acheteur (bulle) et au vendeur (onglet Messages). */
 export function Thread({ conversationId, target, onCreated, className = '' }: { conversationId: number | null; target?: ChatTarget; onCreated?: (id: number) => void; className?: string }) {
+  useI18n();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -83,6 +85,7 @@ export function Thread({ conversationId, target, onCreated, className = '' }: { 
 
 /** Liste des discussions (côté acheteur dans la bulle, côté vendeur dans le tableau de bord). */
 export function ConversationList({ as, onOpen, activeId }: { as: 'buyer' | 'seller'; onOpen: (c: Conv) => void; activeId?: number | null }) {
+  useI18n();
   const [rows, setRows] = useState<Conv[] | null>(null);
   useEffect(() => {
     let live = true;

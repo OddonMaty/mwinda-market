@@ -7,7 +7,7 @@ import { DEPARTMENTS } from '@saotech/shared';
 import { collectionHref } from '../lib';
 import { useAuth } from './AuthProvider';
 import { useCart } from './CartProvider';
-import { useT } from './I18n';
+import { LanguageChips, useT } from './I18n';
 import { useWishlist } from './WishlistProvider';
 
 const LINKS: [string, string, string][] = [
@@ -74,6 +74,7 @@ export function MobileNav() {
             <li key={to}><Link href={to} className={on(to) && to !== '/' ? 'on' : ''}><i className={`fas ${icon}`} /><span>{t(label)}</span><i className="fas fa-chevron-right" /></Link></li>
           ))}
         </ul>
+        <LanguageChips />
         <div className="m-legal">{LEGAL.map(([l, to]) => <Link key={to} href={to}>{t(l)}</Link>)}</div>
         <div className="m-contact">
           <a href="tel:+243972584021"><i className="fas fa-phone" /> +243 972 584 021</a>
@@ -92,7 +93,7 @@ export function MobileNav() {
               </button>
               {openDep === d.slug && (
                 <div className="m-sub">
-                  <Link href={collectionHref(d.slug)}>Tout voir dans {d.name}</Link>
+                  <Link href={collectionHref(d.slug)}>{`Tout voir dans ${d.name}`}</Link>
                   {d.categories.map((c) => <Link key={c} href={collectionHref(d.slug, c)}>{c}</Link>)}
                 </div>
               )}

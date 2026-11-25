@@ -62,7 +62,7 @@ export function PhotoPicker({ photos, onChange }: { photos: string[]; onChange: 
 
   return (
     <div className="grid gap-2">
-      <p className="text-sm font-medium">Photos du produit ({photos.length}/{MAX_PHOTOS}) <span className="font-normal text-muted-foreground">— la première est la photo principale</span></p>
+      <p className="text-sm font-medium">{`Photos du produit (${photos.length}/${MAX_PHOTOS})`} <span className="font-normal text-muted-foreground">— la première est la photo principale</span></p>
       <div className="flex flex-wrap gap-3">
         {photos.map((url, i) => (
           <div key={url} className="relative w-24">

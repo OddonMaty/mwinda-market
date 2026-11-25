@@ -1,4 +1,5 @@
 'use client';
+import { nowLocale, useI18n } from './I18n';
 
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart3, Users as UsersIcon, Store, Package, ShoppingBag, Crown, Inbox, Globe2, FileText, ScrollText, Search as SearchIcon, ShieldCheck, Wallet, Percent, Bell, Sparkles } from 'lucide-react';
@@ -21,7 +22,7 @@ const NAV: NavGroup[] = [
 const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée', active: 'Actif', suspended: 'Suspendu', archived: 'Archivé' };
 const TONE: Record<string, 'success' | 'warning' | 'danger' | 'secondary' | 'default'> = { active: 'success', delivered: 'success', approved: 'success', pending: 'warning', confirmed: 'default', shipped: 'default', suspended: 'danger', cancelled: 'danger', rejected: 'danger', archived: 'secondary' };
 const PAGE_LABELS: Record<string, string> = { conditions: 'Conditions générales d’utilisation', confidentialite: 'Politique de confidentialité', 'conditions-vendeur': 'Conditions générales vendeur', remboursement: 'Retours et remboursements', livraison: 'Livraison', paiements: 'Paiements' };
-const day = (d: string | null) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+const day = (d: string | null) => (d ? new Date(d).toLocaleDateString(nowLocale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const St = ({ s }: { s: string }) => <Badge variant={TONE[s] ?? 'secondary'}>{STATUS[s] ?? s}</Badge>;
 
 /** Charge une liste depuis l'API d'administration et la recharge à la demande. */
@@ -58,6 +59,7 @@ function Search({ value, onChange }: { value: string; onChange: (v: string) => v
 }
 
 export function AdminArea() {
+  useI18n();
   const { user, ready, openLogin, notify } = useAuth();
   const [roles, setRoles] = useState<string[] | null>(null);
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -125,7 +127,7 @@ function NotificationBell({ onOpenShops }: { onOpenShops: () => void }) {
               <li key={n.id}><button type="button" className="block w-full border-b px-4 py-3 text-left text-sm last:border-0 hover:bg-muted/50" onClick={() => { setOpen(false); onOpenShops(); }}>
                 <span className="flex items-center gap-2 font-medium">{!n.read && <span className="size-2 rounded-full bg-primary" />}{n.title}</span>
                 {n.body && <span className="block text-xs text-muted-foreground">{n.body}</span>}
-                <span className="block text-[11px] text-muted-foreground">{new Date(n.createdAt).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                <span className="block text-[11px] text-muted-foreground">{new Date(n.createdAt).toLocaleString(nowLocale(), { dateStyle: 'medium', timeStyle: 'short' })}</span>
               </button></li>
             ))}
           </ul>
@@ -440,7 +442,7 @@ function Audit({ isSuper }: { isSuper: boolean }) {
   if (!isSuper) return <Empty icon={ShieldCheck} title="Réservé au super-administrateur" />;
   return (
     <Table head={['Date', 'Administrateur', 'Action', 'Cible']} empty={rows?.length === 0}>
-      {rows?.map((a, i) => <tr key={i} className="hover:bg-muted/30"><Td>{new Date(a.createdAt).toLocaleString('fr-FR')}</Td><Td>{a.actor ?? '—'}</Td><Td>{a.action}</Td><Td>{a.targetType} {a.targetId}</Td></tr>)}
+      {rows?.map((a, i) => <tr key={i} className="hover:bg-muted/30"><Td>{new Date(a.createdAt).toLocaleString(nowLocale())}</Td><Td>{a.actor ?? '—'}</Td><Td>{a.action}</Td><Td>{a.targetType} {a.targetId}</Td></tr>)}
     </Table>
   );
 }

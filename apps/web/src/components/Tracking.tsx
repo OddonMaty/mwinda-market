@@ -1,4 +1,5 @@
 'use client';
+import { nowLocale, useI18n } from './I18n';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -22,7 +23,7 @@ const STEPS = [
 ];
 const EVENT_LABEL: Record<string, string> = { placed: 'Commande passée', confirmed: 'Commande confirmée', shipped: 'Colis expédié', update: 'Mise à jour de la position', delivered: 'Colis livré', cancelled: 'Commande annulée' };
 const STATUS_LABEL: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'En route', delivered: 'Livrée', cancelled: 'Annulée' };
-const when = (d: string) => new Date(d).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+const when = (d: string) => new Date(d).toLocaleString(nowLocale(), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 
 function Steps({ status }: { status: string }) {
   const idx = STEPS.findIndex((s) => s.key === status);
@@ -89,6 +90,7 @@ function ShipmentCard({ s, destination, placed }: { s: Shipment; destination: st
 
 /** Page « Suivre ma commande » : liste des commandes du client, puis frise de suivi et position du colis par boutique. */
 export function TrackingArea() {
+  useI18n();
   const { user, ready, openLogin } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
@@ -136,7 +138,7 @@ export function TrackingArea() {
                 <>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <h2 className="text-lg font-semibold">Commande {track.number}</h2>
-                    <p className="text-sm text-muted-foreground">Passée le {when(track.createdAt)} · livraison à {track.destination.city}</p>
+                    <p className="text-sm text-muted-foreground">{`Passée le ${when(track.createdAt)} · livraison à ${track.destination.city}`}</p>
                   </div>
                   {track.shipments.length > 1 && <p className="text-sm text-muted-foreground">Votre commande contient des articles de {track.shipments.length} boutiques : chacune expédie séparément.</p>}
                   {track.shipments.map((s) => <ShipmentCard key={s.shop} s={s} destination={`${track.destination.city} — ${track.destination.address}`} placed={track.placed} />)}

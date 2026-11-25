@@ -58,7 +58,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
           {placeLabel(product) && <p className="seller-place"><i className="fas fa-map-marker-alt" /> Expédié depuis <b>{placeLabel(product)}</b></p>}
           <div className="product-rating">
             <div className="stars"><Stars rating={product.rating} /></div>
-            <span><span className="review-count">({product.reviews} avis)</span></span>
+            <span><span className="review-count">{`(${product.reviews} avis)`}</span></span>
             <button type="button" className="view-reviews">Voir tous les avis</button>
           </div>
 

@@ -5,7 +5,7 @@ import { toLocal, USD_RATES } from '@saotech/shared';
 import { formatUsd } from '../lib';
 import { useAuth } from './AuthProvider';
 import { useCountries } from './Geo';
-import { useI18n } from './I18n';
+import { useI18n, nowLocale } from './I18n';
 import { isLang } from '../i18n/translate';
 
 const KEY = 'mwinda_country';
@@ -43,7 +43,8 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
 /** Prix en dollars, avec la valeur approximative en monnaie locale à côté. */
 export function Price({ usd, local = true }: { usd: number; local?: boolean }) {
+  useI18n();
   const { currency, rates } = useLocale();
   const l = local ? toLocal(usd, currency, rates) : null;
-  return <>{formatUsd(usd)}{l && <small className="price-local"> ≈ {new Intl.NumberFormat('fr-FR').format(l.amount)} {l.symbol}</small>}</>;
+  return <>{formatUsd(usd)}{l && <small className="price-local"> ≈ {new Intl.NumberFormat(nowLocale()).format(l.amount)} {l.symbol}</small>}</>;
 }

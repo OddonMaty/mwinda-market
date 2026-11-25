@@ -162,14 +162,14 @@ export function SellerArea() {
                 <div className={cn('grid gap-4', step !== 1 && 'hidden')}>
                   <p className="text-sm text-muted-foreground">Choisissez le plan qui correspond à votre activité. Vous pourrez en changer à tout moment.</p>
                   <PlanCards plans={plans} selected={plan} onSelect={setPlan} className="sm:grid-cols-2 xl:grid-cols-2" />
-                  {plan !== 'free' && <p className="rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground">Votre boutique démarre en plan Gratuit. Le plan {chosen?.name} sera activé pour 3 mois dès que notre équipe aura validé le paiement de l’abonnement.</p>}
+                  {plan !== 'free' && <p className="rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground">{`Votre boutique démarre en plan Gratuit. Le plan ${chosen?.name} sera activé pour 3 mois dès que notre équipe aura validé le paiement de l’abonnement.`}</p>}
                 </div>
 
                 {!user && (
                   <div className={cn('grid gap-4', step !== 2 && 'hidden')}>
                     <Field label={t('Adresse e-mail')} hint={t('Facultatif — sans e-mail, vous vous connectez avec votre numéro WhatsApp et recevez vos alertes dessus')}><Input type="email" name="email" placeholder="vendeur@email.com" /></Field>
                     <Field label={t('Mot de passe *')} hint={t('8 caractères minimum')}><Input type="password" name="password" minLength={8} required={step === 2} /></Field>
-                    <div className="rounded-xl bg-muted/60 p-3 text-sm"><b>Récapitulatif :</b> {shop.name || 'Votre boutique'} · {country?.name}{shop.city ? ` · ${country?.cities.find((c) => c.slug === shop.city)?.name}` : ''} · plan {chosen?.name}</div>
+                    <div className="rounded-xl bg-muted/60 p-3 text-sm"><b>Récapitulatif :</b> {shop.name || 'Votre boutique'} · {country?.name}{shop.city ? ` · ${country?.cities.find((c) => c.slug === shop.city)?.name}` : ''} {`· plan ${chosen?.name}`}</div>
                   </div>
                 )}
 

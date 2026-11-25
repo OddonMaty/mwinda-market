@@ -1,5 +1,6 @@
 import { Header, Footer } from './Chrome';
 import type { LegalPageData } from '../data/source';
+import { LocalDate } from './LocalDate';
 
 /** Texte simple : lignes vides = paragraphes, « ## » = titre de section, « - » = liste. */
 function Body({ text }: { text: string }) {
@@ -22,7 +23,7 @@ export function LegalPage({ page }: { page: LegalPageData | null }) {
       <Header active="" />
       <div className="page-header" data-theme={page?.slug ?? 'conditions'}>
         <h1>{page?.title ?? 'Page en préparation'}</h1>
-        {page && <p>Dernière mise à jour : {new Date(page.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>}
+        {page && <p>Dernière mise à jour : <LocalDate iso={page.updatedAt} /></p>}
       </div>
       <div className="container">
         <div className="info-page">{page ? <Body text={page.body} /> : <p>Ce texte sera bientôt disponible.</p>}</div>
