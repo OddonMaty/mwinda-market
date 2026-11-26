@@ -21,7 +21,7 @@ export const metadata: Metadata = {
       { url: '/images/brand/favicon-16.png', sizes: '16x16', type: 'image/png' },
       { url: '/images/brand/favicon-192.png', sizes: '192x192', type: 'image/png' },
     ],
-    apple: { url: '/images/brand/favicon-180.png', sizes: '180x180' },
+    apple: { url: '/images/brand/apple-touch-180.png', sizes: '180x180' },
   },
 };
 
