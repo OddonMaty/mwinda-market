@@ -110,7 +110,7 @@ export function Footer() {
         <div className="container">
           <p>&copy; 2026 Mwinda Market. <T>Tous droits réservés.</T></p>
           <p><T>La place de marché africaine</T></p>
-          <p className="footer-credit"><T>Un produit de</T> <a href="https://saotechagency.com/" target="_blank" rel="noopener noreferrer">Sao Tech Agency</a></p>
+          <p className="footer-credit"><T>Conçu par</T> <a href="https://saotechagency.com/" target="_blank" rel="noopener noreferrer">Sao Tech Agency</a></p>
         </div>
       </div>
     </footer>

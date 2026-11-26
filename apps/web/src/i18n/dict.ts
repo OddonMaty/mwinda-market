@@ -1393,7 +1393,7 @@ export const DICT: Record<'en' | 'sw' | 'zh' | 'es', Record<string, string>> = {
     "{0} produit de démonstration en ligne": "{0} demo product online",
     "{0} produits réels en ligne": "{0} real products online",
     "{0} produit réel en ligne": "{0} real product online",
-    "Un produit de": "A product of",
+    "Conçu par": "Built by",
   },
   sw: {
     "Notifications": "Arifa",
@@ -2788,7 +2788,7 @@ export const DICT: Record<'en' | 'sw' | 'zh' | 'es', Record<string, string>> = {
     "{0} produit de démonstration en ligne": "Bidhaa {0} ya majaribio mtandaoni",
     "{0} produits réels en ligne": "Bidhaa {0} halisi mtandaoni",
     "{0} produit réel en ligne": "Bidhaa {0} halisi mtandaoni",
-    "Un produit de": "Bidhaa ya",
+    "Conçu par": "Imejengwa na",
   },
   zh: {
     "Notifications": "通知",
@@ -4183,7 +4183,7 @@ export const DICT: Record<'en' | 'sw' | 'zh' | 'es', Record<string, string>> = {
     "{0} produit de démonstration en ligne": "在线演示商品 {0} 件",
     "{0} produits réels en ligne": "在线真实商品 {0} 件",
     "{0} produit réel en ligne": "在线真实商品 {0} 件",
-    "Un produit de": "出品方",
+    "Conçu par": "开发方",
   },
   es: {
     "Notifications": "Notificaciones",
@@ -5578,6 +5578,6 @@ export const DICT: Record<'en' | 'sw' | 'zh' | 'es', Record<string, string>> = {
     "{0} produit de démonstration en ligne": "{0} producto de demostración en línea",
     "{0} produits réels en ligne": "{0} productos reales en línea",
     "{0} produit réel en ligne": "{0} producto real en línea",
-    "Un produit de": "Un producto de",
+    "Conçu par": "Desarrollado por",
   },
 };

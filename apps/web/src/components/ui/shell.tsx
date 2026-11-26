@@ -67,7 +67,7 @@ export function DashboardShell({ space, subtitle, groups, active, onSelect, user
           <div className="ml-auto flex items-center gap-2">{topRight}</div>
         </header>
         <main className="mx-auto w-full min-w-0 max-w-[1200px] px-3 py-4 pb-24 sm:px-8 sm:py-8 lg:pb-8">{children}
-          <p className="mt-10 text-center text-xs text-muted-foreground">&copy; 2026 Mwinda Market · <T>Un produit de</T> <a href="https://saotechagency.com/" target="_blank" rel="noopener noreferrer" className="font-medium underline-offset-2 hover:underline">Sao Tech Agency</a></p>
+          <p className="mt-10 text-center text-xs text-muted-foreground">&copy; 2026 Mwinda Market · <T>Conçu par</T> <a href="https://saotechagency.com/" target="_blank" rel="noopener noreferrer" className="font-medium underline-offset-2 hover:underline">Sao Tech Agency</a></p>
         </main>
       </div>
       {/* Barre d'onglets mobile : les 4 premières rubriques + « Plus » qui ouvre le menu complet */}
