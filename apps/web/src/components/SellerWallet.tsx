@@ -43,7 +43,7 @@ export function SellerWallet({ official }: { official: boolean }) {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 sm:gap-6">
       <PageHeading title="Mes gains" description="Vos ventes livrées, moins la commission de votre plan. Vous demandez un retrait, l’administration le valide puis vous paie." />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Disponible" value={formatUsd(w.availableUsd)} icon={Wallet} />

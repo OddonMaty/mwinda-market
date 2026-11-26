@@ -3,6 +3,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Menu, X, ArrowLeft, Ellipsis, type LucideIcon } from 'lucide-react';
 import { cn } from './cn';
+import { T } from '../I18n';
 
 export interface NavItem { key: string; label: string; icon: LucideIcon; badge?: number | string }
 export interface NavGroup { title?: string; items: NavItem[] }
@@ -58,14 +59,16 @@ export function DashboardShell({ space, subtitle, groups, active, onSelect, user
   return (
     <div className="ui ui-shell">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r bg-card lg:block">{side}</aside>
-      {open && <div className="fixed inset-0 z-40 lg:hidden"><div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} /><aside className="absolute inset-y-0 left-0 w-72 bg-card shadow-xl">{side}</aside></div>}
+      {open && <div className="fixed inset-0 z-[60] lg:hidden"><div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} /><aside className="absolute inset-y-0 left-0 w-72 bg-card shadow-xl">{side}</aside></div>}
       <div className="lg:pl-64">
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-card/90 px-4 backdrop-blur sm:px-8">
           <button type="button" className="inline-flex size-9 items-center justify-center rounded-lg border lg:hidden" onClick={() => setOpen((v) => !v)} aria-label="Menu">{open ? <X className="size-4" /> : <Menu className="size-4" />}</button>
           <h1 className="truncate text-lg font-semibold">{current?.label}</h1>
           <div className="ml-auto flex items-center gap-2">{topRight}</div>
         </header>
-        <main className="mx-auto w-full min-w-0 max-w-[1200px] px-4 py-6 pb-24 sm:px-8 sm:py-8 lg:pb-8">{children}</main>
+        <main className="mx-auto w-full min-w-0 max-w-[1200px] px-3 py-4 pb-24 sm:px-8 sm:py-8 lg:pb-8">{children}
+          <p className="mt-10 text-center text-xs text-muted-foreground">&copy; 2026 Mwinda Market · <T>Un produit de</T> <a href="https://saotechagency.com/" target="_blank" rel="noopener noreferrer" className="font-medium underline-offset-2 hover:underline">Sao Tech Agency</a></p>
+        </main>
       </div>
       {/* Barre d'onglets mobile : les 4 premières rubriques + « Plus » qui ouvre le menu complet */}
       {!hideTabs && <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-card pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_12px_rgba(0,0,0,.06)] lg:hidden" aria-label="Rubriques">

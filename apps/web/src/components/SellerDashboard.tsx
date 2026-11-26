@@ -124,7 +124,7 @@ export function SellerDashboard() {
   const shownOrders = orders.filter((o) => orderFilter === 'all' || o.status === orderFilter);
 
   return (
-    <DashboardShell space="Espace vendeur" subtitle={shop.name} groups={groups} active={tab} onSelect={(k) => { setTab(k as Tab); setForm({ open: false, editing: null }); }} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email || user.phone || '', email: user.email ?? user.phone ?? undefined }}
+    <DashboardShell hideTabs space="Espace vendeur" subtitle={shop.name} groups={groups} active={tab} onSelect={(k) => { setTab(k as Tab); setForm({ open: false, editing: null }); }} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email || user.phone || '', email: user.email ?? user.phone ?? undefined }}
       topRight={<>
         <Button size="sm" onClick={() => openForm(null)}><Plus /><span className="sm:hidden">Ajouter</span><span className="hidden sm:inline">Ajouter un produit</span></Button>
         <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex"><Link href="/compte">Mon compte</Link></Button>
@@ -159,16 +159,16 @@ export function SellerDashboard() {
       )}
 
       {tab === 'dashboard' && (
-        <div className="grid gap-6">
-          <Card><CardContent className="flex flex-col gap-4 pt-5 sm:flex-row sm:items-center">
-            <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Crown className="size-6" /></span>
+        <div className="grid gap-4 sm:gap-6">
+          <Card><CardContent className="flex flex-wrap items-center gap-3 pt-4 sm:flex-nowrap sm:gap-4 sm:pt-5">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:size-14 sm:rounded-2xl"><Crown className="size-5 sm:size-6" /></span>
             <div className="min-w-0 flex-1">
-              <p className="flex flex-wrap items-center gap-2 text-lg font-semibold">{shop.name} {shop.isOfficial && <Badge>Boutique officielle</Badge>}{shop.certified && <Badge variant="success"><ShieldCheck className="mr-1 size-3" />Vendeur certifié</Badge>}</p>
+              <p className="flex flex-wrap items-center gap-2 text-base font-semibold sm:text-lg">{shop.name} {shop.isOfficial && <Badge>Boutique officielle</Badge>}{shop.certified && <Badge variant="success"><ShieldCheck className="mr-1 size-3" />Vendeur certifié</Badge>}</p>
               <p className="text-sm text-muted-foreground">Plan {shop.planName}{shop.isOfficial ? '' : ` · commission ${shop.commissionBps / 100} %`} · {planLine}</p>
               {!shop.certified && !shop.isOfficial && <p className="text-xs text-primary">La certification « Vendeur certifié » est incluse dans le plan Premium.</p>}
               <p className="text-xs text-muted-foreground">{shop.city ?? 'Ville non précisée'}{shop.countryCode ? ` (${shop.countryCode})` : ''}{shop.pendingPlan ? ` · demande de plan ${shop.pendingPlan} en attente de validation` : ''}</p>
             </div>
-            {!shop.isOfficial && <Button asChild variant="dark" className="w-full sm:w-auto"><Link href="/tarifs">Changer de plan</Link></Button>}
+            {!shop.isOfficial && <Button asChild variant="dark" size="sm" className="w-full sm:w-auto"><Link href="/tarifs">Changer de plan</Link></Button>}
           </CardContent></Card>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
             <StatCard label="Gains nets (livrées)" value={formatUsd(stats?.netUsd ?? 0)} icon={Wallet} />

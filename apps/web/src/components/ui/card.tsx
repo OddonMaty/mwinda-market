@@ -5,11 +5,11 @@ import { cn } from './cn';
 
 type DivProps = React.HTMLAttributes<HTMLDivElement>;
 export const Card = ({ className, ...p }: DivProps) => <div className={cn('rounded-2xl border bg-card text-card-foreground shadow-sm', className)} {...p} />;
-export const CardHeader = ({ className, ...p }: DivProps) => <div className={cn('flex flex-col gap-1 p-5 pb-3', className)} {...p} />;
+export const CardHeader = ({ className, ...p }: DivProps) => <div className={cn('flex flex-col gap-1 p-4 pb-2 sm:p-5 sm:pb-3', className)} {...p} />;
 export const CardTitle = ({ className, ...p }: React.HTMLAttributes<HTMLHeadingElement>) => <h3 className={cn('text-base font-semibold leading-tight', className)} {...p} />;
 export const CardDescription = ({ className, ...p }: React.HTMLAttributes<HTMLParagraphElement>) => <p className={cn('text-sm text-muted-foreground', className)} {...p} />;
-export const CardContent = ({ className, ...p }: DivProps) => <div className={cn('p-5 pt-2', className)} {...p} />;
-export const CardFooter = ({ className, ...p }: DivProps) => <div className={cn('flex items-center gap-2 p-5 pt-0', className)} {...p} />;
+export const CardContent = ({ className, ...p }: DivProps) => <div className={cn('p-4 pt-2 sm:p-5 sm:pt-2', className)} {...p} />;
+export const CardFooter = ({ className, ...p }: DivProps) => <div className={cn('flex items-center gap-2 p-4 pt-0 sm:p-5 sm:pt-0', className)} {...p} />;
 
 const badge = cva('inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium', {
   variants: { variant: {

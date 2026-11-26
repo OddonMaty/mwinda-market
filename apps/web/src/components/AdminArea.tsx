@@ -84,7 +84,7 @@ export function AdminArea() {
   const roleLabel = isSuper ? 'Super-administrateur' : roles.map((r) => ({ moderator: 'Modérateur', finance: 'Finance' }[r] ?? r)).join(', ');
 
   return (
-    <DashboardShell space="Administration" subtitle={roleLabel} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email || user.phone || '', email: user.email ?? user.phone ?? undefined }} topRight={<NotificationBell onOpenShops={() => setTab('shops')} />}>
+    <DashboardShell hideTabs space="Administration" subtitle={roleLabel} groups={groups} active={tab} onSelect={(k) => setTab(k as Tab)} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email || user.phone || '', email: user.email ?? user.phone ?? undefined }} topRight={<NotificationBell onOpenShops={() => setTab('shops')} />}>
       {welcome && <WelcomeDialog title={`Bienvenue, ${user.firstName || 'administrateur'} !`} text={shopsPending > 0 ? `${shopsPending} boutique${shopsPending > 1 ? 's attendent' : ' attend'} votre validation. Acceptez ou refusez chaque demande depuis l’onglet Boutiques.` : 'Tout est à jour : aucune boutique n’attend de validation. Bon travail !'} action="Voir l’administration" onClose={() => setWelcome(false)} />}
       {tab === 'dashboard' && <Dashboard />}
       {tab === 'users' && <Users isSuper={isSuper} notify={notify} fail={fail} />}
@@ -144,7 +144,7 @@ function Dashboard() {
   useEffect(() => { void api<{ stats: NonNullable<typeof s> }>('/admin/stats').then((r) => r.ok && setS(r.data.stats)); }, []);
   if (!s) return <p className="text-sm text-muted-foreground">Chargement…</p>;
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 sm:gap-6">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Utilisateurs" value={s.users} icon={UsersIcon} />
         <StatCard label="Boutiques vendeurs" value={s.shops} icon={Store} hint={s.shopsPending ? `${s.shopsPending} en attente` : undefined} />

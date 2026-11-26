@@ -404,3 +404,22 @@
 .m-lang > div { display: flex; flex-wrap: wrap; gap: .45rem; }
 .m-lang button { border: 1px solid var(--border); background: #fff; border-radius: 999px; padding: .45rem .9rem; font-size: .85rem; color: var(--dark); cursor: pointer; }
 .m-lang button.on { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+
+.footer-credit a { color: var(--primary); font-weight: 600; text-decoration: none; }
+.footer-credit a:hover { text-decoration: underline; }
+/* Pied de page mobile : une seule ligne, comme une application */
+@media (max-width: 768px) {
+  .footer .footer-newsletter, .footer .footer-content { display: none; }
+  .footer { margin-top: 1.5rem; }
+  .footer-bottom { padding: 1rem 0; }
+  .footer-bottom .container { flex-direction: column; gap: .25rem; text-align: center; }
+  .footer-bottom p { font-size: .75rem; margin: 0; }
+  .footer-bottom p:nth-child(2) { display: none; }
+}
+@media (max-width: 768px) {
+  .about-hero { padding: 2rem 1rem; }
+  .about-hero h1 { font-size: 1.7rem; line-height: 1.25; margin-bottom: .5rem; }
+  .about-hero p { font-size: .95rem; }
+  .footer-bottom p { color: rgba(255,255,255,.7); }
+  .footer-bottom { background: transparent; }
+}
