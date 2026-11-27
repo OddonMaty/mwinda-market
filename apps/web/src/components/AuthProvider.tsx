@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GeoFields } from './Geo';
-import { trNow, useT } from './I18n';
+import { trNow, useI18n, useT } from './I18n';
 
 export interface SessionUser {
   id: string;
@@ -74,6 +74,7 @@ export const errorMessage = (code?: string): string =>
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const t = useT();
+  const { lang } = useI18n();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
@@ -140,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       body: {
         email: String(f.get('email') ?? '').trim() || undefined, password: f.get('password'), firstName: f.get('firstName'), lastName: f.get('lastName'),
-        phone: String(f.get('phone') ?? '').replace(/[\s.-]/g, ''), countryCode: f.get('country'), citySlug: f.get('city') || undefined, locale: 'fr',
+        phone: String(f.get('phone') ?? '').replace(/[\s.-]/g, ''), countryCode: f.get('country'), citySlug: f.get('city') || undefined, locale: lang,
       },
     });
     if (!r.ok) return notify(errorMessage(r.data.code));

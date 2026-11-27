@@ -6,7 +6,8 @@ import { CartButton } from './CartButton';
 import { CountrySelector } from './CountrySelector';
 import { collectionHref } from '../lib';
 import { MobileNav } from './MobileNav';
-import { LanguageSelector, NewsletterField, T } from './I18n';
+import { LanguageSelector, T } from './I18n';
+import { NewsletterForm } from './Newsletter';
 
 type Active = 'home' | 'collection' | 'about' | 'contact' | 'faq' | '';
 
@@ -74,10 +75,7 @@ export function Footer() {
         <div className="container">
           <div className="newsletter-footer">
             <div><p><T>Restez informé — </T><span><T>Abonnez-vous à la newsletter</T></span></p></div>
-            <div className="newsletter-input">
-              <NewsletterField />
-              <button type="button" className="btn btn-primary"><T>S'abonner</T></button>
-            </div>
+            <NewsletterForm />
           </div>
         </div>
       </div>

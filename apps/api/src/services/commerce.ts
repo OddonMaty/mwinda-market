@@ -1,6 +1,7 @@
 import type { ImageStore } from './storage.js';
 import type { Notifier } from './notify.js';
 import { AppError } from '../errors.js';
+import { randomBytes } from 'node:crypto';
 import { newId } from '../lib/crypto.js';
 import type { Db } from '../db/client.js';
 import type { UserRow } from './auth.js';
@@ -38,7 +39,7 @@ const round2 = (n: number): number => Math.round(n * 100) / 100;
 const slugify = (s: string): string =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'boutique';
 
-interface ProductRow { certified?: boolean; shop_name?: string; shop_country?: string | null; shop_country_name?: string | null; shop_city?: string | null; shop_city_slug?: string | null; rating?: string; reviews?: number; sku?: string | null; tags?: string[]; id: string; shop_id: string; name: string; description: string; price_usd: string; original_price_usd: string | null; department: string; category: string; colors: string[]; sizes: string[]; in_stock: boolean; status: string; created_at: Date }
+interface ProductRow { certified?: boolean; shop_name?: string; shop_slug?: string; shop_country?: string | null; shop_country_name?: string | null; shop_city?: string | null; shop_city_slug?: string | null; rating?: string; reviews?: number; sku?: string | null; tags?: string[]; id: string; shop_id: string; name: string; description: string; price_usd: string; original_price_usd: string | null; department: string; category: string; colors: string[]; sizes: string[]; in_stock: boolean; status: string; created_at: Date }
 
 export class CommerceService {
   constructor(private db: Db, private store?: ImageStore, private notify?: Notifier) {}
@@ -49,22 +50,60 @@ export class CommerceService {
       id: Number(p.id), name: p.name, description: p.description, priceUsd: Number(p.price_usd), originalPriceUsd: p.original_price_usd ? Number(p.original_price_usd) : null,
       department: p.department, category: p.category, sku: p.sku ?? '', colors: p.colors, sizes: p.sizes, tags: p.tags ?? [], inStock: p.in_stock,
       rating: Number(p.rating ?? 0), reviews: p.reviews ?? 0, images: imgs, createdAt: p.created_at,
-      certified: !!p.certified, shopName: p.shop_name ?? '',
+      certified: !!p.certified, shopName: p.shop_name ?? '', shopSlug: p.shop_slug ?? '',
       countryCode: p.shop_country ?? null, countryName: p.shop_country_name ?? null, city: p.shop_city ?? null, citySlug: p.shop_city_slug ?? null,
     };
   }
 
   /** Produits visibles par les acheteurs : actifs, d'une boutique active. */
   async listPublicProducts() {
-    const rows = await this.db.query<ProductRow>(`SELECT p.*, (s.is_official OR COALESCE(pl.certified, false)) AS certified, s.name AS shop_name, s.country_code AS shop_country, co.name AS shop_country_name, ci.name AS shop_city, ci.slug AS shop_city_slug FROM products p JOIN shops s ON s.id = p.shop_id LEFT JOIN countries co ON co.code = s.country_code LEFT JOIN cities ci ON ci.id = s.city_id LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.status = 'active' AND s.status = 'active' ORDER BY p.id`);
+    const rows = await this.db.query<ProductRow>(`SELECT p.*, (s.is_official OR COALESCE(pl.certified, false)) AS certified, s.name AS shop_name, s.slug AS shop_slug, s.country_code AS shop_country, co.name AS shop_country_name, ci.name AS shop_city, ci.slug AS shop_city_slug FROM products p JOIN shops s ON s.id = p.shop_id LEFT JOIN countries co ON co.code = s.country_code LEFT JOIN cities ci ON ci.id = s.city_id LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.status = 'active' AND s.status = 'active' ORDER BY p.id`);
     const imgs = await this.images(rows.map((r) => r.id));
     return rows.map((r) => this.publicDto(r, imgs.get(r.id) ?? []));
   }
 
   async getPublicProduct(id: number) {
-    const rows = await this.db.query<ProductRow>(`SELECT p.*, (s.is_official OR COALESCE(pl.certified, false)) AS certified, s.name AS shop_name, s.country_code AS shop_country, co.name AS shop_country_name, ci.name AS shop_city, ci.slug AS shop_city_slug FROM products p JOIN shops s ON s.id = p.shop_id LEFT JOIN countries co ON co.code = s.country_code LEFT JOIN cities ci ON ci.id = s.city_id LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.id = $1 AND p.status = 'active' AND s.status = 'active'`, [id]);
+    const rows = await this.db.query<ProductRow>(`SELECT p.*, (s.is_official OR COALESCE(pl.certified, false)) AS certified, s.name AS shop_name, s.slug AS shop_slug, s.country_code AS shop_country, co.name AS shop_country_name, ci.name AS shop_city, ci.slug AS shop_city_slug FROM products p JOIN shops s ON s.id = p.shop_id LEFT JOIN countries co ON co.code = s.country_code LEFT JOIN cities ci ON ci.id = s.city_id LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.id = $1 AND p.status = 'active' AND s.status = 'active'`, [id]);
     if (!rows[0]) throw new AppError(404, 'not_found', 'Produit introuvable.');
     return this.publicDto(rows[0], (await this.images([rows[0].id])).get(rows[0].id) ?? []);
+  }
+
+  // ---------- Boutique publique ----------
+  /** Page publique d'une boutique active : présentation + ses produits visibles. */
+  async getPublicShop(slug: string) {
+    const rows = await this.db.query<{ id: string; name: string; slug: string; description: string | null; is_official: boolean; certified: boolean; city: string | null; country_name: string | null; created_at: Date; whatsapp: string | null }>(
+      `SELECT s.id, s.name, s.slug, s.description, s.is_official, (s.is_official OR COALESCE(pl.certified, false)) AS certified, ci.name AS city, co.name AS country_name, s.created_at, s.whatsapp
+         FROM shops s LEFT JOIN cities ci ON ci.id = s.city_id LEFT JOIN countries co ON co.code = s.country_code
+         LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')}
+        WHERE s.slug = $1 AND s.status = 'active'`, [slug]);
+    const s = rows[0];
+    if (!s) throw new AppError(404, 'not_found', 'Boutique introuvable.');
+    const prods = await this.db.query<ProductRow>(
+      `SELECT p.*, $2::boolean AS certified, $3::text AS shop_name, $6::text AS shop_slug, $4::text AS shop_country_name, $5::text AS shop_city FROM products p WHERE p.shop_id = $1 AND p.status = 'active' ORDER BY p.id DESC`,
+      [s.id, s.certified, s.name, s.country_name, s.city, s.slug]);
+    const imgs = await this.images(prods.map((r) => r.id));
+    return {
+      shop: { name: s.name, slug: s.slug, description: s.description, certified: s.certified, official: s.is_official, city: s.city, country: s.country_name, since: s.created_at, whatsapp: s.whatsapp },
+      products: prods.map((r) => this.publicDto(r, imgs.get(r.id) ?? [])),
+    };
+  }
+
+  // ---------- Newsletter ----------
+  async subscribeNewsletter(email: string, locale: string) {
+    const addr = email.trim().toLowerCase();
+    const ex = (await this.db.query<{ id: string; unsubscribed_at: Date | null }>('SELECT id, unsubscribed_at FROM newsletter_subscribers WHERE lower(email) = $1', [addr]))[0];
+    if (ex) {
+      if (ex.unsubscribed_at) await this.db.query('UPDATE newsletter_subscribers SET unsubscribed_at = NULL, locale = $2 WHERE id = $1', [ex.id, locale]);
+      return; // réponse identique si déjà inscrit : on ne révèle rien
+    }
+    const token = randomBytes(16).toString('hex');
+    await this.db.query('INSERT INTO newsletter_subscribers(id, email, locale, token) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING', [newId(), addr, locale, token]);
+    void this.notify?.newsletterWelcome(addr, locale, token);
+  }
+
+  async unsubscribeNewsletter(token: string) {
+    const r = await this.db.query('UPDATE newsletter_subscribers SET unsubscribed_at = now() WHERE token = $1 AND unsubscribed_at IS NULL RETURNING id', [token]);
+    return r.length > 0;
   }
 
   // ---------- Adresses ----------

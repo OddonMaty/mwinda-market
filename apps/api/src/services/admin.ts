@@ -138,7 +138,7 @@ export class AdminService extends PlatformService {
   /** Prévient le vendeur par e-mail quand sa boutique est acceptée (avec le lien) ou refusée (avec le motif). Un échec d'envoi ne bloque jamais la décision. */
   private async notifyOwner(before: { status: string; name: string; email: string | null; locale: string | null }, b: { status?: string; reason?: string }) {
     if (!this.notifier || !before.email || !b.status || b.status === before.status) return;
-    const locale = before.locale === 'en' ? 'en' : 'fr';
+    const locale = tpl.asLocale(before.locale);
     try {
       if (b.status === 'active' && (before.status === 'pending' || before.status === 'rejected')) await this.notifier.mailer.send(tpl.shopApproved(locale, before.email, before.name, `${this.notifier.baseUrl}/vendeur/tableau`));
       else if (b.status === 'rejected') await this.notifier.mailer.send(tpl.shopRejected(locale, before.email, before.name, b.reason?.trim() || null));

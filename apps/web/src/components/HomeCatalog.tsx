@@ -3,8 +3,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import type { Product } from '../data/catalogue';
 import { departmentIcon } from '@saotech/shared';
-import { useAuth } from './AuthProvider';
 import { ProductCard } from './ProductCard';
+import { NewsletterForm } from './Newsletter';
 
 /** Catégories réellement présentes dans le catalogue, les plus fournies d'abord. */
 const catsOf = (products: Product[]) => {
@@ -41,8 +41,6 @@ export function NewProducts({ products, now }: { products: Product[]; now: numbe
 /** Section « Tous nos produits » avec filtre par secteur. */
 export function HomeCatalog({ products, now }: { products: Product[]; now: number }) {
   const [dep, setDep] = useState('All');
-  const [email, setEmail] = useState('');
-  const { notify } = useAuth();
   const items = dep === 'All'
     ? catsOf(products).flatMap((c) => products.filter((p) => p.category === c).slice(0, 3))
     : products.filter((p) => p.category === dep).slice(0, 12);
@@ -64,8 +62,7 @@ export function HomeCatalog({ products, now }: { products: Product[]; now: numbe
           <p className="newsletter-tag">Newsletter</p>
           <h3>-10 % sur votre première commande</h3>
           <p>Offres exclusives, nouveautés et réductions réservées aux abonnés.</p>
-          <input type="email" placeholder="Votre e-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <button type="button" className="btn btn-primary" onClick={() => { notify(email.includes('@') ? 'Merci ! Votre inscription sera confirmée dès l’activation des e-mails.' : 'Entrez une adresse e-mail valide.'); if (email.includes('@')) setEmail(''); }}>S&apos;abonner</button>
+          <NewsletterForm stacked />
         </aside>
         <div className="products-grid">
           {items.length > 0

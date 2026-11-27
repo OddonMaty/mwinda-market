@@ -35,14 +35,13 @@ export const ADMIN_SESSION_HOURS = 8;
 const LOGIN_FAILS = 5;
 const LOGIN_WINDOW = 15 * MIN;
 
-type Locale = 'fr' | 'en';
 interface UserRow {
   id: string; email: string | null; email_verified_at: Date | null; phone_verified_at: Date | null; password_hash: string | null; first_name: string; last_name: string;
   phone: string | null; country_code: string | null; city_id: string | null; locale: string; status: string;
 }
 
 export const publicUrl = (c: EnvConfig) => webOrigins(c)[0] ?? '';
-const asLocale = (l: string): Locale => (l === 'en' ? 'en' : 'fr');
+const asLocale = tpl.asLocale;
 
 // Hash factice pour égaliser le temps de réponse quand le compte n'existe pas.
 let dummyHash: Promise<string> | undefined;

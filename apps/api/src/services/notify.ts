@@ -4,7 +4,7 @@ import type { Db } from '../db/client.js';
 import type { Mailer } from '../mail/mailer.js';
 import * as tpl from '../mail/templates.js';
 
-const loc = (l: string | null | undefined): 'fr' | 'en' => (l === 'en' ? 'en' : 'fr');
+const loc = tpl.asLocale;
 
 /** E-mails liés aux commandes et aux abonnements. Un envoi raté ne doit jamais faire échouer l'action du client. */
 export class Notifier {
@@ -54,6 +54,10 @@ export class Notifier {
       if (o) await this.pushTo(o.user_id, `Commande ${o.number}`, ({ confirmed: 'Le vendeur a confirmé votre commande.', shipped: 'Votre commande est en route.', delivered: 'Votre commande est livrée.', cancelled: 'Votre commande a été annulée.' } as Record<string, string>)[status] ?? 'Mise à jour de votre commande.', '/compte', `order-${o.number}`);
       if (o?.email) await this.mailer.send(tpl.orderStatus(loc(o.locale), o.email, o.number, status, `${this.baseUrl}/suivi`));
     });
+  }
+
+  newsletterWelcome(email: string, locale: string, token: string) {
+    return this.safe(() => this.mailer.send(tpl.newsletterWelcome(loc(locale), email, `${this.baseUrl}/desabonnement?token=${token}`)));
   }
 
   planDecision(shopId: string, approved: boolean) {

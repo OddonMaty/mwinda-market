@@ -22,6 +22,9 @@ const ProductBody = z.object({
   name: text(200), description: text(5000), priceUsd: z.number().positive().max(1_000_000), originalPriceUsd: z.number().positive().max(1_000_000).nullable().optional(),
   department: z.enum(DEPARTMENT_SLUGS), category: text(80), colors: list, sizes: list, inStock: z.boolean().default(true), images: z.array(imageUrl).max(5).default([]),
 }).refine((p) => p.originalPriceUsd == null || p.originalPriceUsd > p.priceUsd, { message: 'original_price_must_exceed_price', path: ['originalPriceUsd'] });
+const NewsletterBody = z.object({ email: z.string().trim().toLowerCase().email().max(254), locale: z.enum(['fr', 'en', 'sw', 'zh', 'es']).default('fr') });
+const SlugParam = z.object({ slug: z.string().regex(/^[a-z0-9-]{1,120}$/) });
+const TokenBody = z.object({ token: z.string().regex(/^[0-9a-f]{32}$/) });
 const IdParam = z.object({ id: z.string().regex(/^[0-9A-Za-z]{1,26}$/) });
 const ConvId = z.object({ id: z.coerce.number().int().positive() });
 
@@ -31,6 +34,10 @@ interface Ctx { svc: CommerceService; authenticate: (req: FastifyRequest) => Pro
 export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }: Ctx): void {
   r.get('/products', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { products: await svc.listPublicProducts() }; });
   r.get('/products/:id', async (req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { product: await svc.getPublicProduct(Number(parse(IdParam, req.params).id)) }; });
+
+  r.get('/shops/:slug', async (req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return svc.getPublicShop(parse(SlugParam, req.params).slug); });
+  r.post('/newsletter', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (req) => { const b = parse(NewsletterBody, req.body); await svc.subscribeNewsletter(b.email, b.locale); return { ok: true }; });
+  r.post('/newsletter/unsubscribe', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (req) => ({ ok: true, done: await svc.unsubscribeNewsletter(parse(TokenBody, req.body).token) }));
 
   r.get('/images/:id', async (req, reply) => {
     const img = await svc.getImage(parse(IdParam, req.params).id);

@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Product } from '../data/catalogue';
@@ -54,7 +55,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
         <div className="product-info">
           <div className="product-meta"><i className="fas fa-eye" /> Récemment consulté</div>
           <h1>{product.name}</h1>
-          {product.shopName && <p className="seller-line">Vendu par <b>{product.shopName}</b>{product.certified && <span className="badge-certified-inline"><i className="fas fa-check-circle" /> Vendeur certifié Mwinda</span>}</p>}
+          {product.shopName && <p className="seller-line">Vendu par {product.shopSlug ? <Link href={`/boutique/${product.shopSlug}`}><b>{product.shopName}</b></Link> : <b>{product.shopName}</b>}{product.certified && <span className="badge-certified-inline"><i className="fas fa-check-circle" /> Vendeur certifié Mwinda</span>}</p>}
           {placeLabel(product) && <p className="seller-place"><i className="fas fa-map-marker-alt" /> Expédié depuis <b>{placeLabel(product)}</b></p>}
           <div className="product-rating">
             <div className="stars"><Stars rating={product.rating} /></div>

@@ -464,4 +464,27 @@ describe('Validation des boutiques, messagerie, recherche, taux', () => {
     assert.equal(t.shipments[0].currentLocation, 'Bukavu');
     assert.equal(t.shipments[0].events.at(-1).kind, 'delivered');
   });
+  it('page publique d\'une boutique : active seulement, produits actifs, 404 sinon', async () => {
+    const off = (await db.query<{ slug: string }>('SELECT slug FROM shops WHERE is_official'))[0]!.slug;
+    const r = await call('GET', `/shops/${off}`);
+    assert.equal(r.status, 200);
+    assert.equal(r.json.products.length, 19);
+    assert.equal(r.json.products[0].shopSlug, off);
+    assert.equal((await call('GET', '/shops/inconnue')).status, 404);
+    assert.equal((await call('GET', '/shops/BAD slug')).status, 400);
+  });
+
+  it('newsletter : inscription, doublon silencieux, désabonnement par jeton', async () => {
+    assert.equal((await call('POST', '/newsletter', { body: { email: 'abc' } })).status, 400);
+    assert.equal((await call('POST', '/newsletter', { body: { email: 'Lecteur@Example.com', locale: 'sw' } })).status, 200);
+    assert.equal((await call('POST', '/newsletter', { body: { email: 'lecteur@example.com' } })).status, 200);
+    const rows = await db.query<{ email: string; locale: string; token: string }>('SELECT email, locale, token FROM newsletter_subscribers');
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0]!.email, 'lecteur@example.com');
+    assert.equal(rows[0]!.locale, 'sw');
+    assert.equal((await call('POST', '/newsletter/unsubscribe', { body: { token: rows[0]!.token } })).json.done, true);
+    assert.equal((await call('POST', '/newsletter/unsubscribe', { body: { token: rows[0]!.token } })).json.done, false);
+    assert.equal((await call('POST', '/newsletter', { body: { email: 'lecteur@example.com' } })).status, 200);
+    assert.equal((await db.query<{ u: Date | null }>('SELECT unsubscribed_at AS u FROM newsletter_subscribers'))[0]!.u, null);
+  });
 });

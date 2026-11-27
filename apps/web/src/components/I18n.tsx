@@ -127,5 +127,3 @@ export function LanguageChips() {
   );
 }
 
-/** Champ e-mail de la newsletter (le texte d'aide dépend de la langue). */
-export function NewsletterField() { return <input type="email" placeholder={useT()('Votre adresse e-mail')} />; }

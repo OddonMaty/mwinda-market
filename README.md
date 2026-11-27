@@ -1,110 +1,82 @@
-# Mwinda Market — Monorepo
+# Mwinda Market
 
-> **Plateforme SaaS e-commerce multi-vendeurs** conçue en TypeScript strict, démarrant en République Démocratique du Congo (RDC) et destinée à l'échelle panafricaine.
+Place de marché multi-vendeurs panafricaine, lancée en RDC. Monorepo **pnpm**, TypeScript strict.
 
----
-
-## 🏗️ Architecture & Structure du Dépôt
-
-Dépôt unique géré avec **pnpm workspaces** :
+## Structure
 
 ```text
-saotechmarket/
-├── apps/
-│   ├── api/                     # Backend Fastify, Zod, Pino, Helmet, CORS, Rate Limit
-│   └── web/                     # Frontend Next.js 15 (App Router), React 19, Tailwind
-├── packages/
-│   └── shared/                  # Schémas Zod et types TypeScript partagés
-├── legacy/                      # Référence en lecture seule de l'ancien site PHP/JS
-├── design-reference/            # Captures d'écran de référence (390px et 1440px)
-├── docs/
-│   └── parite-fonctionnelle.md  # Inventaire exhaustif et plan de migration
-├── .github/
-│   └── workflows/ci.yml         # CI automatisée (install, lint, typecheck, tests)
-├── docker-compose.yml           # Base de données MySQL 8.4 pour développement
-├── pnpm-workspace.yaml          # Configuration de l'espace de travail pnpm
-├── tsconfig.base.json           # Configuration TypeScript stricte commune
-└── README.md                    # Ce guide
+apps/api        API Fastify (Zod, Pino, Helmet, CORS, rate limit), base PostgreSQL (Neon en production)
+apps/web        Site Next.js (App Router, React 19), installable en PWA, 5 langues
+packages/shared Schémas Zod et types partagés (API et web)
+docs/           Parité fonctionnelle, guide des identifiants (e-mail, Google, WhatsApp, SMS)
+legacy/         Ancien site PHP/JS, en lecture seule (référence)
 ```
 
----
+## Fonctionnalités
 
-## ⚙️ Prérequis
+- **Acheteurs** : catalogue, recherche, favoris, panier, commande directe avec choix du paiement (à la livraison ou Mobile Money), suivi de colis, messagerie avec les vendeurs, notifications push.
+- **Vendeurs** : boutique soumise à validation, produits et photos, commandes, portefeuille et retraits, abonnements (mise en avant, certification), page publique `/boutique/<nom>`.
+- **Administration** : validation des boutiques, produits, retraits, abonnements, carrousel d'accueil, pages légales, taux de change.
+- **Langues** : français (source), anglais, swahili, chinois, espagnol. Le texte français est la clé dans `apps/web/src/i18n/dict.ts` ; un test vérifie que les 5 langues ont les mêmes clés. Les e-mails sont traduits dans `apps/api/src/mail/templates.ts`.
+- **Mobile** : interface type application (barre du bas sur toutes les pages, menu à gauche avec choix de la langue, pied de page minimal).
+- **Newsletter** : inscription depuis l'accueil et le pied de page, e-mail de bienvenue, désabonnement par lien (`/desabonnement`).
 
-- **Node.js** : `v22.x` (LTS) — voir `.nvmrc`
-- **pnpm** : `v9.x` ou supérieur (`corepack enable` ou `npm install -g pnpm@9`)
-- **Base de données** : MySQL 8.x (via Docker Compose ou installation locale native)
+## Démarrer en local
 
----
-
-## 🚀 Installation & Démarrage
-
-### 1. Installation des dépendances
+Prérequis : Node 22 (`.nvmrc`), pnpm 9, Docker (PostgreSQL) ou un PostgreSQL local.
 
 ```bash
 pnpm install
-```
-
-### 2. Configuration des variables d'environnement
-
-Copiez les fichiers d'exemple et renseignez les valeurs de développement :
-
-```bash
-# Pour l'API
 cp apps/api/.env.example apps/api/.env
-
-# Pour le Web
 cp apps/web/.env.example apps/web/.env
+docker compose up -d            # PostgreSQL 17
+pnpm --filter @saotech/api migrate
+pnpm dev                        # API :4000, site :3000
 ```
 
-### 3. Démarrage de la base de données MySQL
+Le site relaie `/api/*` vers l'API (variable `API_URL`), si bien que navigateur et API partagent la même origine (cookie de session `stm_session`).
 
-#### Option A — Via Docker (recommandé si disponible) :
-```bash
-docker compose up -d
-```
+## Variables d'environnement de l'API
 
-#### Option B — Via MySQL local :
-1. Installez MySQL Server 8.x sur votre machine.
-2. Créez la base de données et l'utilisateur :
-   ```sql
-   CREATE DATABASE saotech_market CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   CREATE USER 'saotech_user'@'localhost' IDENTIFIED BY 'saotech_password';
-   GRANT ALL PRIVILEGES ON saotech_market.* TO 'saotech_user'@'localhost';
-   FLUSH PRIVILEGES;
-   ```
-3. Ajustez `DATABASE_URL` dans `apps/api/.env`.
+| Variable | Rôle | Obligatoire |
+| :--- | :--- | :--- |
+| `DATABASE_URL`, `API_SECRET`, `WEB_ORIGIN` | Base, secret interne, origines autorisées | oui |
+| `SMTP_URL`, `MAIL_FROM` | Envoi des e-mails (vérification, commandes, newsletter) | non, e-mails désactivés sinon |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Connexion Google | non |
+| `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` | WhatsApp (alertes vendeurs, vérification) | non |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | SMS de vérification | non |
+| `BLOB_READ_WRITE_TOKEN` | Stockage des photos (Vercel Blob) | non, stockage en base sinon |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Notifications push | non |
 
-### 4. Lancement en mode développement
+Une fonction dont l'identifiant manque reste simplement désactivée. Procédure d'obtention : `docs/GUIDE-IDENTIFIANTS.md`.
 
-```bash
-pnpm dev
-```
+## Base de données et migrations
 
-- **Site Web** : [http://localhost:3000](http://localhost:3000)
-- **API Fastify** : [http://localhost:4000](http://localhost:4000)
-- **Vérification d'état** : [http://localhost:4000/health](http://localhost:4000/health)
+Les migrations sont des fichiers SQL numérotés dans `apps/api/migrations/NNNN_nom/migration.sql`, suivis dans la table `schema_migrations`. Elles ne s'exécutent **pas** au démarrage en production : appliquez-les avant de déployer le code qui en dépend (`pnpm --filter @saotech/api migrate`).
 
----
+## Déploiement
 
-## 🛠️ Commandes Disponibles
+Deux projets Vercel, déployés automatiquement depuis la branche `main` : le site (`apps/web`) et l'API (`apps/api`, voir `apps/api/DEPLOY.md`).
+
+## Commandes
 
 | Commande | Description |
 | :--- | :--- |
-| `pnpm dev` | Démarre l'API et le Web en parallèle |
+| `pnpm dev` | API et site en parallèle |
 | `pnpm build` | Compile `shared`, `api` et `web` |
-| `pnpm lint` | Vérifie le respect des règles de style (ESLint) |
-| `pnpm typecheck` | Contrôle strict des types TypeScript sur tous les paquets |
-| `pnpm test` | Exécute la suite de tests automatisés |
-| `pnpm format` | Formate le code avec Prettier |
+| `pnpm lint` | ESLint |
+| `pnpm typecheck` | Types stricts sur tous les paquets |
+| `pnpm test` | Tests (API sur PostgreSQL en mémoire, site) |
 
----
+## Pas encore en place
 
-## 🔒 Principes d'Ingénierie & Sécurité
+- **Paiements réels** : le Mobile Money est enregistré mais aucun argent ne circule (intégration Flexpaie et séquestre à faire).
+- Favoris liés au compte (ils sont aujourd'hui gardés sur l'appareil).
 
-- **TypeScript strict** : `noUncheckedIndexedAccess: true` activé sur tout le projet.
-- **Validation Zod** : Toutes les variables d'environnement et entrées d'API sont validées à l'exécution.
-- **Journalisation sécurisée** : Pino masque automatiquement mots de passe, jetons, cookies et autorisations.
-- **Gestion d'erreurs unifiée** : Toutes les erreurs d'API répondent au format `{ error: { code, message } }`.
-- **Fidélité au design** : Les composants d'`apps/web` reprennent scrupuleusement la charte et le rendu visuel de `legacy/`.
+## Principes
 
+- TypeScript strict (`noUncheckedIndexedAccess`), entrées validées par Zod, journaux Pino sans secrets.
+- Erreurs d'API au format `{ error: { code, message } }`.
+- Protection CSRF par vérification de l'origine sur toute requête modifiante portant un cookie.
+
+Conçu par [Sao Tech Agency](https://saotechagency.com/).
