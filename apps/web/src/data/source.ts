@@ -13,7 +13,7 @@ const toProduct = (p: ApiProduct): Product => ({
   countryCode: p.countryCode ?? null, countryName: p.countryName ?? null, city: p.city ?? null, citySlug: p.citySlug ?? null,
 });
 
-/** Catalogue lu depuis l'API (boutique officielle + vendeurs) ; en cas de panne, repli sur la liste d'origine. */
+/** Catalogue lu depuis l'API (boutique officielle + boutiques) ; en cas de panne, repli sur la liste d'origine. */
 export async function getProducts(): Promise<Product[]> {
   const api = process.env.API_URL ?? 'http://localhost:4000';
   try {
@@ -78,5 +78,18 @@ export async function getShop(slug: string): Promise<PublicShop | null> {
     return { shop: d.shop, products: d.products.map(toProduct) };
   } catch {
     return null;
+  }
+}
+
+export interface ShopSummary { name: string; slug: string; description: string | null; official: boolean; certified: boolean; city: string | null; country: string | null; since: string; productCount: number }
+
+/** Annuaire des boutiques actives (côté serveur, pour la page /boutiques). */
+export async function getShops(): Promise<ShopSummary[]> {
+  const api = process.env.API_URL ?? 'http://localhost:4000';
+  try {
+    const res = await fetch(`${api}/v1/shops`, { next: { revalidate: 30 }, signal: AbortSignal.timeout(4000) });
+    return res.ok ? ((await res.json()) as { shops: ShopSummary[] }).shops : [];
+  } catch {
+    return [];
   }
 }

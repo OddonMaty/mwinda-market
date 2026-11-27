@@ -10,7 +10,7 @@ import { MobileCatStrip } from '../components/MobileCatStrip';
 
 export const revalidate = 10;
 
-const FALLBACK: Slide = { id: 'brand', tag: 'Mwinda Market', title: 'La place de marché des vendeurs africains', text: 'Des boutiques locales près de chez vous, livrées dans votre ville.', image: '', priceLabel: '', href: '/collection' };
+const FALLBACK: Slide = { id: 'brand', tag: 'Mwinda Market', title: 'La place de marché des boutiques africaines', text: 'Des boutiques locales près de chez vous, livrées dans votre ville.', image: '', priceLabel: '', href: '/collection' };
 
 export default async function HomePage() {
   const [products, heroData, promotedIds] = await Promise.all([getProducts(), getHeroSlides(), getPromotedIds()]);
@@ -29,7 +29,7 @@ export default async function HomePage() {
       <section className="usp-band">
         <div className="container">
           <div className="usp-grid">
-            {[['fa-truck', 'Livraison dans votre ville', 'Des vendeurs locaux près de chez vous'], ['fa-box', 'Livraison gratuite', 'Le prix affiché est le prix payé'], ['fa-undo', 'Retours sous 30 jours', 'Satisfait ou remboursé']].map(([icon, t, s]) => (
+            {[['fa-truck', 'Livraison dans votre ville', 'Des boutiques locales près de chez vous'], ['fa-box', 'Livraison gratuite', 'Le prix affiché est le prix payé'], ['fa-undo', 'Retours sous 30 jours', 'Satisfait ou remboursé']].map(([icon, t, s]) => (
               <div className="usp-item" key={t}>
                 <i className={`fas ${icon}`} />
                 <div><p className="usp-title">{t}</p><p className="usp-sub">{s}</p></div>

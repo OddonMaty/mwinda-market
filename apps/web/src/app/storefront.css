@@ -164,7 +164,9 @@
   .search-bar { order: 5; flex: 1 1 100%; }
   .search-bar input { height: 44px; font-size: 16px; border-radius: 8px; background: #f4f4f5; border-color: transparent; padding-right: 2.75rem; }
   .search-bar button { width: 44px; height: 44px; right: 0; }
-  .search-bar .search-suggest { min-width: 0; left: 0; right: 0; }
+  .search-bar .search-suggest { min-width: 0; left: 0; right: 0; max-height: 60vh; overflow-y: auto; }
+  .search-bar .search-suggest button { width: 100%; height: auto; min-height: 48px; }
+  .search-sug-row span { white-space: normal; }
 
   .m-tabbar { display: grid; grid-template-columns: repeat(6, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 12px rgba(0,0,0,.06); }
   .m-tabbar a, .m-tabbar button { min-width: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 60px; background: none; border: 0; color: var(--text-muted); font-size: 0.68rem; font-weight: 500; cursor: pointer; text-decoration: none; }
@@ -423,3 +425,46 @@
   .footer-bottom p { color: rgba(255,255,255,.7); }
   .footer-bottom { background: transparent; }
 }
+
+/* ===== Annuaire des boutiques (/boutiques) : liste façon application sur mobile, grille sur ordinateur ===== */
+.shops-page { padding: 1rem 0 2.5rem; }
+.shops-title { font-size: 1.35rem; font-weight: 800; margin: 0 0 0.8rem; display: flex; align-items: center; gap: 0.5rem; }
+.shops-count { background: #fdf1e3; color: var(--primary-dark); font-size: 0.78rem; font-weight: 700; border-radius: 999px; padding: 0.1rem 0.6rem; }
+.shops-search { position: relative; margin-bottom: 1rem; }
+.shops-search i { position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none; }
+.shops-search input { width: 100%; height: 46px; border: 1px solid #e6e6e6; border-radius: 12px; background: #f4f4f5; padding: 0 1rem 0 2.5rem; font: inherit; font-size: 16px; }
+.shops-search input:focus { outline: 2px solid var(--primary); background: #fff; }
+.shops-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+.shop-row { display: flex; align-items: center; gap: 0.8rem; background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 0.8rem 0.9rem; color: var(--dark); text-decoration: none; min-width: 0; }
+.shop-row:hover { border-color: var(--primary); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07); }
+.shop-avatar { flex: 0 0 52px; width: 52px; height: 52px; border-radius: 14px; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 1.4rem; font-weight: 800; }
+.shop-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.shop-name { font-size: 0.98rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shop-cert { color: var(--primary); margin-left: 0.35rem; font-size: 0.85rem; }
+.shop-info small { color: #777; font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shop-info .shop-count { color: var(--primary-dark); font-weight: 600; }
+.shop-go { color: #bbb; font-size: 0.8rem; flex-shrink: 0; }
+.shops-empty { text-align: center; color: #777; padding: 2rem 0; }
+.shops-cta { margin-top: 1.5rem; text-align: center; background: #fff8ef; border: 1px solid #f6dcb8; border-radius: 16px; padding: 1.4rem 1.1rem; }
+.shops-cta > i { font-size: 1.6rem; color: var(--primary); }
+.shops-cta h2 { margin: 0.4rem 0 0.2rem; font-size: 1.1rem; }
+.shops-cta p { margin: 0 auto 0.9rem; max-width: 460px; color: #666; font-size: 0.9rem; }
+@media (max-width: 1000px) { .shops-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 768px) {
+  .shops-page { padding-top: 0.6rem; }
+  .shops-title { justify-content: center; font-size: 1.15rem; }
+  .shops-list { grid-template-columns: 1fr; gap: 0.55rem; }
+  .shop-row { padding: 0.7rem 0.8rem; }
+  .shops-cta { position: sticky; bottom: 76px; box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.08); margin-top: 1.1rem; padding: 0.9rem; text-align: left; display: grid; grid-template-columns: auto 1fr; column-gap: 0.8rem; align-items: center; }
+  .shops-cta > i { grid-row: span 3; font-size: 1.5rem; }
+  .shops-cta h2 { font-size: 0.98rem; margin: 0; }
+  .shops-cta p { font-size: 0.8rem; margin: 0.1rem 0 0.5rem; max-width: none; }
+  .shops-cta .btn { justify-self: start; padding: 0.55rem 1rem; font-size: 0.88rem; }
+}
+
+/* Page publique d'une boutique : en-tête compact sur mobile */
+@media (max-width: 768px) {
+  .shop-hero-m { padding: 0.9rem !important; gap: 0.7rem !important; }
+}
+
+@media (max-width: 768px) { .shop-hero-m h1 { font-size: 1.2rem !important; } .shop-hero-m .badge-certified-inline { display: block; margin: 0.2rem 0 0 !important; } }

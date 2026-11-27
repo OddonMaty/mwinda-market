@@ -24,6 +24,8 @@ export interface AuthDeps {
   google?: GoogleOAuth;
   messenger?: Messenger;
   push?: PushSender;
+  /** Remplace fetch pour la traduction automatique (tests). */
+  fetch?: typeof fetch;
 }
 export interface ReqMeta { ip: string; userAgent?: string }
 

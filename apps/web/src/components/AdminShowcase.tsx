@@ -1,5 +1,5 @@
 'use client';
-import { useT } from './I18n';
+import { trNow, useT } from './I18n';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
@@ -18,7 +18,7 @@ interface P { notify: (m: string) => void; fail: (r: { data: { code?: string; me
 
 const REASON: Record<string, string> = { inactive: 'Désactivée', hors_periode: 'Hors période', produit_indisponible: 'Produit indisponible', boutique_inactive: 'Boutique inactive', plan_non_eligible: 'Abonnement non éligible' };
 
-/** « Promotions » : l'administrateur choisit les produits promus (accueil, carrousel). Réservé aux vendeurs à abonnement payant. */
+/** « Promotions » : l'administrateur choisit les produits promus (accueil, carrousel). Réservé aux boutiques à abonnement payant. */
 export function Showcase({ notify, fail }: P) {
   const t = useT();
   const [slides, setSlides] = useState<Slide[] | null>(null);
@@ -49,13 +49,13 @@ export function Showcase({ notify, fail }: P) {
     notify(msg); await reload();
   }
   async function remove(id: string) {
-    if (!window.confirm('Supprimer cette diapositive ?')) return;
+    if (!window.confirm(trNow('Supprimer cette diapositive ?'))) return;
     const r = await api(`/admin/hero/${id}`, { method: 'DELETE' });
     if (!r.ok) return fail(r);
     notify('Diapositive supprimée'); await reload();
   }
   async function demoAction(kind: 'hide' | 'restore') {
-    if (kind === 'hide' && !window.confirm(`Retirer les ${demo?.demoActive} produits de démonstration de la boutique ? Vous pourrez les remettre en ligne.`)) return;
+    if (kind === 'hide' && !window.confirm(trNow('Retirer les {0} produits de démonstration de la boutique ? Vous pourrez les remettre en ligne.', demo?.demoActive ?? 0))) return;
     const r = await api(`/admin/demo/${kind}`, { method: 'POST' });
     if (!r.ok) return fail(r);
     notify(kind === 'hide' ? 'Produits de démonstration retirés' : 'Produits de démonstration remis en ligne'); await reload();
@@ -66,7 +66,7 @@ export function Showcase({ notify, fail }: P) {
       <Card>
         <CardHeader>
           <CardTitle>Promotions des produits</CardTitle>
-          <CardDescription>Les vendeurs ayant choisi un abonnement payant ont droit aux promotions sur la plateforme ; c’est vous qui choisissez quels produits sont promus : dans le carrousel de l’accueil (avec un prix affiché si vous le souhaitez) ou dans la section « À la une ». Si l’abonnement d’un vendeur expire, sa promotion s’arrête toute seule.</CardDescription>
+          <CardDescription>Les boutiques ayant choisi un abonnement payant ont droit aux promotions sur la plateforme ; c’est vous qui choisissez quels produits sont promus : dans le carrousel de l’accueil (avec un prix affiché si vous le souhaitez) ou dans la section « À la une ». Si l’abonnement d’une boutique expire, sa promotion s’arrête toute seule.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="flex flex-wrap gap-2">
@@ -107,7 +107,7 @@ export function Showcase({ notify, fail }: P) {
       <Card>
         <CardHeader>
           <CardTitle>Produits de démonstration</CardTitle>
-          <CardDescription>Les produits d’exemple fournis au lancement (boutique officielle). Quand les vrais produits des vendeurs sont en ligne, retirez-les en un clic ; ils sont archivés, pas supprimés.</CardDescription>
+          <CardDescription>Les produits d’exemple fournis au lancement (boutique officielle). Quand les vrais produits des boutiques sont en ligne, retirez-les en un clic ; ils sont archivés, pas supprimés.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
           {demo && <p className="text-sm">{`${t(demo.demoActive > 1 ? '{0} produits de démonstration en ligne' : '{0} produit de démonstration en ligne', demo.demoActive)} · ${t(demo.realActive > 1 ? '{0} produits réels en ligne' : '{0} produit réel en ligne', demo.realActive)}`}</p>}
@@ -133,7 +133,7 @@ function ProductPicker({ placement, notify, fail, onDone }: P & { placement: 'he
   }
   return (
     <Card>
-      <CardHeader><CardTitle>{placement === 'home' ? 'Promouvoir « À la une »' : 'Promouvoir dans le carrousel'}</CardTitle><CardDescription>Seuls les produits de la boutique officielle ou d’un vendeur à abonnement payant peuvent être promus ; ils sont en tête de liste.</CardDescription></CardHeader>
+      <CardHeader><CardTitle>{placement === 'home' ? 'Promouvoir « À la une »' : 'Promouvoir dans le carrousel'}</CardTitle><CardDescription>Seuls les produits de la boutique officielle ou d’une boutique à abonnement payant peuvent être promus ; ils sont en tête de liste.</CardDescription></CardHeader>
       <CardContent className="grid gap-3">
         <Input placeholder="Rechercher un produit…" value={q} onChange={(e) => setQ(e.target.value)} />
         <UTable>

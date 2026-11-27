@@ -68,6 +68,20 @@ export class CommerceService {
     return this.publicDto(rows[0], (await this.images([rows[0].id])).get(rows[0].id) ?? []);
   }
 
+  // ---------- Annuaire des boutiques ----------
+  /** Boutiques actives (officielle, certifiées, puis les plus fournies), filtrées par nom, description ou ville. */
+  async listPublicShops(q = '', limit = 60) {
+    const like = `%${q.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    const rows = await this.db.query<{ name: string; slug: string; description: string | null; is_official: boolean; certified: boolean; city: string | null; country_name: string | null; created_at: Date; n: string }>(
+      `SELECT s.name, s.slug, s.description, s.is_official, (s.is_official OR COALESCE(pl.certified, false)) AS certified, ci.name AS city, co.name AS country_name, s.created_at,
+              (SELECT count(*) FROM products p WHERE p.shop_id = s.id AND p.status = 'active') AS n
+         FROM shops s LEFT JOIN cities ci ON ci.id = s.city_id LEFT JOIN countries co ON co.code = s.country_code
+         LEFT JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')}
+        WHERE s.status = 'active' AND ($1 = '%%' OR s.name ILIKE $1 OR s.description ILIKE $1 OR ci.name ILIKE $1 OR co.name ILIKE $1)
+        ORDER BY s.is_official DESC, certified DESC, n DESC, s.name LIMIT $2`, [like, Math.min(Math.max(limit, 1), 100)]);
+    return rows.map((r) => ({ name: r.name, slug: r.slug, description: r.description, official: r.is_official, certified: r.certified, city: r.city, country: r.country_name, since: r.created_at, productCount: Number(r.n) }));
+  }
+
   // ---------- Boutique publique ----------
   /** Page publique d'une boutique active : présentation + ses produits visibles. */
   async getPublicShop(slug: string) {
@@ -240,7 +254,7 @@ export class CommerceService {
     };
   }
 
-  /** Le vendeur indique où se trouve le colis (ville, étape, remarque) tant que sa part de commande est confirmée ou expédiée. */
+  /** La boutique indique où se trouve le colis (ville, étape, remarque) tant que sa part de commande est confirmée ou expédiée. */
   async addTracking(userId: string, number: string, b: { location: string; note?: string }) {
     const s = await this.requireShop(userId);
     const o = (await this.db.query<{ id: string }>('SELECT id FROM orders WHERE number = $1', [number]))[0];
@@ -250,7 +264,7 @@ export class CommerceService {
     return { ok: true };
   }
 
-  // ---------- Boutique du vendeur ----------
+  // ---------- Boutique de la boutique ----------
   async getShop(userId: string) {
     const r = await this.db.query<{ id: string; name: string; slug: string; phone: string | null; whatsapp: string | null; notify_whatsapp: boolean; description: string | null; plan: string; plan_expires_at: Date | null; status: string; is_official: boolean; country_code: string | null; city: string | null; reject_reason: string | null }>(
       `SELECT s.id, s.name, s.slug, s.phone, s.whatsapp, s.notify_whatsapp, s.description, s.plan, s.plan_expires_at, s.status, s.is_official, s.country_code, c.name AS city, s.reject_reason
@@ -281,7 +295,7 @@ export class CommerceService {
       const slug = n === 0 ? base : `${base}-${n + 1}`;
       const taken = await this.db.query('SELECT 1 FROM shops WHERE slug = $1', [slug]);
       if (taken[0]) continue;
-      // Un vendeur sans e-mail est joint par WhatsApp : son numéro de compte sert alors par défaut.
+      // Une boutique sans e-mail est joint par WhatsApp : son numéro de compte sert alors par défaut.
       const whatsapp = b.whatsapp ?? (user.email ? null : user.phone);
       await this.db.query('INSERT INTO shops(id,owner_id,name,slug,city_id,country_code,phone,whatsapp,description,status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,\'pending\')',
         [newId(), user.id, b.name.trim(), slug, city[0]?.id ?? null, country, b.phone ?? user.phone, whatsapp, b.description ?? null]);
@@ -348,7 +362,7 @@ export class CommerceService {
     return rows.map((r) => this.dto(r, imgs.get(r.id) ?? []));
   }
 
-  /** Les photos envoyées par le vendeur doivent appartenir à sa boutique ; les autres doivent être des liens https. */
+  /** Les photos envoyées par la boutique doivent appartenir à sa boutique ; les autres doivent être des liens https. */
   private async checkImages(shopId: string, images: string[]) {
     for (const url of images) {
       const m = IMAGE_PATH.exec(url);
@@ -452,7 +466,7 @@ export class CommerceService {
     return [...out.values()].map((o) => ({ ...o, totalUsd: round2(o.totalUsd), commissionUsd: round2(o.commissionUsd), netUsd: round2(o.totalUsd - o.commissionUsd) }));
   }
 
-  /** Le vendeur fait avancer sa part de la commande : confirmer, expédier, ou annuler avant l'expédition. */
+  /** La boutique fait avancer sa part de la commande : confirmer, expédier, ou annuler avant l'expédition. */
   async shopOrderAction(userId: string, number: string, to: 'confirmed' | 'shipped' | 'cancelled') {
     const s = await this.requireShop(userId);
     const o = (await this.db.query<{ id: string }>('SELECT id FROM orders WHERE number = $1', [number]))[0];
@@ -463,7 +477,7 @@ export class CommerceService {
       if (!r[0]) throw new AppError(409, 'invalid_transition', 'Cette action n’est pas possible dans l’état actuel de la commande.');
       const origin = (await t.query<{ city: string | null }>('SELECT c.name AS city FROM shops sh LEFT JOIN cities c ON c.id = sh.city_id WHERE sh.id = $1', [s.id]))[0]?.city ?? null;
       await t.query('INSERT INTO order_events(order_id, shop_id, kind, location, note) VALUES ($1,$2,$3,$4,$5)',
-        [o.id, s.id, to, to === 'cancelled' ? null : origin, to === 'confirmed' ? 'Commande confirmée par le vendeur' : to === 'shipped' ? 'Colis expédié par le vendeur' : 'Commande annulée par le vendeur']);
+        [o.id, s.id, to, to === 'cancelled' ? null : origin, to === 'confirmed' ? 'Commande confirmée par la boutique' : to === 'shipped' ? 'Colis expédié par la boutique' : 'Commande annulée par la boutique']);
       return { status: await this.syncOrderStatus(t, o.id) };
     });
     await this.notify?.orderStatus(o.id, to);
@@ -526,7 +540,7 @@ export class CommerceService {
     return { id };
   }
 
-  // ---------- Messagerie acheteur ↔ vendeur ----------
+  // ---------- Messagerie acheteur ↔ boutique ----------
   /** Ouvre (ou reprend) la discussion de l'acheteur avec la boutique du produit et y poste le premier message. */
   async startConversation(userId: string, productId: number, body: string) {
     const p = (await this.db.query<{ shop_id: string; owner_id: string | null }>(

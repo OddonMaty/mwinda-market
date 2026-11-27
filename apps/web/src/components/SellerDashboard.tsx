@@ -1,5 +1,5 @@
 'use client';
-import { nowLocale, useI18n } from './I18n';
+import { nowLocale, trNow, useI18n } from './I18n';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -87,7 +87,7 @@ export function SellerDashboard() {
   }
 
   async function orderAction(number: string, action: 'confirm' | 'ship' | 'cancel') {
-    if (action === 'cancel' && !window.confirm('Annuler cette commande ?')) return;
+    if (action === 'cancel' && !window.confirm(trNow('Annuler cette commande ?'))) return;
     const r = await api(`/seller/orders/${number}/${action}`, { method: 'POST' });
     if (!r.ok) return notify(r.data.message ?? errorMessage(r.data.code));
     await load();
@@ -104,7 +104,7 @@ export function SellerDashboard() {
   }
 
   async function remove(p: SProduct) {
-    if (!window.confirm(`Supprimer « ${p.name} » ?`)) return;
+    if (!window.confirm(trNow('Supprimer « {0} » ?', p.name))) return;
     const r = await api(`/seller/products/${p.id}`, { method: 'DELETE' });
     if (!r.ok) return notify(errorMessage(r.data.code));
     await load();
@@ -124,7 +124,7 @@ export function SellerDashboard() {
   const shownOrders = orders.filter((o) => orderFilter === 'all' || o.status === orderFilter);
 
   return (
-    <DashboardShell hideTabs space="Espace vendeur" subtitle={shop.name} groups={groups} active={tab} onSelect={(k) => { setTab(k as Tab); setForm({ open: false, editing: null }); }} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email || user.phone || '', email: user.email ?? user.phone ?? undefined }}
+    <DashboardShell hideTabs space="Espace boutique" subtitle={shop.name} groups={groups} active={tab} onSelect={(k) => { setTab(k as Tab); setForm({ open: false, editing: null }); }} user={{ name: `${user.firstName} ${user.lastName}`.trim() || user.email || user.phone || '', email: user.email ?? user.phone ?? undefined }}
       topRight={<>
         <Button size="sm" onClick={() => openForm(null)}><Plus /><span className="sm:hidden">Ajouter</span><span className="hidden sm:inline">Ajouter un produit</span></Button>
         <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex"><Link href="/compte">Mon compte</Link></Button>
@@ -133,8 +133,8 @@ export function SellerDashboard() {
 
       {welcome && (
         <WelcomeDialog
-          title={`Bienvenue, ${user.firstName || 'cher vendeur'} !`}
-          text={shop.status === 'pending' ? `Votre boutique « ${shop.name} » est en cours de validation par l’équipe Mwinda Market. Vous pourrez publier vos produits dès son acceptation.` : shop.status === 'rejected' ? `Votre demande d’ouverture pour « ${shop.name} » n’a pas été acceptée. Consultez le motif dans votre tableau de bord.` : `Votre espace vendeur « ${shop.name} » est prêt. Publiez vos produits, suivez vos commandes et répondez aux questions de vos clients.`}
+          title={`Bienvenue, ${user.firstName || 'cher partenaire'} !`}
+          text={shop.status === 'pending' ? `Votre boutique « ${shop.name} » est en cours de validation par l’équipe Mwinda Market. Vous pourrez publier vos produits dès son acceptation.` : shop.status === 'rejected' ? `Votre demande d’ouverture pour « ${shop.name} » n’a pas été acceptée. Consultez le motif dans votre tableau de bord.` : `Votre espace boutique « ${shop.name} » est prêt. Publiez vos produits, suivez vos commandes et répondez aux questions de vos clients.`}
           onClose={() => setWelcome(false)} />
       )}
       {!shop.isOfficial && shop.status === 'pending' && (
@@ -163,9 +163,9 @@ export function SellerDashboard() {
           <Card><CardContent className="flex flex-wrap items-center gap-3 pt-4 sm:flex-nowrap sm:gap-4 sm:pt-5">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:size-14 sm:rounded-2xl"><Crown className="size-5 sm:size-6" /></span>
             <div className="min-w-0 flex-1">
-              <p className="flex flex-wrap items-center gap-2 text-base font-semibold sm:text-lg">{shop.name} {shop.isOfficial && <Badge>Boutique officielle</Badge>}{shop.certified && <Badge variant="success"><ShieldCheck className="mr-1 size-3" />Vendeur certifié</Badge>}</p>
+              <p className="flex flex-wrap items-center gap-2 text-base font-semibold sm:text-lg">{shop.name} {shop.isOfficial && <Badge>Boutique officielle</Badge>}{shop.certified && <Badge variant="success"><ShieldCheck className="mr-1 size-3" />Boutique certifiée</Badge>}</p>
               <p className="text-sm text-muted-foreground">Plan {shop.planName}{shop.isOfficial ? '' : ` · commission ${shop.commissionBps / 100} %`} · {planLine}</p>
-              {!shop.certified && !shop.isOfficial && <p className="text-xs text-primary">La certification « Vendeur certifié » est incluse dans le plan Premium.</p>}
+              {!shop.certified && !shop.isOfficial && <p className="text-xs text-primary">La certification « Boutique certifiée » est incluse dans le plan Premium.</p>}
               <p className="text-xs text-muted-foreground">{shop.city ?? 'Ville non précisée'}{shop.countryCode ? ` (${shop.countryCode})` : ''}{shop.pendingPlan ? ` · demande de plan ${shop.pendingPlan} en attente de validation` : ''}</p>
             </div>
             {!shop.isOfficial && <Button asChild variant="dark" size="sm" className="w-full sm:w-auto"><Link href="/tarifs">Changer de plan</Link></Button>}

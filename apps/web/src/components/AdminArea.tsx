@@ -1,5 +1,5 @@
 'use client';
-import { nowLocale, useI18n } from './I18n';
+import { nowLocale, trNow, useI18n } from './I18n';
 
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart3, Users as UsersIcon, Store, Package, ShoppingBag, Crown, Inbox, Globe2, FileText, ScrollText, Search as SearchIcon, ShieldCheck, Wallet, Percent, Bell, Sparkles } from 'lucide-react';
@@ -16,12 +16,12 @@ const NAV: NavGroup[] = [
     { key: 'products', label: 'Produits', icon: Package }, { key: 'orders', label: 'Commandes', icon: ShoppingBag },
     { key: 'promotions', label: 'Promotions', icon: Sparkles },
   ] },
-  { title: 'Abonnements', items: [{ key: 'plans', label: 'Plans', icon: Crown }, { key: 'requests', label: 'Demandes de plan', icon: Inbox }, { key: 'withdrawals', label: 'Retraits vendeurs', icon: Wallet }] },
+  { title: 'Abonnements', items: [{ key: 'plans', label: 'Plans', icon: Crown }, { key: 'requests', label: 'Demandes de plan', icon: Inbox }, { key: 'withdrawals', label: 'Retraits des boutiques', icon: Wallet }] },
   { title: 'Configuration', items: [{ key: 'countries', label: 'Pays & villes', icon: Globe2 }, { key: 'pages', label: 'Textes légaux', icon: FileText }, { key: 'audit', label: 'Journal d’audit', icon: ScrollText }] },
 ];
 const STATUS: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmée', shipped: 'Expédiée', delivered: 'Livrée', cancelled: 'Annulée', active: 'Actif', suspended: 'Suspendu', archived: 'Archivé' };
 const TONE: Record<string, 'success' | 'warning' | 'danger' | 'secondary' | 'default'> = { active: 'success', delivered: 'success', approved: 'success', pending: 'warning', confirmed: 'default', shipped: 'default', suspended: 'danger', cancelled: 'danger', rejected: 'danger', archived: 'secondary' };
-const PAGE_LABELS: Record<string, string> = { conditions: 'Conditions générales d’utilisation', confidentialite: 'Politique de confidentialité', 'conditions-vendeur': 'Conditions générales vendeur', remboursement: 'Retours et remboursements', livraison: 'Livraison', paiements: 'Paiements' };
+const PAGE_LABELS: Record<string, string> = { conditions: 'Conditions générales d’utilisation', confidentialite: 'Politique de confidentialité', 'conditions-vendeur': 'Conditions générales boutique', remboursement: 'Retours et remboursements', livraison: 'Livraison', paiements: 'Paiements' };
 const day = (d: string | null) => (d ? new Date(d).toLocaleDateString(nowLocale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const St = ({ s }: { s: string }) => <Badge variant={TONE[s] ?? 'secondary'}>{STATUS[s] ?? s}</Badge>;
 
@@ -147,7 +147,7 @@ function Dashboard() {
     <div className="grid gap-4 sm:gap-6">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Utilisateurs" value={s.users} icon={UsersIcon} />
-        <StatCard label="Boutiques vendeurs" value={s.shops} icon={Store} hint={s.shopsPending ? `${s.shopsPending} en attente` : undefined} />
+        <StatCard label="Boutiques" value={s.shops} icon={Store} hint={s.shopsPending ? `${s.shopsPending} en attente` : undefined} />
         <StatCard label="Produits en ligne" value={s.products} icon={Package} />
         <StatCard label="Commandes" value={s.orders} icon={ShoppingBag} />
       </div>
@@ -219,7 +219,7 @@ function Shops({ notify, fail }: P) {
               {s.status === 'pending' && !s.isOfficial && (
                 <div className="flex gap-2">
                   <Button size="sm" onClick={() => void patch(s.id, { status: 'active' })}>Accepter</Button>
-                  <Button size="sm" variant="outline" onClick={() => { const reason = window.prompt('Motif du refus (facultatif) :', ''); if (reason !== null) void patch(s.id, { status: 'rejected', reason }); }}>Refuser</Button>
+                  <Button size="sm" variant="outline" onClick={() => { const reason = window.prompt(trNow('Motif du refus (facultatif) :'), ''); if (reason !== null) void patch(s.id, { status: 'rejected', reason }); }}>Refuser</Button>
                 </div>
               )}
               {!(s.status === 'pending' && !s.isOfficial) && <Select className="h-9 min-w-[8rem]" value={s.status} onChange={(e) => void patch(s.id, { status: e.target.value })}><option value="active">Actif</option><option value="pending">En attente</option><option value="suspended">Suspendu</option><option value="rejected">Refusé</option></Select>}
@@ -251,7 +251,7 @@ function Products({ notify, fail }: P) {
 function Orders({ notify, fail }: P) {
   const [q, setQ] = useState('');
   const [rows, reload] = useAdminData<{ number: string; status: string; totalUsd: number; commissionUsd: number; createdAt: string; customer: string; email: string; city: string }>(`/admin/orders?q=${encodeURIComponent(q)}`, 'orders');
-  async function setStatus(number: string, status: string) { if (status === 'cancelled' && !window.confirm('Annuler cette commande pour tout le monde ?')) return; const r = await api(`/admin/orders/${number}`, { method: 'PATCH', body: { status } }); if (!r.ok) return fail(r); notify('Commande mise à jour'); await reload(); }
+  async function setStatus(number: string, status: string) { if (status === 'cancelled' && !window.confirm(trNow('Annuler cette commande pour tout le monde ?'))) return; const r = await api(`/admin/orders/${number}`, { method: 'PATCH', body: { status } }); if (!r.ok) return fail(r); notify('Commande mise à jour'); await reload(); }
   return (
     <>
       <Search value={q} onChange={setQ} />
@@ -308,9 +308,9 @@ function Plans({ isSuper, notify, fail }: P & { isSuper: boolean }) {
                 <Field label="Ordre d’affichage"><Input type="number" name="sort" min="0" defaultValue={edit.sort} /></Field>
               </div>
               <Field label="Avantages" hint="Un avantage par ligne"><Textarea name="features" rows={4} defaultValue={edit.features.join('\n')} /></Field>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="certified" defaultChecked={edit.certified} disabled={edit.code === 'free'} />Certification « Vendeur certifié » incluse</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="certified" defaultChecked={edit.certified} disabled={edit.code === 'free'} />Certification « Boutique certifiée » incluse</label>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="heroEligible" defaultChecked={edit.heroEligible} disabled={edit.code === 'free'} />Éligible aux promotions (accueil et carrousel, sur sélection de l’administrateur)</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="active" defaultChecked={edit.active} disabled={edit.code === 'free'} />Plan proposé aux vendeurs</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="active" defaultChecked={edit.active} disabled={edit.code === 'free'} />Plan proposé aux boutiques</label>
               <div className="flex gap-2"><Button type="submit">Enregistrer</Button><Button type="button" variant="outline" onClick={() => setEdit(null)}>Annuler</Button></div>
             </form>
           </CardContent>
@@ -339,23 +339,23 @@ function Requests({ notify, fail }: P) {
 function Withdrawals({ notify, fail }: P) {
   const [rows, reload] = useAdminData<{ id: string; shop: string; owner: string | null; amountUsd: number; method: string; provider: string; accountName: string; accountNumber: string; status: string; reference: string | null; reason: string | null; createdAt: string }>('/admin/withdrawals', 'withdrawals');
   async function pay(id: string) {
-    const reference = window.prompt('Référence du paiement effectué (transaction Mobile Money, virement…) — facultatif :');
+    const reference = window.prompt(trNow('Référence du paiement effectué (transaction Mobile Money, virement…) — facultatif :'));
     if (reference === null) return;
     const r = await api(`/admin/withdrawals/${id}/pay`, { method: 'POST', body: { reference: reference.trim() || undefined } });
     if (!r.ok) return fail(r);
-    notify('Retrait marqué comme payé : le vendeur est prévenu.'); await reload();
+    notify('Retrait marqué comme payé : la boutique est prévenue.'); await reload();
   }
   async function reject(id: string) {
-    const reason = window.prompt('Motif du refus (communiqué au vendeur) :');
+    const reason = window.prompt(trNow('Motif du refus (communiqué à la boutique) :'));
     if (!reason?.trim()) return;
     const r = await api(`/admin/withdrawals/${id}/reject`, { method: 'POST', body: { reason: reason.trim() } });
     if (!r.ok) return fail(r);
-    notify('Retrait refusé : le montant retourne au solde du vendeur.'); await reload();
+    notify('Retrait refusé : le montant retourne au solde de la boutique.'); await reload();
   }
   const label: Record<string, string> = { pending: 'À payer', paid: 'Payé', rejected: 'Refusé' };
   return (
     <>
-      <p className="mb-4 max-w-2xl text-sm text-muted-foreground">Envoyez l&apos;argent au vendeur (Mobile Money ou virement) <b>avant</b> de cliquer sur « Marquer payé » : le vendeur est alors prévenu par e-mail ou WhatsApp. Un refus remet le montant dans son solde.</p>
+      <p className="mb-4 max-w-2xl text-sm text-muted-foreground">Envoyez l&apos;argent à la boutique (Mobile Money ou virement) <b>avant</b> de cliquer sur « Marquer payé » : la boutique est alors prévenue par e-mail ou WhatsApp. Un refus remet le montant dans son solde.</p>
       <Table head={['Date', 'Boutique', 'Montant', 'Destination', 'État', '']} empty={rows?.length === 0}>
         {rows?.map((r) => (
           <tr key={r.id}><Td>{day(r.createdAt)}</Td><Td>{r.shop}<div className="text-xs text-muted-foreground">{r.owner ?? ''}</div></Td><Td>{formatUsd(r.amountUsd)}</Td>
@@ -390,7 +390,7 @@ function Countries({ isSuper, notify, fail }: P & { isSuper: boolean }) {
         </form>
       </CardContent></Card>
       <Search value={q} onChange={setQ} />
-      <Table head={['Pays', 'Indicatif', 'Devise', 'Villes', 'Ouvert aux vendeurs']} empty={shown?.length === 0}>
+      <Table head={['Pays', 'Indicatif', 'Devise', 'Villes', 'Ouvert aux boutiques']} empty={shown?.length === 0}>
         {shown?.map((c) => (
           <tr key={c.code}><Td>{c.name} ({c.code})</Td><Td>{c.phonePrefix}</Td><Td>{c.currency ?? '—'}</Td><Td>{c.cities}</Td>
             <Td>{isSuper ? <input type="checkbox" checked={c.active} onChange={(e) => void toggle(c.code, e.target.checked)} /> : c.active ? 'Oui' : 'Non'}</Td></tr>

@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthProvider';
-import { dateLocale, detectLang, isLang, LANGS, tr, trDom, type Lang } from '../i18n/translate';
+import { dateLocale, detectLang, hasEntry, isDictOutput, isLang, isProduced, LANGS, markProduced, tr, trDom, worthMachine, type Lang } from '../i18n/translate';
 
 const KEY = 'mwinda_lang';
 /** Langue courante, lisible hors React (messages de notification). */
@@ -36,22 +36,74 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 const ATTRS = ['placeholder', 'title', 'aria-label', 'alt'];
 const texts = new WeakMap<Node, { src: string; shown: string }>();
 const attrs = new WeakMap<Element, Record<string, { src: string; shown: string }>>();
-const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE']);
+const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE', 'TITLE']); // le titre de l'onglet est géré à part (doTitle)
+
+/** Traductions automatiques déjà obtenues (contenus saisis par les boutiques, textes hors dictionnaire), par langue. */
+const MT_KEY = (l: Lang) => `mwinda_mt_${l}`;
+const mtCache = new Map<Lang, Map<string, string>>();
+function mtFor(lang: Lang): Map<string, string> {
+  let m = mtCache.get(lang);
+  if (!m) {
+    m = new Map();
+    try { for (const [k, v] of JSON.parse(localStorage.getItem(MT_KEY(lang)) ?? '[]') as [string, string][]) { m.set(k, v); markProduced(v); } } catch { /* cache absent */ }
+    mtCache.set(lang, m);
+  }
+  return m;
+}
+const mtSave = (lang: Lang) => { try { localStorage.setItem(MT_KEY(lang), JSON.stringify([...mtFor(lang)].slice(-600))); } catch { /* ignoré */ } };
+const mtFailedAt = new Map<string, number>();
+const norm1 = (s: string) => s.replace(/\s+/g, ' ').trim();
 
 /**
  * Traduit tout le document (textes, placeholders, titres, info-bulles) à partir du français d'origine,
  * y compris ce qui est affiché plus tard (notifications, listes chargées). Chaque texte garde son français d'origine
  * pour pouvoir revenir en arrière ou changer de langue à tout moment.
+ * Ce qui n'est pas dans le dictionnaire (produits et descriptions saisis par les boutiques, textes oubliés) est envoyé à la
+ * traduction automatique du serveur, puis mémorisé.
  */
 function AutoTranslate({ lang }: { lang: Lang }) {
   useEffect(() => {
-    const skip = (el: Element | null): boolean => { for (let e = el; e; e = e.parentElement) { if (SKIP.has(e.tagName) || e.hasAttribute('data-no-translate')) return true; } return false; };
+    const pending = new Set<string>();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let cancelled = false;
+    const skip = (el: Element | null): boolean => { for (let e = el; e; e = e.parentElement) { if (SKIP.has(e.tagName) || e.hasAttribute('data-no-translate') || e.classList.contains('chat-msg')) return true; } return false; };
+    const inUgc = (el: Element | null) => !!el?.closest('[data-ugc]');
+    /** Traduit un texte : dictionnaire, sinon traduction automatique déjà reçue, sinon la demande est mise en file. */
+    const convert = (raw: string, el: Element | null): string => {
+      if (lang === 'fr') return raw;
+      const viaDict = trDom(lang, raw);
+      if (viaDict !== raw) return viaDict;
+      const core = norm1(raw);
+      if (!core || hasEntry(lang, core) || isProduced(core) || isDictOutput(lang, core)) return raw;
+      const hit = mtFor(lang).get(core);
+      if (hit !== undefined) { const lead = /^\s*/.exec(raw)![0]; const tail = /\s*$/.exec(raw)![0]; return lead + hit + tail; }
+      if (worthMachine(core, inUgc(el)) && !((mtFailedAt.get(`${lang}:${core}`) ?? 0) > Date.now() - 120_000)) { pending.add(core); if (!timer) timer = setTimeout(() => void fetchMt(), 250); }
+      return raw;
+    };
+    const fetchMt = async () => {
+      timer = undefined;
+      const all = [...pending]; pending.clear();
+      if (!all.length || lang === 'fr') return;
+      for (let i = 0; i < all.length; i += 40) {
+        const batch = all.slice(i, i + 40);
+        try {
+          const res = await fetch('/api/v1/translate', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ lang, texts: batch }) });
+          if (!res.ok) throw new Error(String(res.status));
+          const { translations } = (await res.json()) as { translations: (string | null)[] };
+          const m = mtFor(lang);
+          batch.forEach((src, k) => { const t = translations[k]; if (t) { m.set(src, t); markProduced(t); } else mtFailedAt.set(`${lang}:${src}`, Date.now()); });
+        } catch { batch.forEach((src) => mtFailedAt.set(`${lang}:${src}`, Date.now())); }
+      }
+      if (cancelled) return;
+      mtSave(lang);
+      observer.disconnect(); walk(document.documentElement); doTitle(); observer.observe(document.documentElement, OPTS);
+    };
     const doText = (n: Text) => {
       if (skip(n.parentElement)) return;
       const cur = n.nodeValue ?? '';
       const rec = texts.get(n);
       const src = rec && rec.shown === cur ? rec.src : cur;
-      const out = lang === 'fr' ? src : trDom(lang, src);
+      const out = convert(src, n.parentElement);
       if (out !== cur) n.nodeValue = out;
       texts.set(n, { src, shown: out });
     };
@@ -63,12 +115,21 @@ function AutoTranslate({ lang }: { lang: Lang }) {
         const all = attrs.get(el) ?? {};
         const rec = all[a];
         const src = rec && rec.shown === cur ? rec.src : cur;
-        const out = lang === 'fr' ? src : trDom(lang, src);
+        const out = convert(src, el);
         if (out !== cur) el.setAttribute(a, out);
         all[a] = { src, shown: out };
         attrs.set(el, all);
       }
     };
+    /** Titre de l'onglet : chaque segment (« Page - Mwinda Market ») est traduit séparément. */
+    const doTitle = () => {
+      const cur = document.title; const rec = titleRec;
+      const src = rec && rec.shown === cur ? rec.src : cur;
+      const out = lang === 'fr' ? src : src.split(' - ').map((seg) => convert(seg, null)).join(' - ');
+      if (out !== cur) document.title = out;
+      titleRec = { src, shown: out };
+    };
+    let titleRec: { src: string; shown: string } | undefined;
     const walk = (root: Node) => {
       if (root.nodeType === 3) { doText(root as Text); return; }
       if (root.nodeType !== 1) return;
@@ -78,8 +139,9 @@ function AutoTranslate({ lang }: { lang: Lang }) {
       for (let c = el.firstChild; c; c = c.nextSibling) walk(c);
     };
     walk(document.documentElement);
+    doTitle();
     let queue: Node[] = []; let raf = 0;
-    const flush = () => { raf = 0; const q = queue; queue = []; observer.disconnect(); for (const n of q) if (n.isConnected) walk(n); observer.observe(document.documentElement, OPTS); };
+    const flush = () => { raf = 0; const q = queue; queue = []; observer.disconnect(); for (const n of q) if (n.isConnected) walk(n); doTitle(); observer.observe(document.documentElement, OPTS); };
     const OPTS: MutationObserverInit = { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS };
     const observer = new MutationObserver((muts) => {
       for (const m of muts) {
@@ -90,7 +152,7 @@ function AutoTranslate({ lang }: { lang: Lang }) {
       if (!raf) raf = requestAnimationFrame(flush);
     });
     observer.observe(document.documentElement, OPTS);
-    return () => { observer.disconnect(); if (raf) cancelAnimationFrame(raf); };
+    return () => { cancelled = true; if (timer) clearTimeout(timer); observer.disconnect(); if (raf) cancelAnimationFrame(raf); };
   }, [lang]);
   return null;
 }

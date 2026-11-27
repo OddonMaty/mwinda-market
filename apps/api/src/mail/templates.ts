@@ -75,30 +75,30 @@ const lineText = (l: MailLine) => `- ${l.name} × ${l.quantity} : ${usd(l.unitUs
 export function orderPlaced(locale: Locale, to: string, number: string, lines: MailLine[], totalUsd: number, link: string): Mail {
   const body = lines.map(lineText).join('\n'); const total = usd(totalUsd);
   return pick(locale, to, {
-    fr: { subject: `Commande ${number} bien reçue`, text: `Merci pour votre commande ${number} sur Mwinda Market.\n\n${body}\nTotal : ${total}\n\nChaque vendeur va confirmer puis expédier sa partie de la commande. Suivez votre commande : ${link}` },
-    en: { subject: `Order ${number} received`, text: `Thank you for your order ${number} on Mwinda Market.\n\n${body}\nTotal: ${total}\n\nEach seller will confirm and ship their part. Follow your order: ${link}` },
-    sw: { subject: `Agizo ${number} limepokelewa`, text: `Asante kwa agizo lako ${number} kwenye Mwinda Market.\n\n${body}\nJumla: ${total}\n\nKila muuzaji atathibitisha na kutuma sehemu yake. Fuatilia agizo lako: ${link}` },
-    zh: { subject: `订单 ${number} 已收到`, text: `感谢您在 Mwinda Market 下单 ${number}。\n\n${body}\n合计：${total}\n\n每位卖家将分别确认并发货。查看订单：${link}` },
-    es: { subject: `Pedido ${number} recibido`, text: `Gracias por tu pedido ${number} en Mwinda Market.\n\n${body}\nTotal: ${total}\n\nCada vendedor confirmará y enviará su parte. Sigue tu pedido: ${link}` },
+    fr: { subject: `Commande ${number} bien reçue`, text: `Merci pour votre commande ${number} sur Mwinda Market.\n\n${body}\nTotal : ${total}\n\nChaque boutique va confirmer puis expédier sa partie de la commande. Suivez votre commande : ${link}` },
+    en: { subject: `Order ${number} received`, text: `Thank you for your order ${number} on Mwinda Market.\n\n${body}\nTotal: ${total}\n\nEach shop will confirm and ship their part. Follow your order: ${link}` },
+    sw: { subject: `Agizo ${number} limepokelewa`, text: `Asante kwa agizo lako ${number} kwenye Mwinda Market.\n\n${body}\nJumla: ${total}\n\nKila duka atathibitisha na kutuma sehemu yake. Fuatilia agizo lako: ${link}` },
+    zh: { subject: `订单 ${number} 已收到`, text: `感谢您在 Mwinda Market 下单 ${number}。\n\n${body}\n合计：${total}\n\n每位店铺将分别确认并发货。查看订单：${link}` },
+    es: { subject: `Pedido ${number} recibido`, text: `Gracias por tu pedido ${number} en Mwinda Market.\n\n${body}\nTotal: ${total}\n\nCada tienda confirmará y enviará su parte. Sigue tu pedido: ${link}` },
   });
 }
 export function newOrderSeller(locale: Locale, to: string, shopName: string, number: string, lines: MailLine[], link: string): Mail {
   const body = lines.map(lineText).join('\n');
   return pick(locale, to, {
-    fr: { subject: `Nouvelle commande ${number} pour ${shopName}`, text: `Vous avez reçu une nouvelle commande (${number}) pour votre boutique « ${shopName} » :\n\n${body}\n\nConfirmez-la depuis votre espace vendeur : ${link}` },
-    en: { subject: `New order ${number} for ${shopName}`, text: `You have a new order (${number}) for your shop "${shopName}":\n\n${body}\n\nConfirm it from your seller space: ${link}` },
-    sw: { subject: `Agizo jipya ${number} la ${shopName}`, text: `Una agizo jipya (${number}) kwa duka lako "${shopName}":\n\n${body}\n\nLithibitishe kupitia eneo lako la muuzaji: ${link}` },
-    zh: { subject: `店铺 ${shopName} 的新订单 ${number}`, text: `您的店铺“${shopName}”收到一笔新订单（${number}）：\n\n${body}\n\n请在卖家中心确认：${link}` },
-    es: { subject: `Nuevo pedido ${number} para ${shopName}`, text: `Has recibido un nuevo pedido (${number}) para tu tienda «${shopName}»:\n\n${body}\n\nConfírmalo desde tu espacio de vendedor: ${link}` },
+    fr: { subject: `Nouvelle commande ${number} pour ${shopName}`, text: `Vous avez reçu une nouvelle commande (${number}) pour votre boutique « ${shopName} » :\n\n${body}\n\nConfirmez-la depuis votre espace boutique : ${link}` },
+    en: { subject: `New order ${number} for ${shopName}`, text: `You have a new order (${number}) for your shop "${shopName}":\n\n${body}\n\nConfirm it from your shop space: ${link}` },
+    sw: { subject: `Agizo jipya ${number} la ${shopName}`, text: `Una agizo jipya (${number}) kwa duka lako "${shopName}":\n\n${body}\n\nLithibitishe kupitia eneo lako la duka: ${link}` },
+    zh: { subject: `店铺 ${shopName} 的新订单 ${number}`, text: `您的店铺“${shopName}”收到一笔新订单（${number}）：\n\n${body}\n\n请在店铺中心确认：${link}` },
+    es: { subject: `Nuevo pedido ${number} para ${shopName}`, text: `Has recibido un nuevo pedido (${number}) para tu tienda «${shopName}»:\n\n${body}\n\nConfírmalo desde tu espacio de tienda: ${link}` },
   });
 }
 
 const STATUS: Record<Locale, Record<string, string>> = {
-  fr: { confirmed: 'a été confirmée par le vendeur', shipped: 'a été expédiée', delivered: 'a été livrée', cancelled: 'a été annulée' },
-  en: { confirmed: 'was confirmed by the seller', shipped: 'has been shipped', delivered: 'was delivered', cancelled: 'was cancelled' },
-  sw: { confirmed: 'imethibitishwa na muuzaji', shipped: 'imetumwa', delivered: 'imewasilishwa', cancelled: 'imeghairiwa' },
-  zh: { confirmed: '已被卖家确认', shipped: '已发货', delivered: '已送达', cancelled: '已取消' },
-  es: { confirmed: 'ha sido confirmado por el vendedor', shipped: 'ha sido enviado', delivered: 'ha sido entregado', cancelled: 'ha sido cancelado' },
+  fr: { confirmed: 'a été confirmée par la boutique', shipped: 'a été expédiée', delivered: 'a été livrée', cancelled: 'a été annulée' },
+  en: { confirmed: 'was confirmed by the shop', shipped: 'has been shipped', delivered: 'was delivered', cancelled: 'was cancelled' },
+  sw: { confirmed: 'imethibitishwa na duka', shipped: 'imetumwa', delivered: 'imewasilishwa', cancelled: 'imeghairiwa' },
+  zh: { confirmed: '已被店铺确认', shipped: '已发货', delivered: '已送达', cancelled: '已取消' },
+  es: { confirmed: 'ha sido confirmado por la tienda', shipped: 'ha sido enviado', delivered: 'ha sido entregado', cancelled: 'ha sido cancelado' },
 };
 export function orderStatus(locale: Locale, to: string, number: string, status: string, link: string): Mail {
   const s = (l: Locale) => STATUS[l][status] ?? status;

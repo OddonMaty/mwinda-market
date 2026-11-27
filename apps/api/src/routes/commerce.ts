@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { DEPARTMENT_SLUGS } from '@saotech/shared';
 import type { CommerceService } from '../services/commerce.js';
+import { TARGETS, type TranslateService } from '../services/translate.js';
 
 const phone = z.string().trim().regex(/^\+[1-9][0-9]{6,14}$/, 'phone_e164');
 const text = (max: number) => z.string().trim().min(1).max(max);
@@ -29,12 +30,29 @@ const IdParam = z.object({ id: z.string().regex(/^[0-9A-Za-z]{1,26}$/) });
 const ConvId = z.object({ id: z.coerce.number().int().positive() });
 
 type Parse = <T extends z.ZodTypeAny>(schema: T, data: unknown) => z.infer<T>;
-interface Ctx { svc: CommerceService; authenticate: (req: FastifyRequest) => Promise<void>; parse: Parse }
+interface Ctx { svc: CommerceService; translator?: TranslateService; authenticate: (req: FastifyRequest) => Promise<void>; parse: Parse }
 
-export function commerceRoutes(r: FastifyInstance, { svc, authenticate, parse }: Ctx): void {
+const TranslateBody = z.object({ lang: z.enum(TARGETS), texts: z.array(z.string().max(2000)).min(1).max(40) });
+
+export function commerceRoutes(r: FastifyInstance, { svc, translator, authenticate, parse }: Ctx): void {
+  r.get('/translate', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (req) => {
+    const b = parse(z.object({ lang: z.enum(TARGETS), q: z.string().trim().min(1).max(300) }), req.query);
+    return { translations: translator ? await translator.translate(b.lang, [b.q]) : [null] };
+  });
+  r.post('/translate', { config: { rateLimit: { max: 40, timeWindow: '1 minute' } } }, async (req) => {
+    const b = parse(TranslateBody, req.body);
+    if (!translator) return { translations: b.texts.map(() => null) };
+    return { translations: await translator.translate(b.lang, b.texts) };
+  });
+
   r.get('/products', async (_req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { products: await svc.listPublicProducts() }; });
   r.get('/products/:id', async (req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return { product: await svc.getPublicProduct(Number(parse(IdParam, req.params).id)) }; });
 
+  r.get('/shops', async (req, reply) => {
+    const b = parse(z.object({ q: z.string().trim().max(80).default(''), limit: z.coerce.number().int().min(1).max(100).default(60) }), req.query);
+    if (!b.q) reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300');
+    return { shops: await svc.listPublicShops(b.q, b.limit) };
+  });
   r.get('/shops/:slug', async (req, reply) => { reply.header('cache-control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=300'); return svc.getPublicShop(parse(SlugParam, req.params).slug); });
   r.post('/newsletter', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (req) => { const b = parse(NewsletterBody, req.body); await svc.subscribeNewsletter(b.email, b.locale); return { ok: true }; });
   r.post('/newsletter/unsubscribe', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (req) => ({ ok: true, done: await svc.unsubscribeNewsletter(parse(TokenBody, req.body).token) }));

@@ -23,11 +23,11 @@ export default async function ShopPage({ params }: Props) {
   return (
     <>
       <Header active="" />
-      <div className="container" style={{ padding: '1.2rem 0 2rem' }}>
-        <section style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', padding: '1.2rem', border: '1px solid var(--border, #e5e5e5)', borderRadius: 14, background: '#fff' }}>
+      <div className="container" data-ugc style={{ padding: '1.2rem 0 2rem' }}>
+        <section className="shop-hero-m" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', padding: '1.2rem', border: '1px solid var(--border, #e5e5e5)', borderRadius: 14, background: '#fff' }}>
           <div style={{ width: 64, height: 64, borderRadius: 16, background: 'var(--primary, #e98a2b)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: '1.8rem', fontWeight: 800 }} aria-hidden>{shop.name.slice(0, 1).toUpperCase()}</div>
           <div style={{ flex: 1, minWidth: 200 }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>{shop.name}{shop.certified && <span className="badge-certified-inline" style={{ marginLeft: 8 }}><i className="fas fa-check-circle" /> <T>Vendeur certifié Mwinda</T></span>}</h1>
+            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>{shop.name}{shop.certified && <span className="badge-certified-inline" style={{ marginLeft: 8 }}><i className="fas fa-check-circle" /> <T>Boutique certifiée Mwinda</T></span>}</h1>
             <p style={{ margin: '0.3rem 0 0', color: '#666', fontSize: '0.9rem' }}>
               {place && <><i className="fas fa-map-marker-alt" /> {place} · </>}
               <T>Sur Mwinda Market depuis</T> <LocalDate iso={shop.since} />

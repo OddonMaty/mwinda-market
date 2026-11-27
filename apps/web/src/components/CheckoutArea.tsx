@@ -68,7 +68,7 @@ export function CheckoutArea() {
     setBusy(false);
     if (!r.ok) return notify(errorMessage(r.data.code) === 'Une erreur est survenue. Réessayez.' ? (r.data.message ?? errorMessage(r.data.code)) : errorMessage(r.data.code));
     cart.clear();
-    notify(`Commande ${r.data.order.number} envoyée au vendeur : il doit l’accepter, vous serez notifié. Suivi dans « Mon compte ».`);
+    notify(`Commande ${r.data.order.number} envoyée à la boutique : elle doit l’accepter, vous serez notifié. Suivi dans « Mon compte ».`);
     router.push('/compte');
   }
 
@@ -169,10 +169,10 @@ function PaymentBox({ pay, setPay, defaultPhone }: { pay: { method: 'cod' | 'mob
             <select value={pay.provider} onChange={(e) => setPay({ ...pay, provider: e.target.value })}>{PROVIDERS.map((p) => <option key={p}>{p}</option>)}</select></div>
           <div className="form-group"><label>Numéro Mobile Money *</label>
             <input type="tel" placeholder="+243..." value={pay.phone || defaultPhone} onChange={(e) => setPay({ ...pay, phone: e.target.value })} /></div>
-          <p className="seller-form-note">Le paiement est demandé sur ce numéro une fois la commande acceptée par le vendeur. Ne payez rien avant d&apos;avoir reçu la demande.</p>
+          <p className="seller-form-note">Le paiement est demandé sur ce numéro une fois la commande acceptée par la boutique. Ne payez rien avant d&apos;avoir reçu la demande.</p>
         </div>
       )}
-      {pay.method === 'cod' && <p className="seller-form-note">Le vendeur doit d&apos;abord accepter votre commande ; vous êtes prévenu par notification.</p>}
+      {pay.method === 'cod' && <p className="seller-form-note">La boutique doit d&apos;abord accepter votre commande ; vous êtes prévenu par notification.</p>}
     </div>
   );
 }

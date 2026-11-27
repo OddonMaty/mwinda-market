@@ -5,6 +5,7 @@ import { DEPARTMENTS } from '@saotech/shared';
 import { useT } from './I18n';
 import { collectionHref, formatUsd, productImageUrl } from '../lib';
 
+interface ShopHit { name: string; slug: string; city: string | null; country: string | null; certified: boolean; productCount: number }
 interface Suggestion { id: number; name: string; priceUsd: number; category: string; image: string | null }
 
 /** Recherche reliée au catalogue : suggestions de produits et de rayons pendant la frappe. */
@@ -13,18 +14,23 @@ export function SearchBar({ initial = '' }: { initial?: string }) {
   const t = useT();
   const [value, setValue] = useState(initial);
   const [items, setItems] = useState<Suggestion[]>([]);
+  const [shops, setShops] = useState<ShopHit[]>([]);
   const [open, setOpen] = useState(false);
   const [cursor, setCursor] = useState(-1);
   const box = useRef<HTMLDivElement>(null);
   const q = value.trim();
 
   useEffect(() => {
-    if (q.length < 2) { setItems([]); return; }
+    if (q.length < 2) { setItems([]); setShops([]); return; }
     const ctl = new AbortController();
     const t = setTimeout(() => {
       fetch(`/api/v1/products/suggest?q=${encodeURIComponent(q)}`, { signal: ctl.signal })
         .then((r) => (r.ok ? r.json() : { suggestions: [] }))
         .then((d: { suggestions: Suggestion[] }) => { setItems(d.suggestions); setCursor(-1); })
+        .catch(() => {});
+      fetch(`/api/v1/shops?q=${encodeURIComponent(q)}&limit=3`, { signal: ctl.signal })
+        .then((r) => (r.ok ? r.json() : { shops: [] }))
+        .then((d: { shops: ShopHit[] }) => setShops(d.shops))
         .catch(() => {});
     }, 200);
     return () => { clearTimeout(t); ctl.abort(); };
@@ -54,19 +60,24 @@ export function SearchBar({ initial = '' }: { initial?: string }) {
         id="searchInput"
         autoComplete="off"
         role="combobox"
-        aria-expanded={open && (items.length > 0 || rayons.length > 0)}
-        placeholder={t('Rechercher un produit, une marque…')}
+        aria-expanded={open && (items.length > 0 || rayons.length > 0 || shops.length > 0)}
+        placeholder={t('Rechercher un produit, une boutique…')}
         value={value}
         onChange={(e) => { setValue(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         onKeyDown={onKey}
       />
       <button type="button" onClick={() => go()} aria-label="Rechercher"><i className="fas fa-search" /></button>
-      {open && q.length >= 2 && (items.length > 0 || rayons.length > 0) && (
+      {open && q.length >= 2 && (items.length > 0 || rayons.length > 0 || shops.length > 0) && (
         <div className="search-suggest" role="listbox">
           {rayons.map((d) => (
             <button type="button" key={d.slug} className="search-sug-row" onClick={() => { setOpen(false); router.push(collectionHref(d.slug)); }}>
               <i className={`fas ${d.icon}`} /><span><b>{d.name}</b><small>Rayon</small></span>
+            </button>
+          ))}
+          {shops.map((s) => (
+            <button type="button" key={s.slug} className="search-sug-row" onClick={() => { setOpen(false); router.push(`/boutique/${s.slug}`); }}>
+              <i className="fas fa-store" /><span><b>{s.name}{s.certified && <i className="fas fa-check-circle" style={{ marginLeft: 6, color: 'var(--primary)', width: 'auto' }} />}</b><small>{t('Boutique')}{[s.city, s.country].filter(Boolean).length ? ` · ${[s.city, s.country].filter(Boolean).join(', ')}` : ''}</small></span>
             </button>
           ))}
           {items.map((p, i) => (
@@ -75,7 +86,8 @@ export function SearchBar({ initial = '' }: { initial?: string }) {
               <span><b>{p.name}</b><small>{p.category}</small></span><em>{formatUsd(p.priceUsd)}</em>
             </button>
           ))}
-          <button type="button" className="search-sug-all" onClick={() => go()}>{`Voir tous les résultats pour « ${q} »`}</button>
+          <button type="button" className="search-sug-all" onClick={() => go()}>{t('Voir tous les résultats pour « {0} »', q)}</button>
+          {shops.length > 0 && <button type="button" className="search-sug-all" onClick={() => { setOpen(false); router.push(`/boutiques?q=${encodeURIComponent(q)}`); }}>{t('Voir toutes les boutiques pour « {0} »', q)}</button>}
         </div>
       )}
     </div>

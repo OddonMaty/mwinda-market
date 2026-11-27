@@ -1,5 +1,5 @@
 'use client';
-import { nowLocale, useI18n } from './I18n';
+import { nowLocale, trNow, useI18n } from './I18n';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -44,7 +44,7 @@ export function AccountArea() {
   }, [user]);
   const loadOrders = useCallback(() => api<{ orders: OrderRow[] }>('/orders').then((r) => setOrders(r.ok ? r.data.orders : [])), []);
   async function orderAction(number: string, action: 'cancel' | 'receive') {
-    if (action === 'cancel' && !window.confirm('Annuler cette commande ?')) return;
+    if (action === 'cancel' && !window.confirm(trNow('Annuler cette commande ?'))) return;
     const r = await api(`/orders/${number}/${action}`, { method: 'POST' });
     if (!r.ok) return notify(r.data.message ?? errorMessage(r.data.code));
     notify(action === 'cancel' ? 'Commande annulée.' : 'Réception confirmée, merci !');
@@ -163,7 +163,7 @@ export function AccountArea() {
       topRight={<>
         <button type="button" aria-label="Notifications" onClick={() => setTab('notifications')} className="relative inline-flex size-9 items-center justify-center rounded-lg border"><Bell className="size-4" />{unread > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">{unread}</span>}</button>
         {user.roles.length > 0 && <Button asChild variant="outline" size="sm"><a href="/admin"><ShieldCheck /><span className="hidden sm:inline">Administration</span></a></Button>}
-        <Button asChild variant="outline" size="sm"><Link href="/vendeur"><Store /><span className="hidden sm:inline">Espace vendeur</span></Link></Button>
+        <Button asChild variant="outline" size="sm"><Link href="/vendeur"><Store /><span className="hidden sm:inline">Espace boutique</span></Link></Button>
         <Button variant="ghost" size="sm" onClick={() => void logout()}><LogOut /><span className="hidden sm:inline">Déconnexion</span></Button>
       </>}>
       {tab === 'dashboard' && (
@@ -260,7 +260,7 @@ export function AccountArea() {
 
       {tab === 'messages' && (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          <Card className={`overflow-hidden${conv ? ' hidden lg:block' : ''}`}><CardHeader><CardTitle>Mes discussions</CardTitle><CardDescription>Vos questions aux vendeurs, avant et après commande.</CardDescription></CardHeader>
+          <Card className={`overflow-hidden${conv ? ' hidden lg:block' : ''}`}><CardHeader><CardTitle>Mes discussions</CardTitle><CardDescription>Vos questions aux boutiques, avant et après commande.</CardDescription></CardHeader>
             <div className="max-h-[480px] overflow-y-auto"><ConversationList as="buyer" activeId={conv?.id} onOpen={setConv} /></div></Card>
           <Card className={`overflow-hidden${conv ? '' : ' hidden lg:block'}`}><div className="flex items-center gap-2 border-b px-5 py-3 text-sm font-semibold">{conv && <button type="button" className="-ml-2 rounded-lg px-2 py-1 text-primary lg:hidden" onClick={() => setConv(null)}>← Retour</button>}<span className="truncate">{conv ? conv.other : 'Sélectionnez une discussion'}</span></div>
             {conv ? <Thread key={conv.id} conversationId={conv.id} className="h-[calc(100dvh-17rem)] min-h-[320px] lg:h-[440px]" /> : <p className="p-8 text-center text-sm text-muted-foreground">Choisissez une discussion pour la lire et répondre.</p>}</Card>

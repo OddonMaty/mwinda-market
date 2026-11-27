@@ -14,7 +14,7 @@ import { Button, PageLoader, Card, CardContent, CardDescription, CardHeader, Car
 
 const STEPS = ['Votre boutique', 'Votre plan', 'Votre compte'];
 
-/** Ouverture de boutique en 3 étapes : boutique (pays et ville) → plan → compte. Un vendeur déjà connecté saute l'étape compte. */
+/** Ouverture de boutique en 3 étapes : boutique (pays et ville) → plan → compte. Une boutique déjà connecté saute l'étape compte. */
 export function SellerArea() {
   const router = useRouter();
   const t = useT();
@@ -88,7 +88,7 @@ export function SellerArea() {
     notify('Connexion réussie !');
   }
 
-  // Un vendeur déjà connecté est redirigé vers sa boutique : on n'affiche jamais la page de présentation, seulement le chargement.
+  // Une boutique déjà connecté est redirigé vers sa boutique : on n'affiche jamais la page de présentation, seulement le chargement.
   if (!ready || (user && (hasShop === null || hasShop))) return <PageLoader />;
   const chosen = plans.find((p) => p.code === plan);
   const stepsShown = user ? STEPS.slice(0, 2) : STEPS;
@@ -96,8 +96,8 @@ export function SellerArea() {
   return (
     <>
     <Header active="" />
-    <div className="page-header" data-theme="vendeur">
-      <h1>{t('Devenez vendeur sur Mwinda Market')}</h1>
+    <div className="page-header" data-theme="boutique">
+      <h1>{t('Ouvrez votre boutique sur Mwinda Market')}</h1>
       <p>Ouvrez votre boutique en ligne et vendez vos produits à des milliers de clients, dans votre pays et partout en Afrique.</p>
     </div>
     <div className="container" style={{ paddingTop: '3rem', paddingBottom: '4rem' }}>
@@ -116,7 +116,7 @@ export function SellerArea() {
       <Card className="self-start">
         {mode === 'login' && !user ? (
           <>
-            <CardHeader><CardTitle>{t('Se connecter à ma boutique')}</CardTitle><CardDescription>Accédez à votre espace vendeur.</CardDescription></CardHeader>
+            <CardHeader><CardTitle>{t('Se connecter à ma boutique')}</CardTitle><CardDescription>Accédez à votre espace boutique.</CardDescription></CardHeader>
             <CardContent>
               <form id="sellerLoginForm" className="grid gap-4" onSubmit={onLogin}>
                 <Field label={t('Numéro WhatsApp ou e-mail *')}><Input type="text" name="identifier" placeholder="+243… ou vendeur@email.com" required /></Field>
@@ -177,7 +177,7 @@ export function SellerArea() {
                   {step > 0 ? <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>{t('Retour')}</Button> : !user ? <button type="button" className="text-sm text-primary hover:underline" onClick={() => setMode('login')}>{t('J’ai déjà une boutique')}</button> : <span />}
                   <Button type="submit" size="lg" disabled={busy}>{t(step < last ? 'Continuer' : 'Créer ma boutique')}</Button>
                 </div>
-                {!user && step === 0 && <p className="text-center text-xs text-muted-foreground">En continuant, vous acceptez les <Link href="/conditions-vendeur" className="text-primary hover:underline">conditions vendeur</Link>.</p>}
+                {!user && step === 0 && <p className="text-center text-xs text-muted-foreground">En continuant, vous acceptez les <Link href="/conditions-vendeur" className="text-primary hover:underline">conditions boutique</Link>.</p>}
               </form>
             </CardContent>
           </>

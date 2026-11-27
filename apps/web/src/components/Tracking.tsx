@@ -62,8 +62,8 @@ function ShipmentCard({ s, destination, placed }: { s: Shipment; destination: st
           : <Steps status={s.status} />}
         {s.status !== 'cancelled' && (
           <div className="grid gap-3 rounded-xl bg-muted/50 p-4 sm:grid-cols-3" data-track-position>
-            <div><p className="text-xs text-muted-foreground">Position actuelle</p><p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold"><MapPin className="size-4 text-primary" />{s.currentLocation ?? 'En préparation chez le vendeur'}</p></div>
-            <div><p className="text-xs text-muted-foreground">Départ</p><p className="mt-0.5 text-sm font-medium">{[s.origin.city, s.origin.country].filter(Boolean).join(', ') || 'Chez le vendeur'}</p></div>
+            <div><p className="text-xs text-muted-foreground">Position actuelle</p><p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold"><MapPin className="size-4 text-primary" />{s.currentLocation ?? 'En préparation chez la boutique'}</p></div>
+            <div><p className="text-xs text-muted-foreground">Départ</p><p className="mt-0.5 text-sm font-medium">{[s.origin.city, s.origin.country].filter(Boolean).join(', ') || 'Chez la boutique'}</p></div>
             <div><p className="text-xs text-muted-foreground">Destination</p><p className="mt-0.5 text-sm font-medium">{destination}</p></div>
           </div>
         )}

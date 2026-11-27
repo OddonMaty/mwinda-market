@@ -25,7 +25,7 @@ export class Notifier {
     return rows.map((r) => ({ name: r.name, quantity: r.quantity, unitUsd: Number(r.unit_price_usd) }));
   }
 
-  /** Confirmation à l'acheteur (s'il a une adresse e-mail), alerte « nouvelle commande » à chaque vendeur (e-mail et/ou WhatsApp). */
+  /** Confirmation à l'acheteur (s'il a une adresse e-mail), alerte « nouvelle commande » à chaque boutique (e-mail et/ou WhatsApp). */
   orderPlaced(orderId: string) {
     return this.safe(async () => {
       const o = (await this.db.query<{ number: string; subtotal_usd: string; email: string | null; locale: string }>('SELECT o.number, o.subtotal_usd, u.email, u.locale FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = $1', [orderId]))[0];
@@ -34,14 +34,14 @@ export class Notifier {
       const shops = await this.db.query<{ id: string; name: string; owner_id: string; email: string | null; locale: string; whatsapp: string | null; notify_whatsapp: boolean }>(
         'SELECT DISTINCT s.id, s.name, s.owner_id, u.email, u.locale, s.whatsapp, s.notify_whatsapp FROM order_items i JOIN shops s ON s.id = i.shop_id JOIN users u ON u.id = s.owner_id WHERE i.order_id = $1', [orderId]);
       for (const s of shops) {
-        await this.pushTo(s.owner_id, 'Nouvelle commande à confirmer', `Commande ${o.number} pour ${s.name} : ouvrez votre espace vendeur pour l’accepter.`, '/vendeur/tableau', `order-${o.number}`);
+        await this.pushTo(s.owner_id, 'Nouvelle commande à confirmer', `Commande ${o.number} pour ${s.name} : ouvrez votre espace boutique pour l’accepter.`, '/vendeur/tableau', `order-${o.number}`);
         if (s.email) await this.safe(async () => this.mailer.send(tpl.newOrderSeller(loc(s.locale), s.email!, s.name, o.number, await this.lines(orderId, s.id), `${this.baseUrl}/vendeur`)));
         await this.whatsapp(s, 'new_order', [o.number, s.name, `${this.baseUrl}/vendeur`]);
       }
     });
   }
 
-  /** Message WhatsApp au vendeur, seulement s'il a donné un numéro, accepté les notifications et que le canal est configuré. */
+  /** Message WhatsApp à la boutique, seulement s'il a donné un numéro, accepté les notifications et que le canal est configuré. */
   private async whatsapp(s: { whatsapp: string | null; notify_whatsapp: boolean; locale: string }, template: 'new_order' | 'withdrawal', params: string[]) {
     if (!s.whatsapp || !s.notify_whatsapp || !this.messenger?.available().whatsapp) return;
     await this.safe(() => this.messenger!.notify(s.whatsapp!, template, params, s.locale));
@@ -51,7 +51,7 @@ export class Notifier {
   orderStatus(orderId: string, status: string) {
     return this.safe(async () => {
       const o = (await this.db.query<{ number: string; user_id: string; email: string | null; locale: string }>('SELECT o.number, o.user_id, u.email, u.locale FROM orders o JOIN users u ON u.id = o.user_id WHERE o.id = $1', [orderId]))[0];
-      if (o) await this.pushTo(o.user_id, `Commande ${o.number}`, ({ confirmed: 'Le vendeur a confirmé votre commande.', shipped: 'Votre commande est en route.', delivered: 'Votre commande est livrée.', cancelled: 'Votre commande a été annulée.' } as Record<string, string>)[status] ?? 'Mise à jour de votre commande.', '/compte', `order-${o.number}`);
+      if (o) await this.pushTo(o.user_id, `Commande ${o.number}`, ({ confirmed: 'La boutique a confirmé votre commande.', shipped: 'Votre commande est en route.', delivered: 'Votre commande est livrée.', cancelled: 'Votre commande a été annulée.' } as Record<string, string>)[status] ?? 'Mise à jour de votre commande.', '/compte', `order-${o.number}`);
       if (o?.email) await this.mailer.send(tpl.orderStatus(loc(o.locale), o.email, o.number, status, `${this.baseUrl}/suivi`));
     });
   }
@@ -69,7 +69,7 @@ export class Notifier {
     });
   }
 
-  /** Décision de l'administration sur une demande de retrait : e-mail et/ou WhatsApp au vendeur. */
+  /** Décision de l'administration sur une demande de retrait : e-mail et/ou WhatsApp à la boutique. */
   withdrawalDecision(withdrawalId: string) {
     return this.safe(async () => {
       const r = (await this.db.query<{ amount_usd: string; status: string; reason: string | null; reference: string | null; name: string; email: string | null; locale: string; whatsapp: string | null; notify_whatsapp: boolean }>(
@@ -83,7 +83,7 @@ export class Notifier {
     });
   }
 
-  /** Nouveau message dans une discussion : notification push au destinataire (le vendeur ou l'acheteur). */
+  /** Nouveau message dans une discussion : notification push au destinataire (la boutique ou l'acheteur). */
   newMessage(conversationId: number, sender: 'buyer' | 'seller', body: string) {
     return this.safe(async () => {
       const c = (await this.db.query<{ buyer_id: string; owner_id: string | null; shop: string; buyer: string }>(

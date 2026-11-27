@@ -58,7 +58,7 @@ export default function Page() {
               <i className="fas fa-check"></i> Revendeur agréé de plus de 200 marques
             </li>
             <li>
-              <i className="fas fa-check"></i> Des vendeurs de plusieurs pays africains sur une seule plateforme
+              <i className="fas fa-check"></i> Des boutiques de plusieurs pays africains sur une seule plateforme
             </li>
             <li>
               <i className="fas fa-check"></i> Support 24/7 par chat et e-mail

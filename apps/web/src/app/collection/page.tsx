@@ -26,7 +26,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
   const inScope = dep !== 'All' ? products.filter((p) => p.department === dep) : products;
   const taxo = DEPARTMENTS.find((d) => d.slug === dep)?.categories ?? [];
   const categories = ['All', ...new Set([...taxo, ...inScope.map((p) => p.category).filter(Boolean)])];
-  // Localisation : pays et villes où se trouvent des vendeurs, avec le nombre de produits (hors filtre de lieu).
+  // Localisation : pays et villes où se trouvent des boutiques, avec le nombre de produits (hors filtre de lieu).
   const base = products.filter((p) => (dep === 'All' || p.department === dep) && (cat === 'All' || p.category === cat) && (!query || matchesSearch(p, query)));
   const byCountry = new Map<string, { code: string; name: string; count: number; cities: Map<string, { slug: string; name: string; count: number }> }>();
   for (const p of base) {

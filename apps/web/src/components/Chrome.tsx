@@ -9,7 +9,7 @@ import { MobileNav } from './MobileNav';
 import { LanguageSelector, T } from './I18n';
 import { NewsletterForm } from './Newsletter';
 
-type Active = 'home' | 'collection' | 'about' | 'contact' | 'faq' | '';
+type Active = 'home' | 'collection' | 'boutiques' | 'about' | 'contact' | 'faq' | '';
 
 /** Bouton de navigation (rendu identique à l'ancien site) ; sans `to` : page pas encore portée. */
 const Nav = NavButton;
@@ -41,7 +41,7 @@ export function Header({ active }: { active: Active }) {
           <div className="m-country"><CountrySelector /></div>
           <SearchBar />
           <div className="header-actions">
-            <NavButton to="/vendeur" className="header-btn"><i className="fas fa-store" /><span className="hidden-mobile"><T>Vendeur</T></span></NavButton>
+            <NavButton to="/boutiques" className="header-btn"><i className="fas fa-store" /><span className="hidden-mobile"><T>Boutique</T></span></NavButton>
             <AccountButton />
             <button type="button" className="header-btn"><i className="fas fa-heart" /><span className="hidden-mobile"><T>Favoris</T></span></button>
             <CartButton />
@@ -63,8 +63,8 @@ export function Header({ active }: { active: Active }) {
 }
 
 const FOOTER_COLS: [string, [string, string?][]][] = [
-  ['Service Client', [['Contactez-nous', '/contact'], ['Aide & conseils', '/faq'], ['Suivre ma commande', '/suivi'], ['Livraison', '/livraison'], ['Conditions générales', '/conditions'], ['Conditions vendeur', '/conditions-vendeur'], ['Retours et remboursements', '/remboursement']]],
-  ['Informations', [['À propos de nous', '/a-propos'], ['Mon compte'], ['Paiements', '/paiements'], ['Tarifs vendeurs', '/tarifs'], ['Voir les catalogues', '/collection']]],
+  ['Service Client', [['Contactez-nous', '/contact'], ['Aide & conseils', '/faq'], ['Suivre ma commande', '/suivi'], ['Livraison', '/livraison'], ['Conditions générales', '/conditions'], ['Conditions boutique', '/conditions-vendeur'], ['Retours et remboursements', '/remboursement']]],
+  ['Informations', [['À propos de nous', '/a-propos'], ['Mon compte'], ['Paiements', '/paiements'], ['Tarifs boutiques', '/tarifs'], ['Voir les catalogues', '/collection']]],
   ['À propos', [['Qui sommes-nous', '/a-propos'], ['Responsabilité sociale', '/responsabilite-sociale'], ['Carrières', '/carrieres'], ['Politique de confidentialité', '/confidentialite']]],
 ];
 

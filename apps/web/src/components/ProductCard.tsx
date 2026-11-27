@@ -25,7 +25,7 @@ export function ProductCard({ product, now }: { product: Product; now: number })
   const cart = useCart();
   const open = () => router.push(`/produit/${product.id}`);
   return (
-    <div className="product-card" onClick={open}>
+    <div className="product-card" data-ugc onClick={open}>
       <div className="product-image">
         <img src={productImageUrl(product.image, 300, 300)} alt={product.name} loading="lazy" decoding="async" />
         <div className="product-badges">

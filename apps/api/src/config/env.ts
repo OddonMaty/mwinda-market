@@ -30,6 +30,9 @@ export const EnvSchema = z.object({
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_FROM: z.string().optional(),
+  /** Traduction automatique des contenus saisis (Google Cloud Translation). Sans clé : service public MyMemory (limité). */
+  GOOGLE_TRANSLATE_API_KEY: z.string().optional(),
+  TRANSLATE_EMAIL: z.string().default('contact@mwindamarket.com'),
   DATABASE_URL: z.string().min(1),
   API_SECRET: z.string().min(16, 'API_SECRET must be at least 16 characters long'),
 });

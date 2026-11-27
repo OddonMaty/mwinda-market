@@ -474,6 +474,16 @@ describe('Validation des boutiques, messagerie, recherche, taux', () => {
     assert.equal((await call('GET', '/shops/BAD slug')).status, 400);
   });
 
+  it('annuaire : liste les boutiques actives, recherche par nom', async () => {
+    const all = await call('GET', '/shops');
+    assert.equal(all.status, 200);
+    assert.equal(all.json.shops[0].official, true);
+    assert.equal(all.json.shops[0].productCount, 19);
+    assert.equal((await call('GET', '/shops?q=mwinda')).json.shops.length >= 1, true);
+    assert.equal((await call('GET', '/shops?q=zzzintrouvable')).json.shops.length, 0);
+    assert.equal((await call('GET', '/shops?q=100%25')).json.shops.length, 0);
+  });
+
   it('newsletter : inscription, doublon silencieux, désabonnement par jeton', async () => {
     assert.equal((await call('POST', '/newsletter', { body: { email: 'abc' } })).status, 400);
     assert.equal((await call('POST', '/newsletter', { body: { email: 'Lecteur@Example.com', locale: 'sw' } })).status, 200);

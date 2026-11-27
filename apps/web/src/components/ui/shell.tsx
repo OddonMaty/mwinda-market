@@ -8,7 +8,7 @@ import { T } from '../I18n';
 export interface NavItem { key: string; label: string; icon: LucideIcon; badge?: number | string }
 export interface NavGroup { title?: string; items: NavItem[] }
 
-/** Gabarit « menu latéral » commun à l'administration, au compte et à l'espace vendeur (inspiré de My Alibaba). */
+/** Gabarit « menu latéral » commun à l'administration, au compte et à l'espace boutique (inspiré de My Alibaba). */
 export function DashboardShell({ space, subtitle, groups, active, onSelect, user, topRight, children, footer, hideTabs }: {
   space: string; subtitle?: string; groups: NavGroup[]; active: string; onSelect: (key: string) => void;
   user?: { name: string; email?: string }; topRight?: React.ReactNode; children: React.ReactNode; footer?: React.ReactNode; hideTabs?: boolean;

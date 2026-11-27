@@ -497,15 +497,15 @@ export const products: Product[] = [
 export const faqs: { q:string; a:string }[] = [
   {
     "q": "Comment fonctionne Mwinda Market ?",
-    "a": "Mwinda Market est une place de marché panafricaine : des vendeurs indépendants y publient leurs produits et vous commandez directement auprès d'eux, avec le suivi de la plateforme."
+    "a": "Mwinda Market est une place de marché panafricaine : des boutiques indépendantes y publient leurs produits et vous commandez directement auprès d'eux, avec le suivi de la plateforme."
   },
   {
     "q": "Comment passer une commande ?",
     "a": "Parcourez les produits, cliquez sur « Ajouter au panier » puis validez votre commande depuis votre compte. Vous suivez ensuite son état dans Mon compte : en attente, confirmée, expédiée, livrée."
   },
   {
-    "q": "Puis-je poser une question au vendeur avant d'acheter ?",
-    "a": "Oui. Sur la fiche produit, cliquez sur « Acheter » pour ouvrir une discussion avec le vendeur, ou sur « Poser une question » depuis votre panier. Vous retrouvez vos échanges dans Mon compte > Mes messages."
+    "q": "Puis-je poser une question à la boutique avant d'acheter ?",
+    "a": "Oui. Sur la fiche produit, cliquez sur « Acheter » pour ouvrir une discussion avec la boutique, ou sur « Poser une question » depuis votre panier. Vous retrouvez vos échanges dans Mon compte > Mes messages."
   },
   {
     "q": "Dans quelle monnaie sont les prix ?",
@@ -513,19 +513,19 @@ export const faqs: { q:string; a:string }[] = [
   },
   {
     "q": "Où livrez-vous et en combien de temps ?",
-    "a": "Mwinda Market s'ouvre progressivement aux pays africains. Le vendeur prépare puis expédie votre commande ; les délais et les frais dépendent du vendeur et de la distance. Posez-lui la question avant de commander."
+    "a": "Mwinda Market s'ouvre progressivement aux pays africains. La boutique prépare puis expédie votre commande ; les délais et les frais dépendent de la boutique et de la distance. Posez-lui la question avant de commander."
   },
   {
     "q": "Puis-je annuler ou retourner une commande ?",
-    "a": "Vous pouvez annuler une commande tant que le vendeur ne l'a pas confirmée. En cas d'article défectueux ou non conforme, contactez le vendeur puis notre assistance dans les 7 jours suivant la réception. Voir la page Remboursement."
+    "a": "Vous pouvez annuler une commande tant que la boutique ne l'a pas confirmée. En cas d'article défectueux ou non conforme, contactez la boutique puis notre assistance dans les 7 jours suivant la réception. Voir la page Remboursement."
   },
   {
     "q": "Comment ouvrir une boutique ?",
-    "a": "Rendez-vous sur « Vendeur », renseignez votre boutique (pays, ville), choisissez une formule puis créez votre compte. L'équipe Mwinda Market examine chaque demande et vous prévient par e-mail de l'acceptation ou du refus."
+    "a": "Rendez-vous sur « Boutique », renseignez votre boutique (pays, ville), choisissez une formule puis créez votre compte. L'équipe Mwinda Market examine chaque demande et vous prévient par e-mail de l'acceptation ou du refus."
   },
   {
     "q": "Combien coûte la vente sur Mwinda Market ?",
-    "a": "Quatre formules : Gratuit (0 $, 10 produits, commission de 5 %), Essentiel (15 $ par trimestre, 50 produits, 4 %), Pro (30 $ par trimestre, 200 produits, 3 %) et Premium (45 $ par trimestre, produits illimités, 2 %, badge « Vendeur certifié »)."
+    "a": "Quatre formules : Gratuit (0 $, 10 produits, commission de 5 %), Essentiel (15 $ par trimestre, 50 produits, 4 %), Pro (30 $ par trimestre, 200 produits, 3 %) et Premium (45 $ par trimestre, produits illimités, 2 %, badge « Boutique certifiée »)."
   },
   {
     "q": "Pourquoi n'arrive-je pas à me connecter à mon compte ?",

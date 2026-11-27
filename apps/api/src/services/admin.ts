@@ -135,7 +135,7 @@ export class AdminService extends PlatformService {
     await this.notifyOwner(before, b);
   }
 
-  /** Prévient le vendeur par e-mail quand sa boutique est acceptée (avec le lien) ou refusée (avec le motif). Un échec d'envoi ne bloque jamais la décision. */
+  /** Prévient la boutique par e-mail quand sa boutique est acceptée (avec le lien) ou refusée (avec le motif). Un échec d'envoi ne bloque jamais la décision. */
   private async notifyOwner(before: { status: string; name: string; email: string | null; locale: string | null }, b: { status?: string; reason?: string }) {
     if (!this.notifier || !before.email || !b.status || b.status === before.status) return;
     const locale = tpl.asLocale(before.locale);
@@ -219,7 +219,7 @@ export class AdminService extends PlatformService {
       `SELECT (s.is_official OR COALESCE(pl.hero_eligible,false)) AS eligible FROM products p JOIN shops s ON s.id = p.shop_id
          JOIN plans pl ON pl.code = ${EFFECTIVE_PLAN_FOR('s.plan', 's.plan_expires_at')} WHERE p.id = $1`, [productId]);
     if (!r[0]) throw new AppError(404, 'not_found', 'Produit introuvable.');
-    if (!r[0].eligible) throw new AppError(409, 'plan_not_eligible', "L'abonnement de ce vendeur n'inclut pas la mise en avant sur l'accueil.");
+    if (!r[0].eligible) throw new AppError(409, 'plan_not_eligible', "L'abonnement de cette boutique n'inclut pas la mise en avant sur l'accueil.");
   }
 
   async createHeroSlide(actor: string, b: HeroInput) {
@@ -283,7 +283,7 @@ export class AdminService extends PlatformService {
     await this.audit(actor, 'demo.restore', 'platform', 'demo');
   }
 
-  // ---------- Retraits des vendeurs ----------
+  // ---------- Retraits des boutiques ----------
   async withdrawals(status?: string) {
     const rows = await this.db.query<{ id: string; amount_usd: string; method: string; provider: string; account_name: string; account_number: string; status: string; reference: string | null; reason: string | null; created_at: Date; decided_at: Date | null; shop: string; owner: string | null }>(
       `SELECT w.*, s.name AS shop, COALESCE(u.email, u.phone) AS owner FROM withdrawals w JOIN shops s ON s.id = w.shop_id LEFT JOIN users u ON u.id = s.owner_id

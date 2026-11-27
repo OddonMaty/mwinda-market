@@ -23,13 +23,13 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
   const allImages = [product.image, ...(product.images ?? [])].filter(Boolean);
   const [main, setMain] = useState(product.image);
   const router = useRouter();
-  /** « Acheter » : le produit va au panier et on passe directement à la commande (plus de message au vendeur). */
+  /** « Acheter » : le produit va au panier et on passe directement à la commande (plus de message à la boutique). */
   const buy = () => { cart.add(product, qty, { color, size }); setQty(1); router.push('/commande'); };
   const ask = () => chat.ask({ productId: Number(product.id), productName: product.name, shopName: product.shopName });
   const hasDiscount = !!product.originalPrice && product.originalPrice > product.price;
 
   return (
-    <div className="container product-container">
+    <div className="container product-container" data-ugc>
       <div className="breadcrumb">
         <NavButton to="/">Accueil</NavButton>
         <i className="fas fa-chevron-right" />
@@ -55,7 +55,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
         <div className="product-info">
           <div className="product-meta"><i className="fas fa-eye" /> Récemment consulté</div>
           <h1>{product.name}</h1>
-          {product.shopName && <p className="seller-line">Vendu par {product.shopSlug ? <Link href={`/boutique/${product.shopSlug}`}><b>{product.shopName}</b></Link> : <b>{product.shopName}</b>}{product.certified && <span className="badge-certified-inline"><i className="fas fa-check-circle" /> Vendeur certifié Mwinda</span>}</p>}
+          {product.shopName && <p className="seller-line">Vendu par {product.shopSlug ? <Link href={`/boutique/${product.shopSlug}`}><b>{product.shopName}</b></Link> : <b>{product.shopName}</b>}{product.certified && <span className="badge-certified-inline"><i className="fas fa-check-circle" /> Boutique certifiée Mwinda</span>}</p>}
           {placeLabel(product) && <p className="seller-place"><i className="fas fa-map-marker-alt" /> Expédié depuis <b>{placeLabel(product)}</b></p>}
           <div className="product-rating">
             <div className="stars"><Stars rating={product.rating} /></div>
@@ -129,7 +129,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
       </div>
 
       <div className="m-buybar">
-        <button type="button" className="m-buybar-ask" onClick={ask} aria-label="Poser une question au vendeur"><i className="fas fa-comment-dots" /><span>Question</span></button>
+        <button type="button" className="m-buybar-ask" onClick={ask} aria-label="Poser une question à la boutique"><i className="fas fa-comment-dots" /><span>Question</span></button>
         <button type="button" className="m-buybar-cart" disabled={!product.inStock} onClick={() => { cart.add(product, qty, { color, size }); setQty(1); }}>Ajouter au panier</button>
         <button type="button" className="m-buybar-buy" disabled={!product.inStock} onClick={buy}>Acheter</button>
       </div>

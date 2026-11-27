@@ -46,5 +46,5 @@ export function collectionHref(department?: string, category?: string, q?: strin
   return s ? `/collection?${s}` : '/collection';
 }
 
-/** « Goma, RD Congo » : où se trouve le vendeur d'un produit. */
+/** « Goma, RD Congo » : où se trouve la boutique d'un produit. */
 export const placeLabel = (p: { city?: string | null; countryName?: string | null }): string => [p.city, p.countryName].filter(Boolean).join(', ');

@@ -24,6 +24,7 @@ export interface AppDeps {
   google?: GoogleOAuth;
   messenger?: Messenger;
   push?: PushSender;
+  fetch?: typeof fetch;
 }
 
 export async function buildApp(config: EnvConfig, deps: AppDeps = {}): Promise<FastifyInstance> {
@@ -123,7 +124,7 @@ export async function buildApp(config: EnvConfig, deps: AppDeps = {}): Promise<F
   await app.register(healthRoutes);
 
   if (deps.db) {
-    const authDeps = { db: deps.db, mailer: deps.mailer ?? new NoopMailer(), limiter: deps.limiter ?? new MemoryRateLimiter(), config, now: deps.now, store: deps.store, google: deps.google, messenger: deps.messenger, push: deps.push };
+    const authDeps = { db: deps.db, mailer: deps.mailer ?? new NoopMailer(), limiter: deps.limiter ?? new MemoryRateLimiter(), config, now: deps.now, store: deps.store, google: deps.google, messenger: deps.messenger, push: deps.push, fetch: deps.fetch };
     await app.register((instance) => authRoutes(instance, authDeps));
   }
 

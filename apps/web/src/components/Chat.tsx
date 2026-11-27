@@ -10,7 +10,7 @@ interface Msg { id: number; mine: boolean; body: string; productName: string | n
 export interface Conv { id: number; other: string; lastMessageAt: string; lastBody: string | null; unread: number }
 
 interface Ctx {
-  /** Ouvre la discussion avec le vendeur d'un produit (invite à se connecter si besoin). */
+  /** Ouvre la discussion avec la boutique d'un produit (invite à se connecter si besoin). */
   ask: (t: ChatTarget) => void;
   /** Ouvre la boîte de réception de l'acheteur, ou une discussion précise. */
   openInbox: (id?: number, title?: string) => void;
@@ -20,7 +20,7 @@ export const useChat = () => useContext(ChatContext);
 
 const time = (d: string) => new Date(d).toLocaleString(nowLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-/** Fil de discussion : messages, saisie, actualisation toutes les 5 s. Sert à l'acheteur (bulle) et au vendeur (onglet Messages). */
+/** Fil de discussion : messages, saisie, actualisation toutes les 5 s. Sert à l'acheteur (bulle) et à la boutique (onglet Messages). */
 export function Thread({ conversationId, target, onCreated, className = '' }: { conversationId: number | null; target?: ChatTarget; onCreated?: (id: number) => void; className?: string }) {
   useI18n();
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -62,7 +62,7 @@ export function Thread({ conversationId, target, onCreated, className = '' }: { 
     <div className={`chat-thread ${className}`}>
       <div className="chat-messages" aria-live="polite">
         {msgs.length === 0 && (
-          <p className="chat-empty">{target ? <>Posez votre question au vendeur{target.shopName ? <> <b>{target.shopName}</b></> : null} au sujet de « {target.productName} » : disponibilité, livraison, couleurs…</> : 'Aucun message pour le moment.'}</p>
+          <p className="chat-empty">{target ? <>Posez votre question à la boutique{target.shopName ? <> <b>{target.shopName}</b></> : null} au sujet de « {target.productName} » : disponibilité, livraison, couleurs…</> : 'Aucun message pour le moment.'}</p>
         )}
         {msgs.map((m) => (
           <div key={m.id} className={`chat-msg ${m.mine ? 'mine' : 'theirs'}`}>
@@ -83,7 +83,7 @@ export function Thread({ conversationId, target, onCreated, className = '' }: { 
   );
 }
 
-/** Liste des discussions (côté acheteur dans la bulle, côté vendeur dans le tableau de bord). */
+/** Liste des discussions (côté acheteur dans la bulle, côté boutique dans le tableau de bord). */
 export function ConversationList({ as, onOpen, activeId }: { as: 'buyer' | 'seller'; onOpen: (c: Conv) => void; activeId?: number | null }) {
   useI18n();
   const [rows, setRows] = useState<Conv[] | null>(null);
@@ -95,7 +95,7 @@ export function ConversationList({ as, onOpen, activeId }: { as: 'buyer' | 'sell
     return () => { live = false; clearInterval(t); };
   }, [as]);
   if (rows === null) return <p className="chat-empty">Chargement…</p>;
-  if (rows.length === 0) return <p className="chat-empty">{as === 'buyer' ? 'Vous n’avez pas encore écrit à un vendeur. Utilisez « Poser une question » sur une fiche produit.' : 'Aucune question de client pour le moment.'}</p>;
+  if (rows.length === 0) return <p className="chat-empty">{as === 'buyer' ? 'Vous n’avez pas encore écrit à une boutique. Utilisez « Poser une question » sur une fiche produit.' : 'Aucune question de client pour le moment.'}</p>;
   return (
     <ul className="chat-list">
       {rows.map((c) => (
@@ -119,13 +119,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const pending = useRef<View | null>(null);
 
   const guard = useCallback((v: View) => {
-    if (!user) { pending.current = v; notify('Connectez-vous pour écrire au vendeur.'); openLogin('signin'); return; }
+    if (!user) { pending.current = v; notify('Connectez-vous pour écrire à la boutique.'); openLogin('signin'); return; }
     setView(v);
   }, [user, notify, openLogin]);
   useEffect(() => { if (user && pending.current) { setView(pending.current); pending.current = null; } }, [user]);
 
   const ask = useCallback((t: ChatTarget) => {
-    const title = t.shopName ?? 'Vendeur';
+    const title = t.shopName ?? 'Boutique';
     if (!user) { guard({ kind: 'thread', id: null, title, target: t }); return; }
     // Reprend la discussion déjà ouverte avec cette boutique, s'il y en a une.
     void api<{ id: number | null }>(`/conversations/lookup?productId=${t.productId}`).then((r) => setView({ kind: 'thread', id: r.ok ? r.data.id : null, title, target: t }));
@@ -136,7 +136,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     <ChatContext.Provider value={{ ask, openInbox }}>
       {children}
       {view.kind !== 'closed' && (
-        <div className="chat-panel" role="dialog" aria-label="Discussion avec le vendeur">
+        <div className="chat-panel" role="dialog" aria-label="Discussion avec la boutique">
           <div className="chat-head">
             {view.kind === 'thread' && <button type="button" className="chat-back" onClick={() => setView({ kind: 'list' })} aria-label="Mes discussions"><i className="fas fa-chevron-left" /></button>}
             <span className="chat-title"><i className="fas fa-comments" /> {view.kind === 'thread' ? view.title : 'Mes discussions'}</span>

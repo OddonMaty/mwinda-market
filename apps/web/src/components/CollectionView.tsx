@@ -74,8 +74,8 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
           <div className="m-sheet-head m-filter-head"><b>Filtres</b><button type="button" onClick={() => setSidebarOpen(false)} aria-label="Fermer"><i className="fas fa-times" /></button></div>
           <div className="collection-cats"><CategorySidebar active={activeDep} /></div>
           <div className="filter-group location-filter">
-            <h4>Localisation du vendeur</h4>
-            {nearMe && place.pays !== myCountry && <NavButton to={href(nearMe.code)} className="near-me-btn"><i className="fas fa-location-arrow" /> {`Vendeurs de mon pays (${nearMe.count})`}</NavButton>}
+            <h4>Localisation de la boutique</h4>
+            {nearMe && place.pays !== myCountry && <NavButton to={href(nearMe.code)} className="near-me-btn"><i className="fas fa-location-arrow" /> {`Boutiques de mon pays (${nearMe.count})`}</NavButton>}
             {places.length === 0 ? <p className="loc-empty">Aucune localisation pour cette sélection.</p> : (
               <ul className="loc-list">
                 <li><NavButton to={href()} className={`loc-link${!place.pays ? ' active' : ''}`}>Tous les pays</NavButton></li>
@@ -113,7 +113,7 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
           </div>
           <div className="filter-group">
             <h4>Boutique</h4>
-            <label className="checkbox-label"><input type="checkbox" /><span>Produits vendeurs uniquement</span></label>
+            <label className="checkbox-label"><input type="checkbox" /><span>Produits des boutiques uniquement</span></label>
           </div>
           <div className="m-filter-foot"><button type="button" className="btn btn-primary" onClick={() => setSidebarOpen(false)}>{shown.length > 1 ? `Voir ${shown.length} produits` : `Voir ${shown.length} produit`}</button></div>
         </aside>

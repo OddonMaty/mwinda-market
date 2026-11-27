@@ -11,13 +11,14 @@ const LINKS: [string, string, string][] = [
   ['fa-house', 'Accueil', '/'],
   ['fa-box-open', 'Nos produits', '/collection'],
   ['fa-truck-fast', 'Suivre ma commande', '/suivi'],
-  ['fa-store', 'Espace vendeur', '/vendeur'],
-  ['fa-tags', 'Tarifs vendeurs', '/tarifs'],
+  ['fa-store', 'Boutiques', '/boutiques'],
+  ['fa-shop', 'Espace boutique', '/vendeur'],
+  ['fa-tags', 'Tarifs boutiques', '/tarifs'],
   ['fa-circle-info', 'À propos', '/a-propos'],
   ['fa-envelope', 'Contact', '/contact'],
   ['fa-circle-question', 'Aide & FAQ', '/faq'],
 ];
-const LEGAL: [string, string][] = [['Conditions générales', '/conditions'], ['Conditions vendeur', '/conditions-vendeur'], ['Livraison', '/livraison'], ['Remboursement', '/remboursement'], ['Confidentialité', '/confidentialite']];
+const LEGAL: [string, string][] = [['Conditions générales', '/conditions'], ['Conditions boutique', '/conditions-vendeur'], ['Livraison', '/livraison'], ['Remboursement', '/remboursement'], ['Confidentialité', '/confidentialite']];
 
 type Sheet = null | 'menu' | 'cats';
 

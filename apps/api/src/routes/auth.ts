@@ -13,6 +13,7 @@ import { Notifier } from '../services/notify.js';
 import { removeSubscription, saveSubscription } from '../services/push.js';
 import { CommerceService } from '../services/commerce.js';
 import { commerceRoutes } from './commerce.js';
+import { TranslateService } from '../services/translate.js';
 import { adminRoutes, publicPlatformRoutes } from './admin.js';
 import { AdminService } from '../services/admin.js';
 
@@ -166,7 +167,7 @@ export async function authRoutes(app: FastifyInstance, deps: AuthDeps): Promise<
     });
     const commerce = new CommerceService(deps.db, deps.store, notify);
     const admin = new AdminService(deps.db, commerce, { mailer: deps.mailer, baseUrl: publicUrl(deps.config) }, notify);
-    commerceRoutes(r, { svc: commerce, authenticate, parse });
+    commerceRoutes(r, { svc: commerce, translator: new TranslateService(deps.db, { GOOGLE_TRANSLATE_API_KEY: deps.config.GOOGLE_TRANSLATE_API_KEY, TRANSLATE_EMAIL: deps.config.TRANSLATE_EMAIL }, deps.fetch), authenticate, parse });
     publicPlatformRoutes(r, admin, parse);
     adminRoutes(r, { svc: admin, authenticate, parse });
   }, { prefix: '/v1' });

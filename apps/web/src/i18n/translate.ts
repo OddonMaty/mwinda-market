@@ -33,7 +33,18 @@ function indexOf(lang: Exclude<Lang, 'fr'>): Index {
 }
 
 /** Le texte source est le français : une phrase sans traduction reste en français. Les modèles « {0} » reçoivent leurs valeurs en arguments ou depuis le texte déjà assemblé. */
+/** Textes déjà produits par une traduction (dictionnaire ou machine) : on ne les renvoie jamais à la traduction automatique. */
+const produced = new Set<string>();
+export const markProduced = (text: string): void => { if (produced.size < 5000) produced.add(norm(text)); };
+export const isProduced = (text: string): boolean => produced.has(norm(text));
+
 export function tr(lang: Lang, text: string, ...args: (string | number)[]): string {
+  const out = trCore(lang, text, ...args);
+  if (lang !== 'fr' && out !== text) markProduced(out);
+  return out;
+}
+
+function trCore(lang: Lang, text: string, ...args: (string | number)[]): string {
   const fill = (s: string) => s.replace(/\{(\d)\}/g, (_, i: string) => String(args[Number(i)] ?? ''));
   if (lang === 'fr') return fill(text);
   const ix = indexOf(lang);
@@ -67,4 +78,27 @@ export const dateLocale = (lang: Lang): string => ({ fr: 'fr-FR', en: 'en-GB', s
 export function detectLang(navigatorLang: string | undefined): Lang {
   const base = (navigatorLang ?? '').slice(0, 2).toLowerCase();
   return isLang(base) ? base : 'fr';
+}
+
+/** Vrai si le texte français fait partie du dictionnaire de la langue (donc déjà connu, inutile de le faire traduire par la machine). */
+/** Sorties du dictionnaire pour la langue (« Open menu » est déjà de l'anglais, pas du français à traduire). */
+const outputs = new Map<string, Set<string>>();
+export function isDictOutput(lang: Lang, text: string): boolean {
+  if (lang === 'fr') return false;
+  let set = outputs.get(lang);
+  if (!set) { set = new Set([...indexOf(lang as Exclude<Lang, 'fr'>).exact.values()].map(norm)); outputs.set(lang, set); }
+  return set.has(norm(text));
+}
+export const hasEntry = (lang: Lang, text: string): boolean => lang !== 'fr' && indexOf(lang as Exclude<Lang, 'fr'>).exact.has(norm(text));
+
+/** Un texte mérite-t-il une traduction automatique ? Écarte nombres, prix, adresses, sigles et noms de personnes. */
+export function worthMachine(core: string, ugc: boolean): boolean {
+  if (core.length < 3 || core.length > 700 || core.includes('©')) return false;
+  if (/^\d/.test(core) && core.length <= 24) return false; // dates, quantités, prix
+  if (/^(Mwinda Market|Sao Tech Agency|Mwinda|WhatsApp|Facebook|Instagram|TikTok|Twitter|YouTube|LinkedIn|Mobile Money|M-Pesa|Airtel Money|Orange Money)$/i.test(core)) return false;
+  if (!/\p{L}{3}/u.test(core)) return false;
+  if (/^[\d\s.,:;%$€£¥+\-–—/()#*]+$/.test(core) || /@|https?:|www\./i.test(core)) return false;
+  if (/^[A-Z0-9 .\-/]+$/.test(core) && core.length <= 6) return false;
+  if (!ugc && !/\d/.test(core) && /^(\p{Lu}[\p{Ll}'’-]+)( \p{Lu}[\p{Ll}'’-]+){0,2}$/u.test(core)) return false; // ressemble à un nom de personne
+  return true;
 }
