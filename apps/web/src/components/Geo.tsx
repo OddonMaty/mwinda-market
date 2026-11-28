@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { countryName } from '../i18n/translate';
+import { useI18n } from './I18n';
 
 export interface Country { code: string; name: string; phonePrefix: string; currency: string | null; cities: { name: string; slug: string }[] }
 
@@ -23,6 +25,7 @@ export function useCountries(): Country[] {
 /** Choix du pays puis de la ville. Champs du formulaire : `country` (code) et `city` (identifiant de ville, vide = autre ville). */
 export function GeoFields({ defaultCountry = 'CD', label = true }: { defaultCountry?: string; label?: boolean }) {
   const countries = useCountries();
+  const { lang } = useI18n();
   const [code, setCode] = useState(defaultCountry);
   const current = countries.find((c) => c.code === code);
   return (
@@ -31,7 +34,7 @@ export function GeoFields({ defaultCountry = 'CD', label = true }: { defaultCoun
         {label && <label>Pays *</label>}
         <select name="country" value={code} onChange={(e) => setCode(e.target.value)} required>
           {countries.length === 0 && <option value={code}>Chargement…</option>}
-          {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+          {countries.map((c) => <option key={c.code} value={c.code}>{countryName(lang, c.name, c.code)}</option>)}
         </select>
       </div>
       <div className="form-group">

@@ -1,4 +1,5 @@
 'use client';
+import { countryName } from '../i18n/translate';
 import { nowLocale, trNow, useI18n } from './I18n';
 
 import { useCallback, useEffect, useState } from 'react';
@@ -200,6 +201,7 @@ function Users({ isSuper, notify, fail }: P & { isSuper: boolean }) {
 }
 
 function Shops({ notify, fail }: P) {
+  const { lang } = useI18n();
   const [q, setQ] = useState('');
   const [rows, reload] = useAdminData<{ id: string; name: string; owner: string | null; countryCode: string | null; city: string | null; status: string; plan: string; planExpiresAt: string | null; products: number; isOfficial: boolean }>(`/admin/shops?q=${encodeURIComponent(q)}`, 'shops');
   const [plans] = useAdminData<{ code: string; name: string }>('/admin/plans', 'plans');
@@ -210,7 +212,7 @@ function Shops({ notify, fail }: P) {
       <Table head={['Boutique', 'Propriétaire', 'Lieu', 'Produits', 'Plan', 'État']} empty={rows?.length === 0}>
         {rows?.map((s) => (
           <tr key={s.id}>
-            <Td>{s.name}{s.isOfficial ? ' (officielle)' : ''}</Td><Td>{s.owner ?? '—'}</Td><Td>{[s.city, s.countryCode].filter(Boolean).join(', ') || '—'}</Td><Td>{s.products}</Td>
+            <Td>{s.name}{s.isOfficial ? ' (officielle)' : ''}</Td><Td>{s.owner ?? '—'}</Td><Td>{[s.city, s.countryCode && countryName(lang, null, s.countryCode)].filter(Boolean).join(', ') || '—'}</Td><Td>{s.products}</Td>
             <Td>
               <Select className="h-9 min-w-[8rem]" value={s.plan} onChange={(e) => void patch(s.id, { plan: e.target.value })}>{plans?.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}</Select>
               {s.plan !== 'free' && <div className="mt-1 text-xs text-muted-foreground">jusqu’au {day(s.planExpiresAt)}</div>}
@@ -369,6 +371,7 @@ function Withdrawals({ notify, fail }: P) {
 }
 
 function Countries({ isSuper, notify, fail }: P & { isSuper: boolean }) {
+  const { lang } = useI18n();
   const [q, setQ] = useState('');
   const [rows, reload] = useAdminData<{ code: string; name: string; phonePrefix: string; active: boolean; currency: string | null; cities: number }>('/admin/countries', 'countries');
   async function toggle(code: string, active: boolean) { const r = await api(`/admin/countries/${code}`, { method: 'PATCH', body: { active } }); if (!r.ok) return fail(r); notify('Pays mis à jour'); await reload(); }
@@ -384,7 +387,7 @@ function Countries({ isSuper, notify, fail }: P & { isSuper: boolean }) {
     <>
       <Card className="mb-6"><CardContent className="pt-5">
         <form onSubmit={addCity} className="grid items-end gap-3 sm:grid-cols-[1fr_1fr_auto]">
-          <Field label="Pays"><Select name="country" defaultValue="CD" required>{rows?.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</Select></Field>
+          <Field label="Pays"><Select name="country" defaultValue="CD" required>{rows?.map((c) => <option key={c.code} value={c.code}>{countryName(lang, c.name, c.code)}</option>)}</Select></Field>
           <Field label="Nouvelle ville *"><Input name="name" required minLength={2} /></Field>
           <Button type="submit">Ajouter la ville</Button>
         </form>

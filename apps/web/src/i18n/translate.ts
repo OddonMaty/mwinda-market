@@ -102,3 +102,34 @@ export function worthMachine(core: string, ugc: boolean): boolean {
   if (!ugc && !/\d/.test(core) && /^(\p{Lu}[\p{Ll}'’-]+)( \p{Lu}[\p{Ll}'’-]+){0,2}$/u.test(core)) return false; // ressemble à un nom de personne
   return true;
 }
+
+// ── Noms de pays : traduits via Intl, à partir du nom français stocké en base ──
+const FR_ALIASES: Record<string, string> = { 'congo-brazzaville': 'CG', 'republique du congo': 'CG', 'rd congo': 'CD', 'rdc': 'CD', 'republique democratique du congo': 'CD', 'cote d ivoire': 'CI', 'sao tome-et-principe': 'ST' };
+const flat = (s: string): string => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, ' ').toLowerCase().trim();
+let nameToCode: Map<string, string> | null = null;
+function codeOfName(name: string): string | null {
+  if (!nameToCode) {
+    nameToCode = new Map();
+    try {
+      const dn = new Intl.DisplayNames(['fr'], { type: 'region' });
+      const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      for (const a of A) for (const b of A) { const code = a + b; const n = dn.of(code); if (n && n !== code) nameToCode.set(flat(n), code); }
+    } catch { /* Intl indisponible */ }
+    for (const [k, v] of Object.entries(FR_ALIASES)) nameToCode.set(k, v);
+  }
+  return nameToCode.get(flat(name)) ?? null;
+}
+const regionNames = new Map<string, Intl.DisplayNames | null>();
+/** Nom de pays dans la langue choisie (à partir du code ISO, sinon du nom français). */
+export function countryName(lang: Lang, name: string | null | undefined, code?: string | null): string {
+  const fallback = name ?? code ?? '';
+  if (lang === 'fr' || !fallback) return fallback;
+  try {
+    let dn = regionNames.get(lang);
+    if (dn === undefined) { dn = new Intl.DisplayNames([lang === 'zh' ? 'zh-CN' : lang], { type: 'region' }); regionNames.set(lang, dn); }
+    const c = (code ?? codeOfName(fallback))?.toUpperCase();
+    const out = c && dn ? dn.of(c) : undefined;
+    if (out && out !== c) { markProduced(out); return out; }
+  } catch { /* garde le nom d'origine */ }
+  return fallback;
+}

@@ -1,8 +1,9 @@
 'use client';
+import { countryName } from '../i18n/translate';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { api, useAuth } from './AuthProvider';
-import { T, useT } from './I18n';
+import { T, useI18n, useT } from './I18n';
 import type { ShopSummary } from '../data/source';
 
 const letter = (n: string) => n.trim().slice(0, 1).toUpperCase();
@@ -10,6 +11,7 @@ const letter = (n: string) => n.trim().slice(0, 1).toUpperCase();
 /** Annuaire : d'abord toutes les boutiques déjà présentes, puis la proposition d'ouvrir la sienne. */
 export function ShopsDirectory({ initial, initialQuery = '' }: { initial: ShopSummary[]; initialQuery?: string }) {
   const t = useT();
+  const { lang } = useI18n();
   const { user } = useAuth();
   const [q, setQ] = useState(initialQuery);
   const [shops, setShops] = useState(initial);
@@ -50,7 +52,7 @@ export function ShopsDirectory({ initial, initialQuery = '' }: { initial: ShopSu
                   <span className="shop-avatar" aria-hidden>{letter(s.name)}</span>
                   <span className="shop-info">
                     <b className="shop-name">{s.name}{s.certified && <i className="fas fa-check-circle shop-cert" title={t('Boutique certifiée Mwinda')} />}</b>
-                    <small>{[s.city, s.country].filter(Boolean).join(', ') || <T>Afrique</T>}</small>
+                    <small>{[s.city, s.country && countryName(lang, s.country)].filter(Boolean).join(', ') || <T>Afrique</T>}</small>
                     <small className="shop-count">{s.productCount} <T>{s.productCount > 1 ? 'produits' : 'produit'}</T></small>
                   </span>
                   <i className="fas fa-chevron-right shop-go" aria-hidden />

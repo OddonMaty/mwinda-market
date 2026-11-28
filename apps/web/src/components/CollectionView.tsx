@@ -1,4 +1,6 @@
 'use client';
+import { countryName } from '../i18n/translate';
+import { useI18n } from './I18n';
 import { useMemo, useState } from 'react';
 import type { Product } from '../data/catalogue';
 import { collectionHref, formatUsd } from '../lib';
@@ -27,6 +29,7 @@ interface Props {
 /** Page catalogue : même structure que l'ancien site (les filtres de la barre latérale n'y étaient qu'indicatifs). */
 export function CollectionView({ products, now, pills, breadcrumbLabel, query, clearHref, inStockCount, activeDep, places, place, baseDep, baseCat }: Props) {
   const { code: myCountry } = useLocale();
+  const { lang } = useI18n();
   const href = (pays?: string, ville?: string) => collectionHref(baseDep, baseCat, query, { pays, ville });
   const nearMe = places.find((c) => c.code === myCountry);
   const open = places.find((c) => c.code === place.pays);
@@ -81,7 +84,7 @@ export function CollectionView({ products, now, pills, breadcrumbLabel, query, c
                 <li><NavButton to={href()} className={`loc-link${!place.pays ? ' active' : ''}`}>Tous les pays</NavButton></li>
                 {places.map((c) => (
                   <li key={c.code}>
-                    <NavButton to={href(c.code)} className={`loc-link${place.pays === c.code && !place.ville ? ' active' : ''}`}><span className={`fi fi-${c.code.toLowerCase()} country-flag`} /> {c.name} <em>{c.count}</em></NavButton>
+                    <NavButton to={href(c.code)} className={`loc-link${place.pays === c.code && !place.ville ? ' active' : ''}`}><span className={`fi fi-${c.code.toLowerCase()} country-flag`} /> {countryName(lang, c.name, c.code)} <em>{c.count}</em></NavButton>
                     {open?.code === c.code && c.cities.length > 0 && (
                       <ul className="loc-cities">{c.cities.map((ci) => <li key={ci.slug}><NavButton to={href(c.code, ci.slug)} className={`loc-link${place.ville === ci.slug ? ' active' : ''}`}>{ci.name} <em>{ci.count}</em></NavButton></li>)}</ul>
                     )}

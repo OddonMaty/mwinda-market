@@ -1,8 +1,9 @@
 'use client';
+import { countryName } from '../i18n/translate';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { DEPARTMENTS } from '@saotech/shared';
-import { useT } from './I18n';
+import { useI18n, useT } from './I18n';
 import { collectionHref, formatUsd, productImageUrl } from '../lib';
 
 interface ShopHit { name: string; slug: string; city: string | null; country: string | null; certified: boolean; productCount: number }
@@ -12,6 +13,7 @@ interface Suggestion { id: number; name: string; priceUsd: number; category: str
 export function SearchBar({ initial = '' }: { initial?: string }) {
   const router = useRouter();
   const t = useT();
+  const { lang } = useI18n();
   const [value, setValue] = useState(initial);
   const [items, setItems] = useState<Suggestion[]>([]);
   const [shops, setShops] = useState<ShopHit[]>([]);
@@ -77,7 +79,7 @@ export function SearchBar({ initial = '' }: { initial?: string }) {
           ))}
           {shops.map((s) => (
             <button type="button" key={s.slug} className="search-sug-row" onClick={() => { setOpen(false); router.push(`/boutique/${s.slug}`); }}>
-              <i className="fas fa-store" /><span><b>{s.name}{s.certified && <i className="fas fa-check-circle" style={{ marginLeft: 6, color: 'var(--primary)', width: 'auto' }} />}</b><small>{t('Boutique')}{[s.city, s.country].filter(Boolean).length ? ` · ${[s.city, s.country].filter(Boolean).join(', ')}` : ''}</small></span>
+              <i className="fas fa-store" /><span><b>{s.name}{s.certified && <i className="fas fa-check-circle" style={{ marginLeft: 6, color: 'var(--primary)', width: 'auto' }} />}</b><small>{t('Boutique')}{[s.city, s.country && countryName(lang, s.country)].filter(Boolean).length ? ` · ${[s.city, s.country && countryName(lang, s.country)].filter(Boolean).join(', ')}` : ''}</small></span>
             </button>
           ))}
           {items.map((p, i) => (

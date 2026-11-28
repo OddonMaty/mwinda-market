@@ -1,5 +1,6 @@
 import { DEPARTMENTS } from '@saotech/shared';
 import type { Product } from './data/catalogue';
+import { countryName, type Lang } from './i18n/translate';
 
 export const USD_TO_CDF = 2800; // taux de secours de l'ancien site (a remplacer par un taux en base)
 const NEW_WINDOW_DAYS = 30;
@@ -47,4 +48,4 @@ export function collectionHref(department?: string, category?: string, q?: strin
 }
 
 /** « Goma, RD Congo » : où se trouve la boutique d'un produit. */
-export const placeLabel = (p: { city?: string | null; countryName?: string | null }): string => [p.city, p.countryName].filter(Boolean).join(', ');
+export const placeLabel = (p: { city?: string | null; countryName?: string | null; countryCode?: string | null }, lang: Lang = 'fr'): string => [p.city, countryName(lang, p.countryName, p.countryCode)].filter(Boolean).join(', ');

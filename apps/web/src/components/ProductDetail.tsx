@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from './I18n';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -14,6 +15,7 @@ import { ProductCard, Stars } from './ProductCard';
 
 /** Fiche produit : même structure et mêmes interactions que l'ancien site. */
 export function ProductDetail({ product, related, now }: { product: Product; related: Product[]; now: number }) {
+  const { lang } = useI18n();
   const [color, setColor] = useState(product.colors[0] ?? '');
   const [size, setSize] = useState(product.sizes[0] ?? '');
   const [qty, setQty] = useState(1);
@@ -56,7 +58,7 @@ export function ProductDetail({ product, related, now }: { product: Product; rel
           <div className="product-meta"><i className="fas fa-eye" /> Récemment consulté</div>
           <h1>{product.name}</h1>
           {product.shopName && <p className="seller-line">Vendu par {product.shopSlug ? <Link href={`/boutique/${product.shopSlug}`}><b>{product.shopName}</b></Link> : <b>{product.shopName}</b>}{product.certified && <span className="badge-certified-inline"><i className="fas fa-check-circle" /> Boutique certifiée Mwinda</span>}</p>}
-          {placeLabel(product) && <p className="seller-place"><i className="fas fa-map-marker-alt" /> Expédié depuis <b>{placeLabel(product)}</b></p>}
+          {placeLabel(product, lang) && <p className="seller-place"><i className="fas fa-map-marker-alt" /> Expédié depuis <b>{placeLabel(product, lang)}</b></p>}
           <div className="product-rating">
             <div className="stars"><Stars rating={product.rating} /></div>
             <span><span className="review-count">{`(${product.reviews} avis)`}</span></span>

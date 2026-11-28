@@ -1,11 +1,12 @@
 'use client';
 
+import { countryName } from '../i18n/translate';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, Globe2, Smartphone, Store, Users } from 'lucide-react';
 import { api, errorMessage, useAuth } from './AuthProvider';
-import { useT } from './I18n';
+import { useI18n, useT } from './I18n';
 import { e164 } from './CheckoutArea';
 import { useCountries } from './Geo';
 import { PlanCards, type Plan } from './PlanCards';
@@ -18,6 +19,7 @@ const STEPS = ['Votre boutique', 'Votre plan', 'Votre compte'];
 export function SellerArea() {
   const router = useRouter();
   const t = useT();
+  const { lang } = useI18n();
   const { user, ready, notify, refresh } = useAuth();
   const countries = useCountries();
   const [mode, setMode] = useState<'open' | 'login'>('open');
@@ -149,7 +151,7 @@ export function SellerArea() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label={t('Pays *')}><Select name="country" value={shop.country} onChange={set('country')} required>
                       {countries.length === 0 && <option value={shop.country}>Chargement…</option>}
-                      {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+                      {countries.map((c) => <option key={c.code} value={c.code}>{countryName(lang, c.name, c.code)}</option>)}
                     </Select></Field>
                     <Field label={t('Ville')}><Select name="city" value={shop.city} onChange={set('city')} key={shop.country}>
                       <option value="">{country?.cities.length ? 'Autre ville' : 'Ville non listée'}</option>
@@ -169,7 +171,7 @@ export function SellerArea() {
                   <div className={cn('grid gap-4', step !== 2 && 'hidden')}>
                     <Field label={t('Adresse e-mail')} hint={t('Facultatif — sans e-mail, vous vous connectez avec votre numéro WhatsApp et recevez vos alertes dessus')}><Input type="email" name="email" placeholder="vendeur@email.com" /></Field>
                     <Field label={t('Mot de passe *')} hint={t('8 caractères minimum')}><Input type="password" name="password" minLength={8} required={step === 2} /></Field>
-                    <div className="rounded-xl bg-muted/60 p-3 text-sm"><b>Récapitulatif :</b> {shop.name || 'Votre boutique'} · {country?.name}{shop.city ? ` · ${country?.cities.find((c) => c.slug === shop.city)?.name}` : ''} {`· plan ${chosen?.name}`}</div>
+                    <div className="rounded-xl bg-muted/60 p-3 text-sm"><b>Récapitulatif :</b> {shop.name || 'Votre boutique'} · {country ? countryName(lang, country.name, country.code) : ''}{shop.city ? ` · ${country?.cities.find((c) => c.slug === shop.city)?.name}` : ''} {`· plan ${chosen?.name}`}</div>
                   </div>
                 )}
 

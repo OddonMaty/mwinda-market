@@ -5,6 +5,7 @@ import { useCart } from './CartProvider';
 import { isProductNew, placeLabel, productImageUrl } from '../lib';
 import { Price } from './Locale';
 import { useWishlist } from './WishlistProvider';
+import { useI18n } from './I18n';
 
 
 export function Stars({ rating }: { rating: number }) {
@@ -20,6 +21,7 @@ export function Stars({ rating }: { rating: number }) {
 
 export function ProductCard({ product, now }: { product: Product; now: number }) {
   const router = useRouter();
+  const { lang } = useI18n();
   const wl = useWishlist();
   const wish = wl.has(product.id);
   const cart = useCart();
@@ -41,7 +43,7 @@ export function ProductCard({ product, now }: { product: Product; now: number })
       </div>
       <div className="product-info">
         <p className="product-category">{product.category}</p>
-        {placeLabel(product) && <p className="product-place"><i className="fas fa-map-marker-alt" /> {placeLabel(product)}</p>}
+        {placeLabel(product, lang) && <p className="product-place"><i className="fas fa-map-marker-alt" /> {placeLabel(product, lang)}</p>}
         <h3 className="product-name">{product.name}</h3>
         <div className="product-rating">
           <div className="stars"><Stars rating={product.rating} /></div>
