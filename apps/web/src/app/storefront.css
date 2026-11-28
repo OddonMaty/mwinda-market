@@ -427,7 +427,8 @@
 }
 
 /* ===== Annuaire des boutiques (/boutiques) : liste façon application sur mobile, grille sur ordinateur ===== */
-.shops-page { padding: 1rem 0 2.5rem; }
+.shops-page { padding-top: 1rem; padding-bottom: 2.5rem; }
+.shop-page { padding-top: 1.2rem; padding-bottom: 2rem; }
 .shops-title { font-size: 1.35rem; font-weight: 800; margin: 0 0 0.8rem; display: flex; align-items: center; gap: 0.5rem; }
 .shops-count { background: #fdf1e3; color: var(--primary-dark); font-size: 0.78rem; font-weight: 700; border-radius: 999px; padding: 0.1rem 0.6rem; }
 .shops-search { position: relative; margin-bottom: 1rem; }
@@ -455,7 +456,7 @@
   .shops-title { justify-content: center; font-size: 1.15rem; }
   .shops-list { grid-template-columns: 1fr; gap: 0.55rem; }
   .shop-row { padding: 0.7rem 0.8rem; }
-  .shops-cta { position: sticky; bottom: 76px; box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.08); margin-top: 1.1rem; padding: 0.9rem; text-align: left; display: grid; grid-template-columns: auto 1fr; column-gap: 0.8rem; align-items: center; }
+  .shops-cta { margin-top: 1.1rem; padding: 0.9rem; text-align: left; display: grid; grid-template-columns: auto 1fr; column-gap: 0.8rem; align-items: center; }
   .shops-cta > i { grid-row: span 3; font-size: 1.5rem; }
   .shops-cta h2 { font-size: 0.98rem; margin: 0; }
   .shops-cta p { font-size: 0.8rem; margin: 0.1rem 0 0.5rem; max-width: none; }
@@ -468,3 +469,10 @@
 }
 
 @media (max-width: 768px) { .shop-hero-m h1 { font-size: 1.2rem !important; } .shop-hero-m .badge-certified-inline { display: block; margin: 0.2rem 0 0 !important; } }
+
+@media (max-width: 768px) {
+  .shop-page { padding-top: 0.7rem; padding-bottom: 1.2rem; }
+  .shop-page .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  .shop-page h2 { font-size: 1rem !important; }
+}
+@media (min-width: 769px) and (max-width: 1000px) { .shop-page .products-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
