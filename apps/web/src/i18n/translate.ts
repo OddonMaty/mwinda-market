@@ -92,14 +92,20 @@ export function isDictOutput(lang: Lang, text: string): boolean {
 export const hasEntry = (lang: Lang, text: string): boolean => lang !== 'fr' && indexOf(lang as Exclude<Lang, 'fr'>).exact.has(norm(text));
 
 /** Un texte mérite-t-il une traduction automatique ? Écarte nombres, prix, adresses, sigles et noms de personnes. */
+// Propriétés Unicode (\p{L}) absentes des vieux navigateurs Android : repli sur les lettres latines accentuées.
+function rx(src: string, fallback: string, flags = ''): RegExp {
+  try { return new RegExp(src, flags + 'u'); } catch { return new RegExp(fallback, flags); }
+}
+const HAS_WORD = rx('\\p{L}{3}', '[A-Za-z\\u00C0-\\u024F\\u0370-\\u1FFF\\u3040-\\u9FFF]{3}');
+const LOOKS_NAME = rx("^(\\p{Lu}[\\p{Ll}'’-]+)( \\p{Lu}[\\p{Ll}'’-]+){0,2}$", "^([A-Z\\u00C0-\\u00DE][a-z\\u00DF-\\u00FF'’-]+)( [A-Z\\u00C0-\\u00DE][a-z\\u00DF-\\u00FF'’-]+){0,2}$");
 export function worthMachine(core: string, ugc: boolean): boolean {
   if (core.length < 3 || core.length > 700 || core.includes('©')) return false;
   if (/^\d/.test(core) && core.length <= 24) return false; // dates, quantités, prix
   if (/^(Mwinda Market|Sao Tech Agency|Mwinda|WhatsApp|Facebook|Instagram|TikTok|Twitter|YouTube|LinkedIn|Mobile Money|M-Pesa|Airtel Money|Orange Money)$/i.test(core)) return false;
-  if (!/\p{L}{3}/u.test(core)) return false;
+  if (!HAS_WORD.test(core)) return false;
   if (/^[\d\s.,:;%$€£¥+\-–—/()#*]+$/.test(core) || /@|https?:|www\./i.test(core)) return false;
   if (/^[A-Z0-9 .\-/]+$/.test(core) && core.length <= 6) return false;
-  if (!ugc && !/\d/.test(core) && /^(\p{Lu}[\p{Ll}'’-]+)( \p{Lu}[\p{Ll}'’-]+){0,2}$/u.test(core)) return false; // ressemble à un nom de personne
+  if (!ugc && !/\d/.test(core) && LOOKS_NAME.test(core)) return false; // ressemble à un nom de personne
   return true;
 }
 

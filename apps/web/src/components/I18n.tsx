@@ -23,11 +23,15 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let saved: string | null = null;
     try { saved = localStorage.getItem(KEY); } catch { /* stockage indisponible */ }
+    if (!saved) saved = document.cookie.match(/(?:^|; )mwinda_lang=(\w+)/)?.[1] ?? null;
     apply(isLang(saved) ? saved : detectLang(navigator.language));
   }, [apply]);
   const setLang = useCallback((l: Lang, persist = true) => {
     apply(l);
-    if (persist) { try { localStorage.setItem(KEY, l); } catch { /* ignoré */ } }
+    if (persist) {
+      try { localStorage.setItem(KEY, l); } catch { /* ignoré */ }
+      try { document.cookie = `mwinda_lang=${l}; path=/; max-age=31536000; SameSite=Lax`; } catch { /* ignoré */ }
+    }
   }, [apply]);
   const t = useCallback((text: string, ...args: (string | number)[]) => tr(lang, text, ...args), [lang]);
   return <I18nContext.Provider value={{ lang, setLang, t }}>{children}<AutoTranslate lang={lang} /></I18nContext.Provider>;
