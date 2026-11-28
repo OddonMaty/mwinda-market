@@ -436,13 +436,14 @@
 .shops-search input { width: 100%; height: 46px; border: 1px solid #e6e6e6; border-radius: 12px; background: #f4f4f5; padding: 0 1rem 0 2.5rem; font: inherit; font-size: 16px; }
 .shops-search input:focus { outline: 2px solid var(--primary); background: #fff; }
 .shops-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
-.shop-row { display: flex; align-items: center; gap: 0.8rem; background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 0.8rem 0.9rem; color: var(--dark); text-decoration: none; min-width: 0; }
+.shop-row { display: flex; align-items: center; gap: 0.8rem; background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 0.8rem 0.9rem; color: var(--dark); text-decoration: none; min-width: 0; width: 100%; box-sizing: border-box; overflow: hidden; }
+.shops-list > li { min-width: 0; }
 .shop-row:hover { border-color: var(--primary); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07); }
 .shop-avatar { flex: 0 0 52px; width: 52px; height: 52px; border-radius: 14px; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 1.4rem; font-weight: 800; }
 .shop-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
-.shop-name { font-size: 0.98rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shop-name { font-size: 0.98rem; white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
 .shop-cert { color: var(--primary); margin-left: 0.35rem; font-size: 0.85rem; }
-.shop-info small { color: #777; font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shop-info small { color: #777; font-size: 0.78rem; white-space: normal; overflow-wrap: anywhere; }
 .shop-info .shop-count { color: var(--primary-dark); font-weight: 600; }
 .shop-go { color: #bbb; font-size: 0.8rem; flex-shrink: 0; }
 .shops-empty { text-align: center; color: #777; padding: 2rem 0; }
